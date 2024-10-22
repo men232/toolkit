@@ -1,0 +1,25 @@
+{
+  "name": "@andrew_l/toolkit-core",
+  "version": "0.0.1",
+  "type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "tsc -p tsconfig.build.json --noEmit && vite build"
+  },
+  "peerDependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "@types/lodash": "^4.17.7"
+  }
+}

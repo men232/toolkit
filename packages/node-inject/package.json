@@ -1,0 +1,26 @@
+{
+	"name": "@andrew_l/toolkit-node-inject",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"scripts": {
+		"preinstall": "npx only-allow pnpm",
+		"build": "tsc -p tsconfig.build.json --noEmit && vite build"
+	},
+	"devDependencies": {
+		"@liuli-util/vite-plugin-node": "^0.9.0",
+		"@types/node": "^20.16.10",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vite-plugin-dts": "catalog:"
+	},
+	"dependencies": {
+		"@andrew_l/toolkit-core": "workspace:*"
+	}
+}
