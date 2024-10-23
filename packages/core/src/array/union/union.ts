@@ -1,6 +1,9 @@
 import { uniq } from '../uniq';
 
 /**
+ * @group Array
+ *
+ * @description
  * Creates an array of unique values from all given arrays.
  *
  * This function takes two arrays, merges them into a single array, and returns a new array

@@ -3,7 +3,9 @@ dist
 node_modules
 coverage
 temp
+**/.vitepress/cache/
 explorations
+typedocs
 TODOs.md
 *.log
 .idea

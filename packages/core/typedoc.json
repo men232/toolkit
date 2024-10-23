@@ -1,0 +1,23 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "readme": "none",
+  "plugin": [
+    "typedoc-plugin-merge-modules",
+    "typedoc-plugin-markdown",
+    "typedoc-vitepress-theme"
+  ],
+  "entryPoints": ["./src/index.ts"],
+  "docsRoot": "./docs",
+  "darkHighlightTheme": "vitesse-dark",
+  "lightHighlightTheme": "vitesse-light",
+  "hideBreadcrumbs": true,
+  "disableSources": true,
+  "cleanOutputDir": true,
+  "out": "./docs/typedocs",
+  "entryFileName": "index.md",
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true
+}
