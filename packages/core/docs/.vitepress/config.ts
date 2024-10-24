@@ -31,7 +31,10 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' },
+      {
+        icon: 'github',
+        link: 'https://github.com/men232/toolkit/tree/main/packages/core',
+      },
     ],
   },
 });
