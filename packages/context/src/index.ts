@@ -3,7 +3,7 @@ import {
   captureStackTrace,
   catchError,
   isFunction,
-} from '@andrew_l/toolkit-core';
+} from '@andrew_l/toolkit';
 import type { AsyncLocalStorage } from 'node:async_hooks';
 
 const PARENT_SYM = Symbol('ctx.parent');

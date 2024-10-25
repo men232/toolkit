@@ -8,7 +8,7 @@ hero:
 features:
   - title: Core
     details: General utility functions
-    link: /typedocs/@andrew_l/toolkit-core/
+    link: /typedocs/@andrew_l/toolkit/
   - title: Context
     details: Like composition api but for Node.
     link: /typedocs/@andrew_l/context/

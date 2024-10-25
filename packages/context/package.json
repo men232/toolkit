@@ -24,6 +24,6 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@andrew_l/toolkit-core": "workspace:*"
+    "@andrew_l/toolkit": "workspace:*"
   }
 }

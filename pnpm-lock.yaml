@@ -56,7 +56,7 @@ importers:
 
   packages/context:
     dependencies:
-      '@andrew_l/toolkit-core':
+      '@andrew_l/toolkit':
         specifier: workspace:*
         version: link:../core
     devDependencies:
