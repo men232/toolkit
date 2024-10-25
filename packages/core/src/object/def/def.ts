@@ -1,5 +1,7 @@
 /**
  * Define not enumerable property in object
+ *
+ * @group Object
  */
 export const def = (
   obj: object,

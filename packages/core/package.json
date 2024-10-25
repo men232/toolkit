@@ -4,11 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "unbuild",
-    "prepack": "unbuild",
-    "typedocs": "typedoc --options typedoc.json",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "prepack": "unbuild"
   },
   "exports": {
     ".": {
@@ -27,12 +23,7 @@
   "devDependencies": {
     "@types/lodash": "^4.17.7",
     "@types/node": "catalog:",
-    "typedoc": "^0.26.10",
-    "typedoc-plugin-markdown": "^4.2.9",
-    "typedoc-plugin-merge-modules": "^6.0.2",
-    "typedoc-vitepress-theme": "^1.0.2",
     "typescript": "catalog:",
-    "unbuild": "catalog:",
-    "vitepress": "^1.4.1"
+    "unbuild": "catalog:"
   }
 }

@@ -5,6 +5,16 @@ import { cacheBucket } from '../withCacheBucket';
 import { cacheFixed } from '../withCacheFixed';
 import { cacheLRU } from '../withCacheLRU';
 
+/**
+ * Drop cached result
+ *
+ * @example
+ * const findUser = withCache((id: number) => db.users.findById(id));
+ *
+ * dropCache(findUser, 100500);
+ *
+ * @group Cache
+ */
 export function dropCache(
   cachePointer: WithCachePointer,
   ...args: any[]

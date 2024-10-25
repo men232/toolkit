@@ -14,6 +14,8 @@ import { getWords } from '../getWords';
  * const convertedStr2 = camelCase('some whitespace') // returns 'someWhitespace'
  * const convertedStr3 = camelCase('hyphen-text') // returns 'hyphenText'
  * const convertedStr4 = camelCase('HTTPRequest') // returns 'httpRequest'
+ *
+ * @group Strings
  */
 export const camelCase = (str?: string): string => {
   const words = getWords(str);

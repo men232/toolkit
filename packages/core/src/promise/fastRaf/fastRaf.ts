@@ -13,8 +13,12 @@ let fastRafCallbacks: Set<NoneToVoidFunction> | undefined;
 let fastRafFallbackCallbacks: Set<NoneToVoidFunction> | undefined;
 let fastRafFallbackTimeout: any;
 
-// May result in an immediate execution if called from another RAF callback which was scheduled
-// (and therefore is executed) earlier than RAF callback scheduled by `fastRaf`
+/**
+ * May result in an immediate execution if called from another RAF callback which was scheduled
+ * (and therefore is executed) earlier than RAF callback scheduled by `fastRaf`
+ *
+ * @group Promise
+ */
 export function fastRaf(
   callback: NoneToVoidFunction,
   withTimeoutFallback = false,

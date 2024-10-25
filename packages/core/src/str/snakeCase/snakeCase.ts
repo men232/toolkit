@@ -13,6 +13,8 @@ import { getWords } from '../getWords';
  * const convertedStr2 = snakeCase('some whitespace') // returns 'some_whitespace'
  * const convertedStr3 = snakeCase('hyphen-text') // returns 'hyphen_text'
  * const convertedStr4 = snakeCase('HTTPRequest') // returns 'http_request'
+ *
+ * @group Strings
  */
 export const snakeCase = (str?: string): string => {
   return getWords(str)

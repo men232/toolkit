@@ -20,6 +20,10 @@ function signed_crc_table() {
   return Int32Array ? new Int32Array(table) : table;
 }
 
+/**
+ * Calculate crc32 hash from string
+ * @group Crypto
+ */
 export function crc32(str: string, seed: number = 0): number {
   var C = seed ^ -1;
   for (var i = 0, L = str.length, c = 0, d = 0; i < L; ) {

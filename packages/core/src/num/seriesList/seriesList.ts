@@ -4,6 +4,8 @@
  * For example: [1, 2, 3, 6, 7]
  *
  * Result: [[1, 3], [6, 7]]
+ *
+ * @group Numbers
  */
 export function seriesList(list: Array<number>) {
   const result = [];

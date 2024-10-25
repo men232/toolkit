@@ -1,3 +1,8 @@
+/**
+ * Unflat flatten object
+ *
+ * @group Object
+ */
 export function unflatten(obj: object) {
   const result = {};
 

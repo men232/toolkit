@@ -2,6 +2,8 @@ import { nextTickIteration } from '../nextTickIteration';
 
 /**
  * Same as `arr.find()` but with async predicate
+ *
+ * @group Promise
  */
 export async function asyncFind<T>(
   array: T[],

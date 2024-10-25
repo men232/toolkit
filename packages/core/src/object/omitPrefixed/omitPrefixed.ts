@@ -1,5 +1,7 @@
 /**
  * Pick object keys with excluding prefix keys
+ *
+ * @group Object
  */
 export function omitPrefixed(
   obj: Record<string, unknown>,

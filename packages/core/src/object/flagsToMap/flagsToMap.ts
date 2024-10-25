@@ -10,6 +10,8 @@ export function flagsToMap(
 
 /**
  * Converts bitmask into mapped object with true/false values
+ *
+ * @group Object
  */
 export function flagsToMap(
   value: number | bigint,

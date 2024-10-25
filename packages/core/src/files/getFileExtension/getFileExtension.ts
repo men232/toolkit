@@ -1,25 +1,16 @@
-export function humanFileSize(
-  bytes: number,
-  digits: number = 1,
-  withSpace: boolean = true,
-): string {
-  const thresh = 1024;
-  const units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-  if (Math.abs(bytes) < thresh) {
-    return (bytes / thresh).toFixed(digits) + ` ${units[0]}`;
+/**
+ * Extract file extension from string
+ *
+ * @example
+ * console.log(getFileExtension('Andrew L - CV.pdf')) // 'pdf'
+ *
+ * @group Files
+ */
+export function getFileExtension(name: string): string | null {
+  if (typeof name !== 'string') {
+    return null;
   }
 
-  let u = -1;
-  const r = 10 ** digits;
-
-  do {
-    bytes /= thresh;
-    ++u;
-  } while (
-    Math.round(Math.abs(bytes) * r) / r >= thresh &&
-    u < units.length - 1
-  );
-
-  return bytes.toFixed(digits) + (withSpace ? ' ' : '') + units[u];
+  const ext = name.split('.').at(-1)?.split('?')?.at(0);
+  return ext ? `.${ext}` : null;
 }

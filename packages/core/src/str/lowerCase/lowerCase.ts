@@ -13,6 +13,8 @@ import { getWords } from '../getWords';
  * const convertedStr2 = lowerCase('some whitespace') // returns 'some whitespace'
  * const convertedStr3 = lowerCase('hyphen-text') // returns 'hyphen text'
  * const convertedStr4 = lowerCase('HTTPRequest') // returns 'http request'
+ *
+ * @group Strings
  */
 export const lowerCase = (str?: string): string => {
   return getWords(str)

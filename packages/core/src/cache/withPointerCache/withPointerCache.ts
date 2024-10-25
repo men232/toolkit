@@ -1,6 +1,10 @@
 import type { AnyFunction } from '@/types';
 import { cache } from '../withCache';
 
+/**
+ * @example TODO
+ * @group Cache
+ */
 export function withPointerCache<T>(
   pointer: object,
   dependencies: string[],

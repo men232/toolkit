@@ -1,3 +1,11 @@
+/**
+ * Converts bytes amount into human readably string
+ *
+ * @example
+ * console.log(humanFileSize(1024)) // 1KB
+ *
+ * @group Files
+ */
 export function humanFileSize(
   bytes: number,
   digits: number = 1,

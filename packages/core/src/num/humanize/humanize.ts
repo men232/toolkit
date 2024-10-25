@@ -1,5 +1,10 @@
 /**
  * Humanize a big number like 100K 1.2M
+ *
+ * @example
+ * console.log(humanize(1000000)); // '1M'
+ *
+ * @group Numbers
  */
 export function humanize(input: number | string, decimals = 1): string {
   if (input === null || input === undefined) {

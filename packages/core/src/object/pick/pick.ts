@@ -17,6 +17,8 @@ import { hasOwn } from '../hasOwn';
  * const obj = { a: 1, b: 2, c: 3 };
  * const result = pick(obj, ['a', 'c']);
  * // result will be { a: 1, c: 3 }
+ *
+ * @group Object
  */
 export function pick<T extends Record<string, any>, U extends keyof T>(
   obj: T | null | undefined,

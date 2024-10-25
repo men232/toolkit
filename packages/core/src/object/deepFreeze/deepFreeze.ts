@@ -1,3 +1,8 @@
+/**
+ * Same as `Object.freeze()` but deep
+ *
+ * @group Object
+ */
 export function deepFreeze<T extends object | unknown[]>(value: T): T {
   let currentValue: any = value;
 

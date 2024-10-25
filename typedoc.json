@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "readme": "none",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-vitepress-theme"
+  ],
+  "entryPoints": ["packages/*"],
+  "entryPointStrategy": "packages",
+  "docsRoot": "./docs",
+  "disableSources": true,
+  "cleanOutputDir": true,
+  "out": "./docs/typedocs",
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true
+}

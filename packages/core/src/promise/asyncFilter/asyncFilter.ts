@@ -2,6 +2,8 @@ import { nextTickIteration } from '@/promise';
 
 /**
  * Same as `arr.filter()` but with async predicate
+ *
+ * @group Promise
  */
 export async function asyncFilter<T>(
   array: T[],

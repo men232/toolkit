@@ -1,0 +1,11 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "readme": "none",
+  "darkHighlightTheme": "vitesse-dark",
+  "lightHighlightTheme": "vitesse-light",
+  "includeVersion": true,
+  "disableSources": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true
+}

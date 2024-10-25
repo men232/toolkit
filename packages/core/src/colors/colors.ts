@@ -2,13 +2,19 @@ import { isNumber, isString, noop } from '@/is';
 
 /**
  * Color channels, format: [`red`, `green`, `blue`, `alpha`]
+ * @group Colors
  */
 export type ColorChannels = [number, number, number, number];
 
+/**
+ * HSL color channels
+ * @group Colors
+ */
 export type ColorHSL = { h: number; s: number; l: number };
 
 /**
  * Linear color interpolating
+ * @group Colors
  */
 export function interpolateColor(
   color1: string | ColorChannels,
@@ -28,6 +34,7 @@ export function interpolateColor(
 
 /**
  * Parse css color and returns color channels
+ * @group Colors
  */
 export function colorToChannels(color: string | ColorChannels): ColorChannels {
   if (isColorChannels(color)) {
@@ -64,6 +71,10 @@ export function colorToChannels(color: string | ColorChannels): ColorChannels {
   return [0, 0, 0, 1];
 }
 
+/**
+ * Calculate luminance of color
+ * @group Colors
+ */
 export function luminance([r, g, b]: ColorChannels): number {
   const a = [r, g, b].map(function (v) {
     v /= 255;
@@ -72,10 +83,18 @@ export function luminance([r, g, b]: ColorChannels): number {
   return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
 }
 
+/**
+ * Calculate contrast ratio of two luminance
+ * @group Colors
+ */
 export function contrastRatio(l1: number, l2: number) {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
+/**
+ * Returns a color text color that should be on background to keep good contrast
+ * @group Colors
+ */
 export function tintedTextColor(
   background: string | ColorChannels,
   tintPercentage = 0.2,
@@ -104,6 +123,10 @@ export function tintedTextColor(
   return tintedColor;
 }
 
+/**
+ * Just mixing of two colors
+ * @group Colors
+ */
 export function blendColors(
   color1: ColorChannels | string,
   color2: ColorChannels | string,
@@ -120,6 +143,10 @@ export function blendColors(
   ];
 }
 
+/**
+ * Converts color channels into hex
+ * @group Colors
+ */
 export function channelsToHex(channels: ColorChannels) {
   const [r, g, b, a] = channels;
 
@@ -143,6 +170,10 @@ export function channelsToHex(channels: ColorChannels) {
   return '#' + outParts.join('');
 }
 
+/**
+ * Converts color channels into HSL
+ * @group Colors
+ */
 export function channelsToHSL([r, g, b]: ColorChannels): ColorHSL {
   r /= 255;
   g /= 255;
@@ -182,6 +213,10 @@ export function channelsToHSL([r, g, b]: ColorChannels): ColorHSL {
   };
 }
 
+/**
+ * Check if provided value represents color channels
+ * @group Colors
+ */
 export function isColorChannels(value: unknown): value is ColorChannels {
   return Array.isArray(value) && value.length === 4;
 }
@@ -222,6 +257,10 @@ function hslToChannels(value: string): ColorChannels {
   ];
 }
 
+/**
+ * Parsing hex string as color channels
+ * @group Colors
+ */
 export function hexToChannels(hexWithAlpha: string): ColorChannels {
   let [hex, alpha] = hexWithAlpha.replace('#', '').split('/');
 
@@ -236,6 +275,10 @@ export function hexToChannels(hexWithAlpha: string): ColorChannels {
   ];
 }
 
+/**
+ * Parsing rgb() string as color channels
+ * @group Colors
+ */
 export function rgbToChannels(value: string): ColorChannels {
   const [r, g, b, a] = value
     .replace(/^(rgb|rgba)\(/, '')
@@ -251,6 +294,10 @@ export function rgbToChannels(value: string): ColorChannels {
   ];
 }
 
+/**
+ * Build css valid color from color channels
+ * @group Colors
+ */
 export function buildCssColor(
   [r, g, b, a = 1]: ColorChannels,
   opacity = 1,
@@ -258,6 +305,10 @@ export function buildCssColor(
   return `rgba(${r}, ${g}, ${b}, ${a * opacity})`;
 }
 
+/**
+ * Returns css valid color with adjusted alpha channel
+ * @group Colors
+ */
 export function alpha(color: string | ColorChannels, opacity: number): string {
   const channels = colorToChannels(color);
 
@@ -266,6 +317,10 @@ export function alpha(color: string | ColorChannels, opacity: number): string {
 
 const defaultWindow = (globalThis as any)?.window;
 
+/**
+ * Create a getter of css variable for container
+ * @group Colors
+ */
 export function cssVariable(container: HTMLElement): (name: string) => string {
   if (!defaultWindow) return noop as any;
 

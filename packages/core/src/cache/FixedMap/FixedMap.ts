@@ -1,5 +1,10 @@
 import { assertCapacity } from './utils';
 
+/**
+ * Same as `Map` but with fixed capacity
+ *
+ * @group Cache
+ */
 export class FixedMap<K = any, V = any> extends Map<K, V> {
   private _tail: K[];
 

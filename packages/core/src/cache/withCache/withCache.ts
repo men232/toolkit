@@ -23,6 +23,8 @@ export const cache = /*#__PURE__*/ new WeakMap<
  * sum(1, 2); // calc?
  * sum(1, 2);
  * sum(1, 3)  // calc?
+ *
+ * @group Cache
  */
 export function withCache<T extends AnyFunction>(fn: T): WithCacheResult<T> {
   const getPointer = () => fn;

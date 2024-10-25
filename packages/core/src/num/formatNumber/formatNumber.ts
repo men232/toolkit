@@ -1,3 +1,11 @@
+/**
+ * Simple formatting money number
+ *
+ * @example
+ * console.log(formatNumber(1500)) // '1 500'
+ *
+ * @group Numbers
+ */
 export function formatNumber(value: number | string): string {
   if (!value || !value.toString) {
     return String(value);

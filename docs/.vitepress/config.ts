@@ -21,19 +21,22 @@ export default defineConfig({
       { text: 'Type Docs', link: '/typedocs/' },
     ],
 
-    sidebar: [
-      {
-        text: 'Type Docs',
-        items: typedocSidebar.filter(
-          v => !EXCLUDE_TYPEDOC_GROUPS.has((v as any).text),
-        ),
-      },
-    ],
+    sidebar: (typedocSidebar as any[]).map(pkg => {
+      pkg.items = pkg.items.filter(
+        v => !EXCLUDE_TYPEDOC_GROUPS.has((v as any).text),
+      );
+
+      if (pkg.items.length === 1 && pkg.items[0].text === 'Main') {
+        pkg.items = pkg.items[0].items;
+      }
+
+      return pkg;
+    }),
 
     socialLinks: [
       {
         icon: 'github',
-        link: 'https://github.com/men232/toolkit/tree/main/packages/core',
+        link: 'https://github.com/men232/toolkit',
       },
     ],
   },

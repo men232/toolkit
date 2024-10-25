@@ -6,7 +6,25 @@ import { isWithCache } from '../createWithCache';
 import { SYM_WITH_CACHE } from '../createWithCache/utils';
 
 /**
- * Utility wrapper function to deep clone results
+ * Utility wrapper function to deep clone results.
+ *
+ * Useful when you need to mutate cached object.
+ *
+ * @example
+ * const findUser = withDeepClone(
+ *   withCache((id: number) => {
+ *     return { id, name: 'Andrew' };
+ *   })
+ * );
+ *
+ * const user1 = findUser(100500);
+ * const user2 = findUser(100500);
+ * user1.name = 'ABC';
+ *
+ * console.log(user1.name); // ABC
+ * console.log(user2.name); // Andrew
+ *
+ * @group Cache
  */
 export function withDeepClone<T extends AnyFunction>(fn: T): T {
   const wrapFn = function (...args) {

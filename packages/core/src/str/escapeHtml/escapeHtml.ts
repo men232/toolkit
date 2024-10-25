@@ -1,3 +1,8 @@
+/**
+ * Sanitize a string to escape html syntax
+ *
+ * @group Strings
+ */
 export function escapeHtml(unsafe: string) {
   if (typeof unsafe !== 'string') {
     return '';

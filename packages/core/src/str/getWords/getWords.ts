@@ -15,6 +15,8 @@ import { isString } from '@/is';
  * @example
  * const matches = 'camelCaseHTTPRequest'.match(CASE_SPLIT_PATTERN);
  * // matchs: ['camel', 'Case', 'HTTP', 'Request']
+ *
+ * @group Strings
  */
 const CASE_SPLIT_PATTERN = /[A-Z]?[a-z]+|[0-9]+|[A-Z]+(?![a-z])/g;
 

@@ -6,4 +6,4 @@ export * from './orderBy';
 export * from './sum';
 export * from './union';
 export * from './uniq';
-export * from './uniqueBy';
+export * from './uniqBy';

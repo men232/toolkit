@@ -3,6 +3,13 @@ const DEF_STR_ASSIGN_METHOD = (obj: any, key: string) => obj[key];
 
 /**
  * A util function for assign string with object
+ *
+ * @example
+ * const context = { name: 'Andrew' };
+ *
+ * console.log(strAssign('Hey {{ name }}'), context); // 'Hey Andrew'
+ *
+ * @group Strings
  */
 export function strAssign(
   str: string,

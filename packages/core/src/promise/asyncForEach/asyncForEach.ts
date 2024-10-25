@@ -2,6 +2,8 @@ import { nextTickIteration } from '../nextTickIteration';
 
 /**
  * Same as `arr.forEach()` but with async callback and parallel processing
+ *
+ * @group Promise
  */
 export async function asyncForEach<T>(
   array: T[],

@@ -17,6 +17,11 @@ export type WithCustomizerValue = Arrayable<
   WithCustomizer | WithCustomizerFactory
 >;
 
+/**
+ * Same as `deepClone` but with customizer function.
+ *
+ * @group Object
+ */
 export function deepCloneWith<T>(value: T, customizer: WithCustomizerValue): T {
   const fns = prepareCustomizes(customizer);
 

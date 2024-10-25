@@ -9,8 +9,9 @@ interface FlattenOptions {
 
 /**
  * Flat object
-
-*/
+ *
+ * @group Object
+ */
 export function flatten(
   obj: Record<string, unknown>,
   {

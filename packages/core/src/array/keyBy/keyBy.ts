@@ -1,9 +1,6 @@
 import type { IsPropertyKey, MaybePropertyKey } from './types';
 
 /**
- * @group Array
- *
- * @description
  * Maps each element of an array based on a provided key.
  *
  * @example
@@ -19,6 +16,8 @@ import type { IsPropertyKey, MaybePropertyKey } from './types';
  * //    [1, [{ id: 1, name: 'group 1' }, { id: 1, name: 'group 2' }],
  * //    [2, { id: 2, name: 'group 2' }],
  * // ]
+ *
+ * @group Array
  */
 export function keyBy<T, K extends MaybePropertyKey<T>>(
   array: T[],

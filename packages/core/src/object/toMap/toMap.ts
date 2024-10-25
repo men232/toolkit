@@ -1,5 +1,7 @@
 /**
  * Converts object into Map
+ *
+ * @group Object
  */
 export const toMap = <KValue = string, TValue = unknown>(
   arr: Readonly<any[]>,

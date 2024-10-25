@@ -1,5 +1,10 @@
 import { isNumber } from '@/is';
 
+/**
+ * Simple implementation of LRU cache
+ *
+ * @group Cache
+ */
 export class LruCache<TKey = any, TValue = any> {
   private items: Map<TKey, number>;
   private forward: Uint8Array | Uint16Array | Uint32Array;

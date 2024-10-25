@@ -2,9 +2,6 @@ import { isFunction } from '@/is';
 import { get } from '@/object/get';
 
 /**
- * @group Array
- *
- * @description
  * Extract the elements from an array that are unique according to a comparator function
  *
  * @example
@@ -15,13 +12,15 @@ import { get } from '@/object/get';
  *     { id: 4, role: 'user' },
  * ];
  *
- * const uniqRoles = uniqueBy(users, (v) => v.role);
+ * const uniqRoles = uniqBy(users, (v) => v.role);
  * // [
  * //     { id: 1, role: 'admin },
  * //     { id: 3, role: 'user },
  * // ]
+ *
+ * @group Array
  */
-export function uniqueBy<T>(
+export function uniqBy<T>(
   array: T[],
   comparator: ((value: T) => any) | PropertyKey,
 ): T[] {

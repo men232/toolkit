@@ -9,6 +9,8 @@ import { fastIdle } from '../fastIdle';
  * for (const item of array) {
  *     await cooldown(); // wait 1 tick each 10 item
  * }
+ *
+ * @group Promise
  */
 export function nextTickIteration(
   amount: number,

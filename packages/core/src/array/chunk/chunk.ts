@@ -1,7 +1,4 @@
 /**
- * @group Array
- *
- * @description
  * Takes an array and splits it into smaller sub-arrays (chunks) of a specified size.
  *
  * @example
@@ -14,6 +11,8 @@
  * //    [4, 5, 6],
  * //    [7, 8, 9]
  * // ]
+ *
+ * @group Array
  */
 export function chunk<T>(list: T[], size: number = 1): T[][] {
   return list.reduce((res, item, index) => {

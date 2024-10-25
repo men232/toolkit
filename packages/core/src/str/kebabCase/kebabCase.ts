@@ -13,6 +13,8 @@ import { getWords } from '../getWords';
  * const convertedStr2 = kebabCase('some whitespace') // returns 'some-whitespace'
  * const convertedStr3 = kebabCase('hyphen-text') // returns 'hyphen-text'
  * const convertedStr4 = kebabCase('HTTPRequest') // returns 'http-request'
+ *
+ * @group Strings
  */
 export const kebabCase = (str?: string): string => {
   return getWords(str)

@@ -21,6 +21,10 @@ interface Options<T extends object, K extends keyof T> {
  * Caching result of object in batch
  * Accepts duplicate values
  * Result excludes non object values
+ *
+ * @example TODO
+ *
+ * @group Cache
  */
 export function withCacheBucketBatch<T extends object, K extends keyof T>(
   {

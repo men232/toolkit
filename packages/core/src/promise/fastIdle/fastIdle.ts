@@ -3,6 +3,11 @@ import type { Fn } from '@/types';
 
 const defaultWindow = (globalThis as any)?.window;
 
+/**
+ * Fast idle capability
+ *
+ * @group Promise
+ */
 export function fastIdle(callback: Fn) {
   if (defaultWindow?.requestIdleCallback) {
     defaultWindow?.requestIdleCallback(callback);

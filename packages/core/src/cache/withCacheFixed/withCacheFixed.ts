@@ -28,6 +28,8 @@ export const cacheFixed = /*#__PURE__*/ new WeakMap<
  * sum(1, 3)  // calc?
  * sum(1, 3)
  * sum(1, 2); // calc?
+ *
+ * @group Cache
  */
 export function withCacheFixed<T extends AnyFunction>(
   size: number,

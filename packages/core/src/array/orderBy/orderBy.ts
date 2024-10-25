@@ -2,9 +2,6 @@ import { isFunction } from '@/is';
 import { compareAscending } from './compareAscending';
 
 /**
- * @group Array
- *
- * @description
  * Sort array by multiple fields
  *
  * @example
@@ -21,6 +18,8 @@ import { compareAscending } from './compareAscending';
  *
  * // Output the sorted array
  * console.log(sortedUsers);
+ *
+ * @group Array
  */
 export function orderBy<T>(
   array: Array<T>,

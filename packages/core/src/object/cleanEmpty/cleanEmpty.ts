@@ -2,7 +2,17 @@ import { isEmpty } from '@/is';
 
 /**
  * Cleanup empty object fields
- * Returns same object
+ *
+ * ⚠️ Mutates original object
+ *
+ * @example
+ * const user = { id: 1, name: 'Andrew', roles: [], };
+ *
+ * cleanupEmpty(user);
+ *
+ * console.log(user); // '{ id: 1, name: 'Andrew' }'
+ *
+ * @group Object
  */
 export function cleanupEmpty(obj: Record<any, any>): Record<any, any> {
   let value;

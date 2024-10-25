@@ -4,6 +4,11 @@ export interface Defer<T = unknown> {
   reject: (value: any) => void;
 }
 
+/**
+ * Old known defer :)
+ *
+ * @group Promise
+ */
 export function defer<T>(): Defer<T> {
   let resolve: any;
   let reject: any;

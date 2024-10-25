@@ -1,5 +1,10 @@
 import { assertCapacity } from '../FixedMap/utils';
 
+/**
+ * Same as `WeakMap` but with fixed capacity
+ *
+ * @group Cache
+ */
 export class FixedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<
   K,
   V

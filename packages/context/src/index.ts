@@ -30,6 +30,21 @@ catchError(async () => {
 /**
  * Create a function within injection context and returns its return value. The providers/injection is not accessible outside of the callback function.
  * @param isolated Do not inject parent providers into this context (Default: `false`)
+ *
+ * @example
+ * const main = withContext(() => {
+ *     provide('user', { id: 1, name: 'Andrew' });
+ *     doCoolStaff();
+ * });
+ *
+ * const doCoolStaff = () => {
+ *     const user = inject('user');
+ *     console.log(user); // { id: 1, name: 'Andrew' }
+ * };
+ *
+ * main();
+ *
+ * @group Main
  */
 export function withContext<T = any>(fn: () => T, isolated = false): () => T {
   const currentInstance = createInstance();
@@ -47,6 +62,7 @@ export function withContext<T = any>(fn: () => T, isolated = false): () => T {
 /**
  * Runs a function within injection context and returns its return value. The providers/injection is not accessible outside of the callback function.
  * @param isolated Do not inject parent providers into this context (Default: `false`)
+ * @group Main
  */
 export function runWithContext<T = any>(fn: () => T, isolated = false): T {
   return withContext(fn, isolated)();
@@ -75,6 +91,22 @@ function runInContext<T>(instance: Instance, fn: () => T) {
 
 /**
  * Bind current context to provided function.
+ *
+ * Useful when you need to create callback with current context, for example `setTimeout` or `EventEmitter` event handler.
+ *
+ * @example
+ * const main = withContext(() => {
+ *   provide("user", { id: 1, name: "Andrew" });
+ *
+ *   setInterval(bindContext(() => {
+ *     const user = inject("user");
+ *     console.log(user); // { id: 1, name: 'Andrew' }
+ *   }));
+ * });
+ *
+ * main();
+ *
+ * @group Main
  */
 export function bindContext<T>(fn: () => T): () => T {
   const currentInstance = getCurrentInstance();
@@ -95,6 +127,7 @@ export function bindContext<T>(fn: () => T): () => T {
 /**
  * To provide data to a descendants
  * @param enterWith Enter into injection context (Experimental)
+ * @group Main
  */
 export function provide(key: ProvideKey, value: any, enterWith?: boolean) {
   let currentInstance = getCurrentInstance();
@@ -115,6 +148,10 @@ export function provide(key: ProvideKey, value: any, enterWith?: boolean) {
   currentInstance.providers.set(key, value);
 }
 
+/**
+ * Inject previously provided data
+ * @group Main
+ */
 export function inject<T = any>(key: ProvideKey): ProvideValue<T> {
   const currentInstance = getCurrentInstance();
 
@@ -146,11 +183,15 @@ export function inject<T = any>(key: ProvideKey): ProvideValue<T> {
 
 /**
  * Returns true if `inject()` can be used without warning about being called in the wrong place.
+ * @group Main
  */
 export function hasInjectionContext() {
   return !!getCurrentInstance();
 }
 
+/**
+ * @group Main
+ */
 export function getCurrentInstance(): Instance | null {
   if (ALS) {
     return ALS.getStore() ?? null;

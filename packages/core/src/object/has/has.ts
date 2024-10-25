@@ -2,6 +2,8 @@ import { isObject } from '@/is';
 
 /**
  * Returns true when provided keys exists in target object
+ *
+ * @group Object
  */
 export function has<T extends PropertyKey>(
   value: any,

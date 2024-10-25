@@ -12,8 +12,10 @@ interface PrefixedValuesOptions {
 
 /**
  * Pick prefixed keys in target object
+ *
+ * @group Object
  */
-export function prefixedValues(
+export function pickPrefixed(
   obj: object,
   options: PrefixedValuesOptions | string,
 ) {

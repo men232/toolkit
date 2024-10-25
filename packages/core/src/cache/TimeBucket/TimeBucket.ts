@@ -5,6 +5,13 @@ interface Options {
   capacity?: number;
 }
 
+/**
+ * Time bucket where records drops each `sizeMs` interval.
+ *
+ * Designed to avoid using timers.
+ *
+ * @group Cache
+ */
 export class TimeBucket<K = any, V = any> {
   private _pointer: number;
   private _sizeMs: number;

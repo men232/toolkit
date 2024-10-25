@@ -34,6 +34,8 @@ export const cacheBucket = /*#__PURE__*/ new WeakMap<
  * sum(1, 3)  // calc?
  * sum(1, 3)
  * sum(1, 2); // calc?
+ *
+ * @group Cache
  */
 export function withCacheBucket<T extends AnyFunction>(
   { capacity, sizeMs, cachePointer }: Options,

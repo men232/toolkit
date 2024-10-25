@@ -30,6 +30,8 @@ export const cacheLRU = /*#__PURE__*/ new WeakMap<
  *
  * sum(1, 2); // calc?
  * sum(1, 2);
+ *
+ * @group Cache
  */
 export function withCacheLRU<T extends AnyFunction>(
   { capacity, cachePointer }: Options,

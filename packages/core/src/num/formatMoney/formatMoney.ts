@@ -1,6 +1,17 @@
 import { formatNumber } from '../formatNumber';
 import { round2digits } from '../round2digits';
 
+/**
+ * Simple formatting money number
+ *
+ * @example
+ * console.log(formatMoney(1500, 'USD')) // '1 500 USD'
+ *
+ * // when money represented by int
+ * console.log(formatMoney(15000, 'USD', true)) // '1 500 USD'
+ *
+ * @group Numbers
+ */
 export function formatMoney(
   amount: number,
   currencySymbol: string = 'USD',

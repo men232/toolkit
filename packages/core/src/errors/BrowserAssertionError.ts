@@ -1,3 +1,7 @@
+/**
+ * Same as `AssertionError` but for browser env.
+ * @group Errors
+ */
 export class BrowserAssertionError extends Error {
   /**
    * Set to the `actual` argument for methods such as {@link assert.strictEqual()}.

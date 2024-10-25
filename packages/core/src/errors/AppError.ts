@@ -15,6 +15,10 @@ const CODE_TO_MESSAGE: Record<number, string> = Object.freeze({
   500: 'Internal Server Error',
 });
 
+/**
+ * Simple application error class with the code
+ * @group Errors
+ */
 export class AppError extends Error {
   code: number;
   constructor(

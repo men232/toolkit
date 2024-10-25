@@ -21,6 +21,8 @@ const stringifyArgs = (...args: any[]): string => {
 
 /**
  * Wrap the function to granite single execution at the time
+ *
+ * @group Promise
  */
 export function withResolve<
   R extends Promise<any>,

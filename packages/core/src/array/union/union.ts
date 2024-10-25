@@ -1,9 +1,6 @@
 import { uniq } from '../uniq';
 
 /**
- * @group Array
- *
- * @description
  * Creates an array of unique values from all given arrays.
  *
  * This function takes two arrays, merges them into a single array, and returns a new array
@@ -19,6 +16,8 @@ import { uniq } from '../uniq';
  * const array2 = [3, 4, 5];
  * const result = union(array1, array2);
  * // result will be [1, 2, 3, 4, 5]
+ *
+ * @group Array
  */
 export function union<T>(arr1: readonly T[], arr2: readonly T[]): T[] {
   return uniq(arr1.concat(arr2));

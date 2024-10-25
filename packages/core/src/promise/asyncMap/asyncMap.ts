@@ -2,6 +2,8 @@ import { nextTickIteration } from '../nextTickIteration';
 
 /**
  * Same as `arr.map()` but with async callback
+ *
+ * @group Promise
  */
 export async function asyncMap<T, U>(
   array: T[],

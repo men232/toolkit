@@ -1,9 +1,6 @@
 import { isString } from '@/is';
 
 /**
- * @group Array
- *
- * @description
  * Converts value into array
  *
  * @example
@@ -15,6 +12,8 @@ import { isString } from '@/is';
  * sum(1); // 1
  * sum([1, 2]); // 3
  * sum('1,2'); // 3
+ *
+ * @group Array
  */
 export function arrayable<T>(
   value: T,

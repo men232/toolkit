@@ -1,5 +1,10 @@
 import { isFunction, isPromise } from '@/is';
 
+/**
+ * Throw an error if provided promise or callback has not been resolved in timeout
+ *
+ * @group Promise
+ */
 export function timeout<T = any>(
   ms: number,
   promiseOrCallback: Promise<T> | ((abortSignal: AbortSignal) => Promise<T>),

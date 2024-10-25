@@ -16,6 +16,8 @@ import { isObject } from '@/is';
  * const obj = { a: 1, b: 2, c: 3 };
  * const result = omit(obj, ['b', 'c']);
  * // result will be { a: 1 }
+ *
+ * @group Object
  */
 export function omit<T extends Record<string, any>, U extends keyof T>(
   obj: T,
