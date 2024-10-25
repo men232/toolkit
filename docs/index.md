@@ -3,19 +3,33 @@ layout: home
 
 hero:
   name: 'Toolkit'
-  text: 'Personal collection of utility functions'
-  # actions:
-  #   - theme: brand
-  #     text: Markdown Examples
-  #     link: /markdown-examples
-  #   - theme: alt
-  #     text: API Examples
-  #     link: /api-examples
-# features:
-#   - title: Feature A
-#     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-#   - title: Feature B
-#     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-#   - title: Feature C
-#     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  text: 'Collection of utility functions'
+
+features:
+  - title: Core
+    details: General utility functions
+    link: /typedocs/@andrew_l/toolkit-core/
+  - title: Context
+    details: Like composition api but for Node.
+    link: /typedocs/@andrew_l/context/
 ---
+
+## Getting Started
+
+Made and collected by Andrew L. with ❤️
+
+::: code-group
+
+```sh [npm]
+$ npm add -D @andrew_l/toolkit
+```
+
+```sh [pnpm]
+$ pnpm add -D @andrew_l/toolkit
+```
+
+```sh [yarn]
+$ yarn add -D @andrew_l/toolkit
+```
+
+:::

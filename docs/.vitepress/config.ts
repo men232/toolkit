@@ -16,6 +16,9 @@ export default defineConfig({
   description: 'Andrew L. Toolkit',
   base: '/toolkit/',
   themeConfig: {
+    search: {
+      provider: 'local',
+    },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
