@@ -10,7 +10,7 @@ const DEF_PROTOCOLS = ['http://', 'https://'];
  * console.log('http://google.com') // true
  * console.log('google.com') // false
  *
- * @groups Strings
+ * @group Strings
  */
 export function hasProtocol(url: string, protocols: string[] = DEF_PROTOCOLS) {
   if (!isString(url)) return false;

@@ -4,7 +4,7 @@ const charactersLength = rndCharacters.length;
 /**
  * Generate a random string with provided length
  *
- * @groups Strings
+ * @group Strings
  */
 export function randomString(length: number): string {
   let result = '';

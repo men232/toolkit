@@ -14,6 +14,7 @@ const EXCLUDE_TYPEDOC_GROUPS = new Set([
 export default defineConfig({
   title: 'Toolkit',
   description: 'Andrew L. Toolkit',
+  base: '/toolkit/',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
