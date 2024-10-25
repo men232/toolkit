@@ -41,9 +41,6 @@ importers:
       typedoc-plugin-markdown:
         specifier: ^4.2.9
         version: 4.2.9(typedoc@0.26.10(typescript@5.6.3))
-      typedoc-plugin-merge-modules:
-        specifier: ^6.0.2
-        version: 6.0.2(typedoc@0.26.10(typescript@5.6.3))
       typedoc-vitepress-theme:
         specifier: ^1.0.2
         version: 1.0.2(typedoc-plugin-markdown@4.2.9(typedoc@0.26.10(typescript@5.6.3)))
@@ -2159,11 +2156,6 @@ packages:
   typedoc-plugin-markdown@4.2.9:
     resolution: {integrity: sha512-Wqmx+7ezKFgtTklEq/iUhQ5uFeBDhAT6wiS2na9cFLidIpl9jpDHJy/COYh8jUZXgIRIZVQ/bPNjyrnPFoDwzg==}
     engines: {node: '>= 18'}
-    peerDependencies:
-      typedoc: 0.26.x
-
-  typedoc-plugin-merge-modules@6.0.2:
-    resolution: {integrity: sha512-WdADOhOCZBi4wDjP82ua36YSmDaiRGb+o9qXGD9W01nE0hZqbGnogSmalj/zii/T9IaSIRVBPvdQD5urBh8NIw==}
     peerDependencies:
       typedoc: 0.26.x
 
@@ -4426,10 +4418,6 @@ snapshots:
       prelude-ls: 1.2.1
 
   typedoc-plugin-markdown@4.2.9(typedoc@0.26.10(typescript@5.6.3)):
-    dependencies:
-      typedoc: 0.26.10(typescript@5.6.3)
-
-  typedoc-plugin-merge-modules@6.0.2(typedoc@0.26.10(typescript@5.6.3)):
     dependencies:
       typedoc: 0.26.10(typescript@5.6.3)
 
