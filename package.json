@@ -7,6 +7,7 @@
     "clean": "rimraf --glob packages/*/dist temp .eslintcache",
     "check": "tsc --incremental --noEmit",
     "lint": "eslint --cache .",
+    "build": "pnpm run -r build",
     "format": "prettier --write --cache .",
     "format-check": "prettier --check --cache .",
     "preinstall": "npx only-allow pnpm",
