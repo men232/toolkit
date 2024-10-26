@@ -4,6 +4,7 @@ export * from './formatMoney';
 export * from './formatNumber';
 export * from './getRandomInt';
 export * from './humanize';
+export * from './parsePercentage';
 export * from './percentOf';
 export * from './round2digits';
 export * from './seriesList';
