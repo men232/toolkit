@@ -1,9 +1,21 @@
+import { isFunction, noop } from '@/is';
 import type { AnyFunction } from '@/types';
 import {
   type WithCachePointer,
   type WithCacheResult,
   createWithCache,
 } from '../createWithCache';
+import type { ArgToKeyOptions } from '../createWithCache/utils';
+
+/**
+ * @group Cache
+ */
+export interface WithCacheOptions extends Partial<ArgToKeyOptions> {
+  /**
+   * Custom cache pointer
+   */
+  cachePointer?: WithCachePointer;
+}
 
 export const cache = /*#__PURE__*/ new WeakMap<
   // @ts-expect-error
@@ -26,8 +38,26 @@ export const cache = /*#__PURE__*/ new WeakMap<
  *
  * @group Cache
  */
-export function withCache<T extends AnyFunction>(fn: T): WithCacheResult<T> {
-  const getPointer = () => fn;
+export function withCache<T extends AnyFunction>(fn: T): WithCacheResult<T>;
+export function withCache<T extends AnyFunction>(
+  options: WithCacheOptions,
+  fn: T,
+): WithCacheResult<T>;
+
+export function withCache(...args: any[]): WithCacheResult<AnyFunction> {
+  let options: WithCacheOptions = {};
+  let fn: AnyFunction = noop;
+
+  if (isFunction(args[0])) {
+    fn = args[0];
+  } else if (isFunction(args[1])) {
+    options = args[0] || {};
+    fn = args[1];
+  }
+
+  const pointer = options.cachePointer || fn;
+
+  const getPointer = () => pointer;
 
   const getBucket = (pointer: any) => {
     let fnCache = cache.get(pointer);
@@ -44,5 +74,6 @@ export function withCache<T extends AnyFunction>(fn: T): WithCacheResult<T> {
     fn,
     getBucket,
     getPointer,
+    ...options,
   });
 }

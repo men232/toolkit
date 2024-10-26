@@ -1,9 +1,10 @@
 import { isPromise } from '@/is';
 import { def } from '@/object/def';
 import type { AnyFunction } from '@/types';
-import { SYM_WITH_CACHE, argToKey } from './utils';
+import { type ArgToKeyOptions, SYM_WITH_CACHE, argToKey } from './utils';
 
-interface Options<T extends AnyFunction> {
+interface CreateWithCacheOptions<T extends AnyFunction>
+  extends Partial<ArgToKeyOptions> {
   getBucket: (pointer: WithCachePointer) => WithCacheStorage;
   getPointer: () => WithCachePointer;
   fn: T;
@@ -46,7 +47,8 @@ export function createWithCache<T extends AnyFunction>({
   fn,
   getPointer,
   getBucket,
-}: Options<T>): WithCacheResult<T> {
+  objectStrategy = 'ref',
+}: CreateWithCacheOptions<T>): WithCacheResult<T> {
   const isAsync = fn.constructor.name === 'AsyncFunction';
 
   const $cache: WithCache['$cache'] = {
@@ -54,9 +56,11 @@ export function createWithCache<T extends AnyFunction>({
     getPointer,
   };
 
+  const argToKeyOptions: ArgToKeyOptions = { objectStrategy };
+
   const wrapFn = ((...args: Parameters<T>) => {
     const storage = getBucket(getPointer());
-    const cacheKey = args.map(argToKey).join('_');
+    const cacheKey = args.map(v => argToKey(v, argToKeyOptions)).join('_');
 
     if (storage.has(cacheKey)) {
       const value = storage.get(cacheKey);

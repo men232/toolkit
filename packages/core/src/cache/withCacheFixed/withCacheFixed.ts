@@ -4,7 +4,23 @@ import {
   type WithCacheResult,
   createWithCache,
 } from '../createWithCache';
+import type { ArgToKeyOptions } from '../createWithCache/utils';
 import { FixedMap } from '../FixedMap';
+
+/**
+ * @group Cache
+ */
+export interface WithCacheFixedOptions extends Partial<ArgToKeyOptions> {
+  /**
+   * Capacity of cached records
+   */
+  size: number;
+
+  /**
+   * Custom cache pointer
+   */
+  cachePointer?: WithCachePointer;
+}
 
 export const cacheFixed = /*#__PURE__*/ new WeakMap<
   // @ts-expect-error
@@ -32,10 +48,10 @@ export const cacheFixed = /*#__PURE__*/ new WeakMap<
  * @group Cache
  */
 export function withCacheFixed<T extends AnyFunction>(
-  size: number,
+  { size, cachePointer, ...options }: WithCacheFixedOptions,
   fn: T,
 ): WithCacheResult<T> {
-  const pointer = fn;
+  const pointer = cachePointer || fn;
 
   const getPointer = () => fn;
 
@@ -54,5 +70,6 @@ export function withCacheFixed<T extends AnyFunction>(
     fn,
     getBucket,
     getPointer,
+    ...options,
   });
 }

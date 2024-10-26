@@ -4,11 +4,26 @@ import {
   type WithCacheResult,
   createWithCache,
 } from '../createWithCache';
+import type { ArgToKeyOptions } from '../createWithCache/utils';
 import { TimeBucket } from '../TimeBucket';
 
-interface Options {
+/**
+ * @group Cache
+ */
+export interface WithCacheBucketOptions extends Partial<ArgToKeyOptions> {
+  /**
+   * Define cached records drops interval.
+   */
   sizeMs: number;
+
+  /**
+   * Capacity of cached records
+   */
   capacity?: number;
+
+  /**
+   * Custom cache pointer
+   */
   cachePointer?: WithCachePointer;
 }
 
@@ -38,7 +53,7 @@ export const cacheBucket = /*#__PURE__*/ new WeakMap<
  * @group Cache
  */
 export function withCacheBucket<T extends AnyFunction>(
-  { capacity, sizeMs, cachePointer }: Options,
+  { capacity, sizeMs, cachePointer, ...options }: WithCacheBucketOptions,
   fn: T,
 ): WithCacheResult<T> {
   const pointer = cachePointer || fn;
@@ -62,5 +77,6 @@ export function withCacheBucket<T extends AnyFunction>(
     fn,
     getBucket,
     getPointer,
+    ...options,
   });
 }

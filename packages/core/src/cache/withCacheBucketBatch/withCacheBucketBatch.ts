@@ -7,20 +7,50 @@ import { cacheBucket } from '../withCacheBucket';
 
 const EMPTY_SYM = Symbol('empty');
 
-interface Options<T extends object, K extends keyof T> {
+export interface WithCacheBucketBatchOptions<
+  T extends object,
+  K extends keyof T,
+> {
+  /**
+   * Define cached records drops interval.
+   */
   sizeMs: number;
+
+  /**
+   * Cache record by object key.
+   */
   key: K;
+
+  /**
+   * Amount of items which will handled by resolver function.
+   */
   batchSize?: number;
+
+  /**
+   * Capacity of cached records
+   */
   capacity?: number;
+
+  /**
+   * Custom cache pointer
+   */
   cachePointer?: WithCachePointer;
+
+  /**
+   * Should we retry resolving for provided item key when previously we got empty result.
+   */
   retryEmpty?: boolean;
+
+  /**
+   * Resolving item function
+   */
   resolver?: (values: T[K][]) => Promise<T[]>;
 }
 
 /**
- * Caching result of object in batch
- * Accepts duplicate values
- * Result excludes non object values
+ * In this way we will cache item of resulted array by `key`.
+ *
+ * Useful when we need for example fetch batch of users by ids but took already cached results if it available.
  *
  * @example TODO
  *
@@ -34,7 +64,7 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
     batchSize = 10,
     cachePointer,
     retryEmpty = true,
-  }: Options<T, K>,
+  }: WithCacheBucketBatchOptions<T, K>,
   resolver: (values: T[K][]) => Promise<T[]>,
 ): WithCacheResult<(values: T[K][]) => Promise<Map<string, Readonly<T>>>> {
   const pointer = cachePointer || resolver;

@@ -4,9 +4,13 @@ import {
   type WithCacheResult,
   createWithCache,
 } from '../createWithCache';
+import type { ArgToKeyOptions } from '../createWithCache/utils';
 import { LruCache } from '../LruCache';
 
-interface Options {
+/**
+ * @group Cache
+ */
+export interface WithCacheLruOptions extends Partial<ArgToKeyOptions> {
   capacity: number;
   cachePointer?: WithCachePointer;
 }
@@ -34,7 +38,7 @@ export const cacheLRU = /*#__PURE__*/ new WeakMap<
  * @group Cache
  */
 export function withCacheLRU<T extends AnyFunction>(
-  { capacity, cachePointer }: Options,
+  { capacity, cachePointer, ...options }: WithCacheLruOptions,
   fn: T,
 ): WithCacheResult<T> {
   const pointer = cachePointer || fn;
@@ -58,5 +62,6 @@ export function withCacheLRU<T extends AnyFunction>(
     fn,
     getBucket,
     getPointer,
+    ...options,
   });
 }
