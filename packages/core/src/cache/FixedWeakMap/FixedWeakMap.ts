@@ -18,18 +18,18 @@ export class FixedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<
   }
 
   set(key: K, value: V): this {
-    if (!Map.prototype.has.call(this, key)) {
+    if (!super.has(key)) {
       this._tail.push(key);
     }
 
-    Map.prototype.set.call(this, key, value);
+    super.set(key, value);
     this._drain();
 
     return this;
   }
 
   delete(key: K): boolean {
-    const removed = Map.prototype.delete.call(this, key);
+    const removed = super.delete(key);
 
     if (removed) {
       const idx = this._tail.findIndex(v => v === key);
@@ -43,11 +43,17 @@ export class FixedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<
   }
 
   clear(): void {
+    for (const item of this._tail) {
+      super.delete(item);
+    }
+
     // @ts-expect-error
     delete this._tail;
     this._tail = [];
+  }
 
-    Map.prototype.clear.call(this);
+  get size(): number {
+    return this._tail.length;
   }
 
   get capacity(): number {
@@ -62,7 +68,7 @@ export class FixedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<
 
   private _drain() {
     while (this._tail.length > this._capacity) {
-      const key = this._tail.pop();
+      const key = this._tail.shift();
 
       key !== undefined && this.delete(key);
     }

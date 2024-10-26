@@ -4,6 +4,7 @@ import { cache } from '../withCache';
 /**
  * @example TODO
  * @group Cache
+ * @beta
  */
 export function withPointerCache<T>(
   pointer: object,

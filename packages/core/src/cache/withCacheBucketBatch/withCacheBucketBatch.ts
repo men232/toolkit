@@ -54,6 +54,8 @@ export interface WithCacheBucketBatchOptions<
  *
  * @example TODO
  *
+ * @beta
+ *
  * @group Cache
  */
 export function withCacheBucketBatch<T extends object, K extends keyof T>(

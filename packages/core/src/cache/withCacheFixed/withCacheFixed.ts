@@ -14,7 +14,7 @@ export interface WithCacheFixedOptions extends Partial<ArgToKeyOptions> {
   /**
    * Capacity of cached records
    */
-  size: number;
+  capacity: number;
 
   /**
    * Custom cache pointer
@@ -48,7 +48,7 @@ export const cacheFixed = /*#__PURE__*/ new WeakMap<
  * @group Cache
  */
 export function withCacheFixed<T extends AnyFunction>(
-  { size, cachePointer, ...options }: WithCacheFixedOptions,
+  { capacity, cachePointer, ...options }: WithCacheFixedOptions,
   fn: T,
 ): WithCacheResult<T> {
   const pointer = cachePointer || fn;
@@ -59,7 +59,7 @@ export function withCacheFixed<T extends AnyFunction>(
     let fnCache = cacheFixed.get(pointer);
 
     if (!fnCache) {
-      fnCache = new FixedMap(size);
+      fnCache = new FixedMap(capacity);
       cacheFixed.set(pointer, fnCache);
     }
 

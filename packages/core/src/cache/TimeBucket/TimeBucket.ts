@@ -1,7 +1,11 @@
 import { FixedMap } from '../FixedMap';
 
-interface Options {
+export interface TimeBucketOptions {
   sizeMs: number;
+
+  /**
+   * @default Infinity
+   */
   capacity?: number;
 }
 
@@ -17,7 +21,7 @@ export class TimeBucket<K = any, V = any> {
   private _sizeMs: number;
   private _bucket: FixedMap<K, V> | Map<K, V>;
 
-  constructor({ capacity = Infinity, sizeMs }: Options) {
+  constructor({ capacity = Infinity, sizeMs }: TimeBucketOptions) {
     assetSizeMs(sizeMs);
 
     this._sizeMs = sizeMs;
@@ -46,6 +50,7 @@ export class TimeBucket<K = any, V = any> {
   }
 
   get size(): number {
+    this._drainBucket();
     return this._bucket.size;
   }
 
@@ -92,6 +97,16 @@ export class TimeBucket<K = any, V = any> {
     this._drainBucket();
 
     return this._bucket.entries();
+  }
+
+  forEach(
+    callbackfn: (value: V, key: K, map: TimeBucket<K, V>) => void,
+    thisArg?: any,
+  ): void {
+    this._drainBucket();
+    return this._bucket.forEach((value, key) => {
+      callbackfn(value, key, this);
+    });
   }
 
   private _drainBucket() {
