@@ -1,5 +1,5 @@
 /**
- * Same as promise but with cantabile feature
+ * Same as promise but with cancellable feature
  *
  * @example
  * const task = new CancellablePromise<void>(async (resolve, reject, onCancel) => {
