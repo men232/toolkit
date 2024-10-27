@@ -1,7 +1,25 @@
 import { nextTickIteration } from '../nextTickIteration';
 
 /**
- * Same as `arr.forEach()` but with async callback and parallel processing
+ * Same as `arr.forEach()` but with async callback and parallel processing.
+ *
+ * Basic idea to avoid block event loop while iteration over large array.
+ *
+ * @example
+ * async function task(taskName: string) {
+ *   const largeArray = Array.from({ length: 100000 }).map((_, idx) => idx);
+ *
+ *   await asyncForEach(largeArray, (value) => {
+ *     if (value % 100 === 0) {
+ *       console.log(taskName, 'handle:', value);
+ *     }
+ *   });
+ * }
+ *
+ * Promise.all([
+ *   task('task 1'),
+ *   task('task 2'),
+ * ]);
  *
  * @group Promise
  */

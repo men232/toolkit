@@ -4,6 +4,14 @@ import { fastIdle } from '../fastIdle';
 /**
  * Returns a provide that will be resolved in provided delay
  *
+ * @example
+ * let seconds = 0;
+ *
+ * while (true) {
+ *   await delay(1000);
+ *   console.log(++seconds);
+ * }
+ *
  * @group Promise
  */
 export function delay(amount: 'tick' | number = 'tick') {

@@ -14,8 +14,15 @@ let fastRafFallbackCallbacks: Set<NoneToVoidFunction> | undefined;
 let fastRafFallbackTimeout: any;
 
 /**
+ * Stack request animation frame into single execution callback.
+ *
  * May result in an immediate execution if called from another RAF callback which was scheduled
  * (and therefore is executed) earlier than RAF callback scheduled by `fastRaf`
+ *
+ * @example
+ * // will be called in same requestAnimationFrame
+ * fastRaf(() => console.log(1));
+ * fastRaf(() => console.log(2));
  *
  * @group Promise
  */

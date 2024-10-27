@@ -7,6 +7,17 @@ export interface Defer<T = unknown> {
 /**
  * Old known defer :)
  *
+ * @example
+ * function loadModule() {
+ *   const q = defer<void>();
+ *
+ *   setTimeout(() => q.resolve(), 5000);
+ *
+ *   return q.promise;
+ * }
+ *
+ * await loadModule();
+ *
  * @group Promise
  */
 export function defer<T>(): Defer<T> {

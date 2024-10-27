@@ -3,6 +3,14 @@ import { isFunction, isPromise } from '@/is';
 /**
  * Throw an error if provided promise or callback has not been resolved in timeout
  *
+ * @example
+ * // throw error if no response within 1 second
+ * await timeout(
+ *   1000,
+ *   () => http.get('/api/users/me'),
+ *   new Error('Request account timeout')
+ * );
+ *
  * @group Promise
  */
 export function timeout<T = any>(

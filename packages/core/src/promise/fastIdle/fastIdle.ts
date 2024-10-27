@@ -4,7 +4,17 @@ import type { Fn } from '@/types';
 const defaultWindow = (globalThis as any)?.window;
 
 /**
- * Fast idle capability
+ * Fast idle capability to run callback at next tick
+ *
+ * @example
+ * fastIdle(() => {
+ *   console.log('1');
+ * });
+ *
+ * console.log('2');
+ *
+ * // 2
+ * // 1
  *
  * @group Promise
  */
@@ -20,6 +30,21 @@ export function fastIdle(callback: Fn) {
   }
 }
 
+/**
+ * Same as `fastIdle` but promisified
+ *
+ * @example
+ * fastIdlePromise().then(() => {
+ *   console.log('1');
+ * });
+ *
+ * console.log('2');
+ *
+ * // 2
+ * // 1
+ *
+ * @group Promise
+ */
 export function fastIdlePromise() {
   return new Promise<void>(resolve => fastIdle(resolve));
 }

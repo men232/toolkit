@@ -3,6 +3,27 @@ import { nextTickIteration } from '../nextTickIteration';
 /**
  * Same as `arr.map()` but with async callback
  *
+ * Basic idea to avoid block event loop while iteration over large array.
+ *
+ * @example
+ * const users = Array.from({ length: 100 }).map((_, idx) => ({
+ *   id: idx,
+ *   name: 'User: ' + (idx + 1)
+ * }));
+ *
+ * async function withUserClients() {
+ *   return await asyncMap(users, async (user) => {
+ *     const clients = await db.clients.find({ user: user.id });
+ *
+ *     return { ...user, clients };
+ *   }, { concurrency: 10 });
+ * }
+ *
+ * Promise.all([
+ *   withUserClients(),
+ *   otherUsefulTask(),
+ * ]).then(console.log);
+ *
  * @group Promise
  */
 export async function asyncMap<T, U>(

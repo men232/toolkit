@@ -3,6 +3,23 @@ import { nextTickIteration } from '@/promise';
 /**
  * Same as `arr.filter()` but with async predicate
  *
+ * Basic idea to avoid block event loop while iteration over large array.
+ *
+ * @example
+ * const users = Array.from({ length: 100000 }).map((_, idx) => ({
+ *   id: idx,
+ *   name: 'User: ' + (idx + 1)
+ * }));
+ *
+ * async function first100Users() {
+ *   return await asyncFilter(users, (user) => user.id < 100);
+ * }
+ *
+ * Promise.all([
+ *   first100Users(),
+ *   otherUsefulTask(),
+ * ]).then(console.log);
+ *
  * @group Promise
  */
 export async function asyncFilter<T>(

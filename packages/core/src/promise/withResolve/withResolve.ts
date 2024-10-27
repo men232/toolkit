@@ -20,7 +20,16 @@ const stringifyArgs = (...args: any[]): string => {
 };
 
 /**
- * Wrap the function to granite single execution at the time
+ * Wrap the function to granite single execution at the same time
+ *
+ * @example Promise
+ * const fetchUserById = withResolve((userId) => db.users.findById(userId));
+ *
+ * // this way we will produce 1 db query at the same time
+ * await Promise.all([
+ *   fetchUserById(100),
+ *   fetchUserById(100)
+ * ])
  *
  * @group Promise
  */

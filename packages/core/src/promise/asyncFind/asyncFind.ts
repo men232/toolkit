@@ -1,7 +1,24 @@
 import { nextTickIteration } from '../nextTickIteration';
 
 /**
- * Same as `arr.find()` but with async predicate
+ * Same as `arr.find()` but with async predicate.
+ *
+ * Basic idea to avoid block event loop while iteration over large array.
+ *
+ * @example
+ * const users = Array.from({ length: 100000 }).map((_, idx) => ({
+ *   id: idx,
+ *   name: 'User: ' + (idx + 1)
+ * }));
+ *
+ * async function findById(userId: number) {
+ *   return await asyncFind(users, (user) => user.id === userId);
+ * }
+ *
+ * Promise.all([
+ *   findById(5000),
+ *   findById(6000),
+ * ]).then(console.log);
  *
  * @group Promise
  */
