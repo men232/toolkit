@@ -2,7 +2,7 @@
  * Returns new array without duplicates
  *
  * @example
- * console.log(uniq([1, 2, 3, 4, 1, 3])) // [1, 2, 3, 4]
+ * uniq([1, 2, 3, 4, 1, 3]); // [1, 2, 3, 4]
  *
  * @group Array
  */

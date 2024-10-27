@@ -6,7 +6,7 @@
  * Using Math.round() will give you a non-uniform distribution!
  *
  * @example
- * console.log(getRandomInt(0, 100)) // random int between 0 - 100
+ * getRandomInt(0, 100); // random int between 0 - 100
  *
  * @group Numbers
  */

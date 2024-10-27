@@ -2,7 +2,7 @@
  * Humanize a big number like 100K 1.2M
  *
  * @example
- * console.log(humanize(1000000)); // '1M'
+ * humanize(1000000); // '1M'
  *
  * @group Numbers
  */

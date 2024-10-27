@@ -7,7 +7,7 @@ const DEF_STR_ASSIGN_METHOD = (obj: any, key: string) => obj[key];
  * @example
  * const context = { name: 'Andrew' };
  *
- * console.log(strAssign('Hey {{ name }}'), context); // 'Hey Andrew'
+ * strAssign('Hey {{ name }}', context); // 'Hey Andrew'
  *
  * @group Strings
  */

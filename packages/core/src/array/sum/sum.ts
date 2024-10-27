@@ -2,7 +2,7 @@
  * Sum array of numbers
  *
  * @example
- * console.log(sum([2, 2])); // 4
+ * sum([2, 2]); // 4
  *
  * @group Array
  */

@@ -3,6 +3,14 @@ import type { Color } from '../types';
 
 /**
  * Just mixing of two colors
+ *
+ * @example
+ * const colorA = 'rgb(50, 100, 100)';
+ * const colorB = 'rgb(150, 0, 0)';
+ *
+ * // [100, 50, 50, 1]
+ * blendColors(colorA, colorB, 0.5);
+ *
  * @group Colors
  */
 export function blendColors(

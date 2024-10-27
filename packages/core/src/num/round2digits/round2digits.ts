@@ -2,9 +2,9 @@
  * Round a number to digits
  *
  * @example
- * console.log(round2digits(3.3333333, 1)); // 3.3
- * console.log(round2digits(3.3333333, 2)); // 3.33
- * console.log(round2digits(3.3333333, 3)); // 3.333
+ * round2digits(3.3333333, 1); // 3.3
+ * round2digits(3.3333333, 2); // 3.33
+ * round2digits(3.3333333, 3); // 3.333
  *
  * @group Numbers
  */

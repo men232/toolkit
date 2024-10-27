@@ -3,6 +3,15 @@ import type { Color } from '../types';
 
 /**
  * Converts color channels into hex
+ *
+ * @example
+ * const channels = [255, 255, 255, 1];
+ *
+ * // with alpha channel
+ * channelsToHex(channels); // '#FFFFFFFF'
+ *
+ * // without alpha channel
+ * channelsToHex(channels, false); // '#FFFFFF'
  * @group Colors
  */
 export function channelsToHex(

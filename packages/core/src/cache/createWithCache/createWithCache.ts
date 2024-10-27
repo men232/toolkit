@@ -32,6 +32,7 @@ export interface WithCache {
   $cache: {
     getBucket: () => WithCacheStorage;
     getPointer: () => WithCachePointer;
+    argToKeyOptions: ArgToKeyOptions;
   };
 }
 
@@ -51,12 +52,13 @@ export function createWithCache<T extends AnyFunction>({
 }: CreateWithCacheOptions<T>): WithCacheResult<T> {
   const isAsync = fn.constructor.name === 'AsyncFunction';
 
+  const argToKeyOptions: ArgToKeyOptions = { objectStrategy };
+
   const $cache: WithCache['$cache'] = {
     getBucket: () => getBucket(getPointer()),
     getPointer,
+    argToKeyOptions,
   };
-
-  const argToKeyOptions: ArgToKeyOptions = { objectStrategy };
 
   const wrapFn = ((...args: Parameters<T>) => {
     const storage = getBucket(getPointer());

@@ -4,7 +4,7 @@ import { getFileExtension } from '../getFileExtension';
  * Extract filename from string
  *
  * @example
- * console.log(getFileName('Andrew L - CV.pdf')) // 'Andrew L - CV'
+ * getFileName('Andrew L - CV.pdf'); // 'Andrew L - CV'
  *
  * @group Files
  */

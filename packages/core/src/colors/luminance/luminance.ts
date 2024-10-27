@@ -2,6 +2,11 @@ import type { Color } from '../types';
 
 /**
  * Calculate luminance of color
+ *
+ * @example
+ * luminance([255, 255, 255, 1]); // 1
+ * luminance([0, 0, 0, 1]); // 0
+ *
  * @group Colors
  */
 export function luminance([r, g, b]: Color.ColorChannels): number {

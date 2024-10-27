@@ -6,6 +6,12 @@ import { clamp } from '@/num/clamp';
  *
  * @param value Value to be parsed
  * @param fallback Value which will be used as fallback when failed to parse
+ *
+ * @example
+ * parseAlpha('0.1'); // 0.1
+ * parseAlpha('10%'); // 0.1
+ * parseAlpha(0.1); // 0.1
+ *
  * @group Colors
  */
 export function parseAlpha(value: unknown, fallback: number = 1): number {

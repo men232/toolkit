@@ -3,6 +3,15 @@ import type { Color } from '../types';
 
 /**
  * Linear color interpolating
+ *
+ * @example
+ * // 'rgba(50, 50, 50, 1)'
+ * interpolateColor(
+ *   'rgb(0, 0, 0)',
+ *   'rgb(100, 100, 100)',
+ *   0.5
+ * );
+ *
  * @group Colors
  */
 export function interpolateColor(

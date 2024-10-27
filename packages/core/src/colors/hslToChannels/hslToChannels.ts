@@ -1,6 +1,15 @@
 import type { Color } from '../types';
 import { parseHSL } from './parseHSL';
 
+/**
+ * Parsing HSL string as color channels
+ *
+ * @example
+ * // [128, 51, 204, 0.15]
+ * hslToChannels('hsl(270 60% 50% / 15%)');
+ *
+ * @group Colors
+ */
 export function hslToChannels(value: string): Color.ColorChannels {
   const parsed = parseHSL(value);
 

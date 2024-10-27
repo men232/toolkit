@@ -1,7 +1,11 @@
 import { isObject } from '@/is';
 import { def } from '@/object/def';
 import type { WithCachePointer, WithCacheResult } from '../createWithCache';
-import { SYM_WITH_CACHE } from '../createWithCache/utils';
+import {
+  type ArgToKeyOptions,
+  SYM_WITH_CACHE,
+  argToKey,
+} from '../createWithCache/utils';
 import { TimeBucket } from '../TimeBucket';
 import { cacheBucket } from '../withCacheBucket';
 
@@ -70,6 +74,9 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
   resolver: (values: T[K][]) => Promise<T[]>,
 ): WithCacheResult<(values: T[K][]) => Promise<Map<string, Readonly<T>>>> {
   const pointer = cachePointer || resolver;
+  const argToKeyOptions: ArgToKeyOptions = {
+    objectStrategy: 'json',
+  };
 
   const getPointer = () => {
     return pointer;
@@ -103,7 +110,7 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
 
         if (!isObject(item)) continue;
 
-        const id = String(item[key]);
+        const id = argToKey(item[key], argToKeyOptions);
 
         batchSet.delete(id);
         result.set(id, item);
@@ -120,7 +127,7 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
     let pos = 0;
 
     while (pos < values.length) {
-      const id = String(values[pos]);
+      const id = argToKey(values[pos], argToKeyOptions);
       const item = fnCache.get(id);
 
       if (item) {
@@ -145,7 +152,7 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
     return result;
   };
 
-  wrapFn.$cache = { getBucket, getPointer };
+  wrapFn.$cache = { getBucket, getPointer, argToKeyOptions };
 
   def(wrapFn, SYM_WITH_CACHE, true);
 

@@ -4,8 +4,9 @@
  * @example
  * const min = 5;
  * const max = 10;
- * console.log(clamp(7, min, max)) // 7
- * console.log(clamp(15, min, max)) // 10
+ *
+ * clamp(7, min, max); // 7
+ * clamp(15, min, max); // 10
  *
  * @group Numbers
  */

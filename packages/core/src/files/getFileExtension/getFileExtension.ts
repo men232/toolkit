@@ -2,7 +2,7 @@
  * Extract file extension from string
  *
  * @example
- * console.log(getFileExtension('Andrew L - CV.pdf')) // 'pdf'
+ * getFileExtension('Andrew L - CV.pdf'); // 'pdf'
  *
  * @group Files
  */

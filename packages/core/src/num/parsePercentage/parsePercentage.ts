@@ -5,7 +5,7 @@ import { clamp } from '../clamp';
  * Safe percent parsing. Returns value from 0 to 100
  *
  * @example
- * console.log(parsePercentage('99%')); // 99
+ * parsePercentage('99%'); // 99
  *
  * @group Numbers
  */

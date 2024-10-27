@@ -6,6 +6,14 @@ import type { Color } from '../types';
 
 /**
  * Returns a color text color that should be on background to keep good contrast
+ *
+ * @example
+ * const bgColor = 'rgb(255, 255, 255)';
+ * const tint = 1;
+ *
+ * // 'rgba(0, 0, 0, 1)'
+ * const textColor = tintedTextColor(bgColor, tint);
+ *
  * @group Colors
  */
 export function tintedTextColor(

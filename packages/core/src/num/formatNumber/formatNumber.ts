@@ -2,7 +2,7 @@
  * Simple formatting money number
  *
  * @example
- * console.log(formatNumber(1500)) // '1 500'
+ * formatNumber(1500); // '1 500'
  *
  * @group Numbers
  */
