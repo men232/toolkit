@@ -1,5 +1,8 @@
 /**
- * Sanitize a string to remove non numeric chars
+ * Sanitize a string to remove non numeric chars.
+ *
+ * @example
+ * escapeNumeric('use 320px'); // '320'
  *
  * @group Strings
  */

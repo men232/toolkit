@@ -1,6 +1,9 @@
 /**
  * Sanitize a string to escape html syntax
  *
+ * @example
+ * escapeHtml('<b>Strong</b> man.') // '&lt;b&gt;Strong&lt;/&gt; man.'
+ *
  * @group Strings
  */
 export function escapeHtml(unsafe: string) {
