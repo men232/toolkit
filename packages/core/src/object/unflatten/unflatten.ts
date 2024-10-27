@@ -1,5 +1,22 @@
 /**
- * Unflat flatten object
+ * Un flat flatten object
+ *
+ * @example
+ * const obj = {
+ *   'name': 'Andrew',
+ *   'config.canReadPost': true,
+ *   'config.canUpdatePost': true,
+ * };
+ *
+ * unflatten(obj);
+ *
+ * // {
+ * //   name: 'Andrew',
+ * //   config: {
+ * //     canReadPost: true,
+ * //     canUpdatePost: true
+ * //   },
+ * // }
  *
  * @group Object
  */

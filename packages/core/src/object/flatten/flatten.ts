@@ -10,6 +10,22 @@ interface FlattenOptions {
 /**
  * Flat object
  *
+ * @example
+ *
+ * flatten({
+ *   name: 'Andrew',
+ *   config: {
+ *     canReadPost: true,
+ *     canUpdatePost: true,
+ *   }
+ * });
+ *
+ * // {
+ * //  'name': 'Andrew',
+ * //  'config.canReadPost': true,
+ * //  'config.canUpdatePost': true,
+ * // }
+ *
  * @group Object
  */
 export function flatten(

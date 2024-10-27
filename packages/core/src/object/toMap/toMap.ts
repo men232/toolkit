@@ -1,6 +1,11 @@
 /**
  * Converts object into Map
  *
+ * @example
+ * const map = toMap({ user1: 'Andrew', user2: 'John' });
+ *
+ * map.get('user2'); // John
+ *
  * @group Object
  */
 export const toMap = <KValue = string, TValue = unknown>(

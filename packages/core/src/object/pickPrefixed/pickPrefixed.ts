@@ -13,6 +13,19 @@ interface PrefixedValuesOptions {
 /**
  * Pick prefixed keys in target object
  *
+ * @example
+ * const record = {
+ *   id: 1,
+ *   canRead: true,
+ *   canWrite: true,
+ * };
+ *
+ *  // { canRead: true, canWrite: true }
+ * pickPrefixed(record, 'can');
+ *
+ * // { Read: true, Write: true }
+ * pickPrefixed(record, { prefix: 'can', prefixTrim: true });
+ *
  * @group Object
  */
 export function pickPrefixed(

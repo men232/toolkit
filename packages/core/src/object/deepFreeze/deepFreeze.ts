@@ -1,6 +1,13 @@
 /**
  * Same as `Object.freeze()` but deep
  *
+ * @example
+ * const config = deepFreeze({
+ *   db: { uri: '' },
+ * });
+ *
+ * config.db.uri = 'test'; // error
+ *
  * @group Object
  */
 export function deepFreeze<T extends object | unknown[]>(value: T): T {

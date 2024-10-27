@@ -1,6 +1,15 @@
 /**
  * Pick object keys with excluding prefix keys
  *
+ * @example
+ * const record = {
+ *   id: 1,
+ *   canRead: true,
+ *   canWrite: true,
+ * };
+ *
+ * omitPrefixed(record, 'can'); // { id: 1 }
+ *
  * @group Object
  */
 export function omitPrefixed(
