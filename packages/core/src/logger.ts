@@ -1,11 +1,20 @@
 import { env } from './env';
 import { isString, noop } from './is';
+import { sprintf } from './str/sprintf';
 import type { Logger } from './types';
 
-const IS_DEV = env.bool('DEV', false);
+const IS_DEV = env.isDevelopment || env.bool('DEV', false);
 
-const REGEX_PLACEHOLDER = /\%[s,d,O,o,j]/g;
-
+/**
+ * Create pretty simple `console.log` wrapper interface.
+ *
+ * @example
+ * const log = logger('UserService');
+ *
+ * log.info('Create user: %s', 'user_1'); // Create user: %s
+ *
+ * @group Others
+ */
 export const logger = (...baseArgs: any[]): Logger => {
   // normalize meta.url
   if (typeof baseArgs[0] === 'string' && baseArgs[0][0] !== '[') {
@@ -20,58 +29,12 @@ export const logger = (...baseArgs: any[]): Logger => {
       return;
     }
 
-    const formatted: any[] = [];
-    let matchIndex = 0;
-    let idx = 0;
-
-    for (const match of pattern.matchAll(REGEX_PLACEHOLDER)) {
-      const placeholder = match[0];
-
-      let value = args[matchIndex];
-      let shouldUseSplit = false;
-
-      switch (placeholder) {
-        case '%s':
-          break;
-
-        case '%d': {
-          shouldUseSplit = true;
-          break;
-        }
-
-        case '%O':
-        case '%o': {
-          shouldUseSplit = true;
-          break;
-        }
-
-        case '%j': {
-          value = JSON.stringify(value);
-          break;
-        }
-      }
-
-      const str = pattern.slice(idx, match.index);
-
-      if (shouldUseSplit) {
-        formatted.push(str, value);
-      } else if (isString(formatted.at(-1))) {
-        formatted[formatted.length - 1] += str + value;
-      } else {
-        formatted.push(str + value);
-      }
-
-      idx = match.index + placeholder.length;
-      matchIndex++;
-    }
-
-    if (matchIndex < args.length - 1) {
-      formatted.push(args.slice(matchIndex, args.length));
-    }
+    const unusedArgs: any[] = [];
+    const formatted = sprintf(pattern, args, unusedArgs);
 
     // @ts-expect-error
     // eslint-disable-next-line no-console
-    console[level](...baseArgs, ...formatted);
+    console[level](...baseArgs, ...formatted, ...unusedArgs);
   };
 
   const log = writeLog.bind(null, 'log');
