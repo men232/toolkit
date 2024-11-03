@@ -1,41 +1,94 @@
 import type { Primitive } from './types';
 
+/**
+ * Determines if the window object is available in the global scope
+ *
+ * @group Is
+ */
 export const isClient = typeof (globalThis as any)?.window !== 'undefined';
 
+/**
+ * Returns `true` when value is not `undefined`
+ * @group Is
+ */
 export const isDef = <T = any>(val?: T): val is T => typeof val !== 'undefined';
 
 const toString = Object.prototype.toString;
 
+/**
+ * Returns `true` when value is `null` or `undefined`
+ * @group Is
+ */
 export function isNullOrUndefined(value: unknown): value is undefined | null {
   return value === null || value === undefined;
 }
 
+/**
+ * Returns `true` when value is `BigInt`
+ * @group Is
+ */
 export const isBigInt = (val: any): val is bigint => typeof val === 'bigint';
 
+/**
+ * Returns `true` when value is `Boolean`
+ * @group Is
+ */
 export const isBoolean = (val: any): val is boolean => typeof val === 'boolean';
 
+/**
+ * Returns `true` when value is `Function`
+ * @group Is
+ */
 export const isFunction = <T extends Function>(val: any): val is T =>
   typeof val === 'function';
 
+/**
+ * Returns `true` when value is `Number` and not `NaN`
+ * @group Is
+ */
 export const isNumber = (val: any): val is number =>
   typeof val === 'number' && !isNaN(val);
 
+/**
+ * Returns `true` when value is `String`
+ * @group Is
+ */
 export const isString = (val: unknown): val is string =>
   typeof val === 'string';
 
+/**
+ * Returns `true` when value is plain `Object`
+ * @group Is
+ */
 export const isObject = (val: any): val is object =>
   toString.call(val) === '[object Object]';
 
+/**
+ * Returns `true` when value is valid `Date`
+ * @group Is
+ */
 export const isDate = (val: any): val is Date =>
   val instanceof Date && !isNaN(val as any);
 
+/**
+ * Function that does nothing
+ * @group Others
+ */
 export const noop = () => {};
 
+/**
+ * Returns true if values is `Error` or instance of `Error`
+ * @group Is
+ */
 export const isError = (val: any): val is Error =>
   val instanceof Error ||
   //@ts-expect-error
   (isObject(val) && isString(val.message) && isString(val.stack));
 
+/**
+ * Returns true if values is `symbol`
+ * @group Is
+ */
 export const isSymbol = (val: any): val is Symbol => typeof val == 'symbol';
 
 /**
@@ -51,6 +104,8 @@ export const isSymbol = (val: any): val is Symbol => typeof val == 'symbol';
  * isEqual(/abc/g, /abc/g); // true
  * isEqual(new Date('2020-01-01'), new Date('2020-01-01')); // true
  * isEqual([1, 2, 3], [1, 2, 3]); // true
+ *
+ * @group Is
  */
 export function isEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) {
@@ -99,6 +154,11 @@ export function isEqual(a: unknown, b: unknown): boolean {
   return true;
 }
 
+/**
+ * Returns true if values is empty. Including support for `Array`, `Object`, `String` `Map`, `Set`.
+ *
+ * @group Is
+ */
 export const isEmpty = (obj: any): boolean => {
   if (obj === null || obj === undefined) return true;
 
@@ -135,6 +195,10 @@ export const isEmpty = (obj: any): boolean => {
   return false;
 };
 
+/**
+ * Returns `true` when value is `Promise`
+ * @group Is
+ */
 export function isPromise<T = void>(value: any): value is Promise<T> {
   return (
     value &&
@@ -150,6 +214,10 @@ const primitiveTypeofSet = Object.freeze(
   new Set(['string', 'number', 'boolean', 'bigint', 'symbol', 'undefined']),
 );
 
+/**
+ * Returns `true` when value is a primitive. `String`, `Number`, `Boolean`, `BigInt`, `Symbol`, `undefined`
+ * @group Is
+ */
 export const isPrimitive = (value: unknown): value is Primitive => {
   return value === null || primitiveTypeofSet.has(typeof value);
 };

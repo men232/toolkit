@@ -34,6 +34,22 @@ export type RetryOnErrorConfig = {
   delayMaxMs?: number;
 };
 
+/**
+ * @example
+ * await retryOnError({
+ *   maxRetriesNumber: 10,
+ *   delayFactor: 2,
+ *   delayMinMs: 1000,
+ *   delayMaxMs: 3000,
+ *   shouldRetryBasedOnError(error, attemptNumber) {
+ *     return error.code !== 'RECORD_EXISTS';
+ *   }
+ * }, async () => {
+ *   await db.transactions.insert(doc);
+ * });
+ *
+ * @group Errors
+ */
 export function retryOnError<T extends AnyFunction>(
   {
     beforeRetryCallback,

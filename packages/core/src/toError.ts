@@ -2,6 +2,7 @@ import { isError } from './is.js';
 
 /**
  * Transform value to error object
+ * @group Errors
  */
 export function toError<T>(
   value: T,

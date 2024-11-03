@@ -1,1 +1,1 @@
-export * from './cleanupEmpty';
+export * from './cleanEmpty';

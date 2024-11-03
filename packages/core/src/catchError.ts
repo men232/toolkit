@@ -10,6 +10,18 @@ type CatchErrorResult = [Error, undefined];
 
 type CatchSuccessResult<T> = [undefined, T];
 
+/**
+ * You're tired to write `try... catch`, and so are we.
+ *
+ * Also supports `async/await`
+ *
+ * @example
+ * const [err, result] = catchError(() => {
+ *   // danger code
+ * });
+ *
+ * @group Errors
+ */
 export function catchError<T>(fn: () => T): ToCatchResult<T> {
   try {
     const res = fn();
