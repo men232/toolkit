@@ -1,3 +1,5 @@
+import { isString } from '@/is';
+import { hasProtocol } from '@/str/hasProtocol';
 import { getFileExtension } from '../getFileExtension';
 
 /**
@@ -9,11 +11,17 @@ import { getFileExtension } from '../getFileExtension';
  * @group Files
  */
 export function getFileName(value: string): string | null {
+  if (hasProtocol(value)) {
+    return getFileName(decodeURI(value.split('/').at(-1)?.split('?')?.at(0)!));
+  }
+
+  if (!isString(value)) return null;
+
   const ext = getFileExtension(value, true);
 
   if (!ext) {
     return value;
   }
 
-  return value.slice(0, -ext.length);
+  return value.slice(0, -ext.length - 1);
 }
