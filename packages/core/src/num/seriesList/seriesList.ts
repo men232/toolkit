@@ -1,47 +1,42 @@
 /**
- * This function make sorted series array from number[]
+ * Collapses a continuous series into a tuple of two elements.
  *
- * For example: [1, 2, 3, 6, 7]
+ * Where the first element is the beginning of the series.
+ * Where the second element is the end of the series.
  *
- * Result: [[1, 3], [6, 7]]
+ * ⚠️ Tuple may consist only one element if the series not started, like: [1, 3] => [[1], [3]]
+ *
+ * @example
+ * const numbers = [1, 2, 3, 8, 9, 10, 15];
+ *
+ * seriesList(numbers); // [[1, 3], [8, 10], [15]]
  *
  * @group Numbers
  */
-export function seriesList(list: Array<number>) {
-  const result = [];
-  list = [...list].sort();
+export function seriesList(list: number[], step = 1): number[][] {
+  const result: number[][] = [];
 
-  let sStart = list.shift() as number;
-  let sEnd;
+  if (!list.length) {
+    return result;
+  }
 
-  while (list.length) {
-    const value = list.shift() as number;
+  const sortedList = [...list].sort();
 
-    if (!sEnd) {
-      if (value - sStart > 1) {
-        result.push([sStart], [value]);
-        sStart = list.shift() as number;
-      } else {
-        sEnd = value;
-      }
+  let currentRange = [list[0]];
+  let currentValue: number;
+
+  for (let idx = 1; idx < sortedList.length; idx++) {
+    currentValue = sortedList[idx];
+
+    if (currentValue - currentRange.at(-1)! > step) {
+      result.push(currentRange);
+      currentRange = [currentValue];
     } else {
-      if (value - sEnd > 1) {
-        result.push([sStart, sEnd]);
-
-        sStart = value;
-        sEnd = null;
-      } else {
-        sEnd = value;
-      }
+      currentRange[1] = currentValue;
     }
   }
 
-  if (sStart && sEnd) {
-    result.push([sStart, sEnd]);
-  } else {
-    if (sStart) result.push([sStart]);
-    if (sEnd) result.push([sEnd]);
-  }
+  result.push(currentRange);
 
   return result;
 }
