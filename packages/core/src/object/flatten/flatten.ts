@@ -22,8 +22,8 @@ interface FlattenOptions {
  *
  * // {
  * //  'name': 'Andrew',
- * //  'config.canReadPost': true,
- * //  'config.canUpdatePost': true,
+ * //  'config_canReadPost': true,
+ * //  'config_canUpdatePost': true,
  * // }
  *
  * @group Object

@@ -1,3 +1,5 @@
+import { set } from '../set';
+
 /**
  * Un flat flatten object
  *
@@ -20,12 +22,11 @@
  *
  * @group Object
  */
-export function unflatten(obj: object) {
+export function unflatten(obj: object, separator = '_') {
   const result = {};
 
   Object.keys(obj).forEach(path => {
-    // @ts-expect-error
-    _set(result, path, obj[path]);
+    set(result, path.split(separator), (obj as any)[path]);
   });
 
   return result;

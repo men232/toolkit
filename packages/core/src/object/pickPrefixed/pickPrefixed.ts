@@ -6,6 +6,7 @@ interface PrefixedValuesOptions {
 
   /**
    * Remove prefix from resulted object
+   * @default false
    */
   prefixTrim?: boolean;
 }
@@ -33,13 +34,13 @@ export function pickPrefixed(
   options: PrefixedValuesOptions | string,
 ) {
   let prefix;
-  let prefixTrim = true;
+  let prefixTrim = false;
 
   if (typeof options === 'string') {
     prefix = options;
   } else {
     prefix = options.prefix;
-    prefixTrim = options.prefixTrim !== false;
+    prefixTrim = options.prefixTrim === true;
   }
 
   const result = {};

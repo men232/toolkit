@@ -8,13 +8,13 @@ import { isEmpty } from '@/is';
  * @example
  * const user = { id: 1, name: 'Andrew', roles: [], };
  *
- * cleanupEmpty(user);
+ * cleanEmpty(user);
  *
  * console.log(user); // '{ id: 1, name: 'Andrew' }'
  *
  * @group Object
  */
-export function cleanupEmpty(obj: Record<any, any>): Record<any, any> {
+export function cleanEmpty(obj: Record<any, any>): Record<any, any> {
   let value;
   for (const key of Object.keys(obj)) {
     value = obj[key];

@@ -8,16 +8,6 @@
  *
  * @group Object
  */
-export const toMap = <KValue = string, TValue = unknown>(
-  arr: Readonly<any[]>,
-  keyBy: string,
-): Map<KValue, TValue> => {
-  const map = new Map<KValue, TValue>();
-
-  for (const item of arr) {
-    const key = item[keyBy];
-    map.set(key as KValue, item);
-  }
-
-  return map;
+export const toMap = <T extends object>(obj: T): Map<keyof T, T[keyof T]> => {
+  return new Map<any, any>(Object.entries(obj));
 };
