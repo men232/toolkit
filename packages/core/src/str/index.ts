@@ -10,5 +10,6 @@ export * from './kebabCase';
 export * from './lowerCase';
 export * from './randomString';
 export * from './snakeCase';
+export * from './sprintf';
 export * from './startCase';
 export * from './strAssign';

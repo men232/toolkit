@@ -1,5 +1,7 @@
 import { isString } from '@/is';
 
+const CASE_SPLIT_PATTERN = /[A-Z]?[a-z]+|[0-9]+|[A-Z]+(?![a-z])/g;
+
 /**
  * Regular expression pattern to split strings into words for various case conversions
  *
@@ -18,8 +20,6 @@ import { isString } from '@/is';
  *
  * @group Strings
  */
-const CASE_SPLIT_PATTERN = /[A-Z]?[a-z]+|[0-9]+|[A-Z]+(?![a-z])/g;
-
 export function getWords(str?: string): string[] {
   if (!isString(str)) return [];
 
