@@ -11,10 +11,10 @@ const DEF_STR_ASSIGN_METHOD = (obj: any, key: string) => obj[key];
  *
  * @group Strings
  */
-export function strAssign(
+export function strAssign<T extends object>(
   str: string,
-  obj: object,
-  method = DEF_STR_ASSIGN_METHOD,
+  obj: T,
+  method: (obj: T, key: string) => any = DEF_STR_ASSIGN_METHOD,
 ): string {
   return str.replace(DEF_STR_ASSIGN_REGEXP, (match, p1) => {
     const key = p1.trim();
