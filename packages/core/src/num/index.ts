@@ -7,5 +7,4 @@ export * from './humanize';
 export * from './parsePercentage';
 export * from './percentOf';
 export * from './round2digits';
-export * from './seriesList';
 export * from './timestamp';

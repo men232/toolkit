@@ -9,5 +9,11 @@
  * @group Object
  */
 export const toMap = <T extends object>(obj: T): Map<keyof T, T[keyof T]> => {
-  return new Map<any, any>(Object.entries(obj));
+  const map = new Map<any, any>(Object.entries(obj));
+
+  for (const symbol of Object.getOwnPropertySymbols(obj)) {
+    map.set(symbol, (obj as any)[symbol]);
+  }
+
+  return map;
 };

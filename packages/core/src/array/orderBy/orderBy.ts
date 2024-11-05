@@ -22,10 +22,10 @@ import { compareAscending } from './compareAscending';
  * @group Array
  */
 export function orderBy<T>(
-  array: Array<T>,
+  array: readonly T[],
   fields: (string | ((item: T) => any))[],
   orders: ('asc' | 'desc')[],
-): Array<T> {
+): readonly T[] {
   return [...array].sort((a, b) => {
     let index = -1,
       length = fields.length,

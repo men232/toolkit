@@ -1,18 +1,31 @@
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { cleanObject } from './cleanObject';
 
-test('cleanObject', () => {
-  const obj = {
-    key: 1,
-    key2: 2,
-    emptyStr: '',
-    emptyArr: [],
-    emptyObj: {},
-    emptyMap: new Map(),
-    emptySet: new Set(),
-  };
+describe('cleanObject', () => {
+  test('must remove all keys', () => {
+    const obj = {
+      key: 1,
+      key2: 2,
+      emptyStr: '',
+      emptyArr: [],
+      emptyObj: {},
+      emptyMap: new Map(),
+      emptySet: new Set(),
+    };
 
-  cleanObject(obj);
+    cleanObject(obj);
 
-  expect(Object.keys(obj)).toStrictEqual([]);
+    expect(Object.keys(obj)).toStrictEqual([]);
+  });
+
+  test('must remove all symbols from object', () => {
+    const sym = Symbol();
+    const obj = {
+      [sym]: true,
+    };
+
+    cleanObject(obj);
+
+    expect(obj[sym]).toBe(undefined);
+  });
 });

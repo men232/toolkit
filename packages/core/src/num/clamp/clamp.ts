@@ -1,3 +1,5 @@
+import { isNumber } from '@/is';
+
 /**
  * Round value to provided range
 
@@ -10,5 +12,7 @@
  *
  * @group Numbers
  */
-export const clamp = (num: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, num));
+export const clamp = (num: number, min: number, max: number) => {
+  if (!isNumber(num)) return min;
+  return Math.min(max, Math.max(min, num));
+};

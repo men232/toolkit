@@ -1,32 +1,34 @@
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { withCacheFixed } from './withCacheFixed';
 
-test('rnd must returns the same result', () => {
-  const rnd = withCacheFixed({ capacity: 1 }, () => Math.random());
+describe('withCacheFixed', () => {
+  test('rnd must returns the same result', () => {
+    const rnd = withCacheFixed({ capacity: 1 }, () => Math.random());
 
-  expect(rnd()).toBe(rnd());
-});
-
-test('check capacity', () => {
-  let called = 0;
-
-  const rnd = withCacheFixed({ capacity: 3 }, (_: number) => {
-    called++;
-    return Math.random();
+    expect(rnd()).toBe(rnd());
   });
 
-  rnd(1);
-  rnd(2);
-  rnd(3);
-  rnd(4);
-  rnd(5);
+  test('check capacity', () => {
+    let called = 0;
 
-  expect(5).toBe(called);
+    const rnd = withCacheFixed({ capacity: 3 }, (_: number) => {
+      called++;
+      return Math.random();
+    });
 
-  // last 3 items must be cached
-  rnd(3);
-  rnd(4);
-  rnd(5);
+    rnd(1);
+    rnd(2);
+    rnd(3);
+    rnd(4);
+    rnd(5);
 
-  expect(5).toBe(called);
+    expect(5).toBe(called);
+
+    // last 3 items must be cached
+    rnd(3);
+    rnd(4);
+    rnd(5);
+
+    expect(5).toBe(called);
+  });
 });

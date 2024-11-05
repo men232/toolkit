@@ -1,6 +1,7 @@
 export * from './arrayable';
 export * from './avg';
 export * from './chunk';
+export * from './chunkSeries';
 export * from './keyBy';
 export * from './orderBy';
 export * from './sum';

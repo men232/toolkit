@@ -9,11 +9,11 @@
  * @example
  * const numbers = [1, 2, 3, 8, 9, 10, 15];
  *
- * seriesList(numbers); // [[1, 3], [8, 10], [15]]
+ * chunkSeries(numbers); // [[1, 3], [8, 10], [15]]
  *
  * @group Numbers
  */
-export function seriesList(list: number[], step = 1): number[][] {
+export function chunkSeries(list: number[], step = 1): number[][] {
   const result: number[][] = [];
 
   if (!list.length) {

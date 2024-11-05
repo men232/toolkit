@@ -14,7 +14,7 @@
  *
  * @group Array
  */
-export function chunk<T>(list: T[], size: number = 1): T[][] {
+export function chunk<T>(list: readonly T[], size: number = 1): T[][] {
   return list.reduce((res, item, index) => {
     if (index % size === 0) {
       res.push([]);

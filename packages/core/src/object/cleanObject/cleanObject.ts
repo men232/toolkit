@@ -2,6 +2,7 @@
  * Cleanup object
  *
  * ⚠️ Mutates original object
+ * ⚠️ Removes symbols keys
  *
  * @example
  * const user = { id: 1, name: 'Andrew', roles: [], };
@@ -13,7 +14,9 @@
  * @group Object
  */
 export const cleanObject = (input: Record<string, any>) => {
-  Object.keys(input).forEach((key: string) => {
-    delete input[key];
-  });
+  [...Object.keys(input), ...Object.getOwnPropertySymbols(input)].forEach(
+    (key: any) => {
+      delete input[key];
+    },
+  );
 };

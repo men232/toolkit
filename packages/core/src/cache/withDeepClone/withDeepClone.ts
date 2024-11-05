@@ -6,9 +6,7 @@ import { isWithCache } from '../createWithCache';
 import { SYM_WITH_CACHE } from '../createWithCache/utils';
 
 /**
- * Utility wrapper function to deep clone results.
- *
- * Useful when you need to mutate cached object.
+ * Make deep cloning of function result before returning.
  *
  * @example
  * const findUser = withDeepClone(
