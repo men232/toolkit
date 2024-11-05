@@ -13,8 +13,8 @@ export type WithCustomizer = (
 
 export type WithCustomizerFactory = () => WithCustomizer;
 
-export type WithCustomizerValue = Arrayable<
-  WithCustomizer | WithCustomizerFactory
+export type WithCustomizerValue = Readonly<
+  Arrayable<WithCustomizer | WithCustomizerFactory>
 >;
 
 /**

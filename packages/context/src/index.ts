@@ -47,16 +47,18 @@ catchError(async () => {
  * @group Main
  */
 export function withContext<T = any>(fn: () => T, isolated = false): () => T {
-  const currentInstance = createInstance();
-  const parentInstance = getCurrentInstance();
+  return () => {
+    const currentInstance = createInstance();
+    const parentInstance = getCurrentInstance();
 
-  if (!isolated) {
-    if (parentInstance) {
-      currentInstance.providers.set(PARENT_SYM, parentInstance);
+    if (!isolated) {
+      if (parentInstance) {
+        currentInstance.providers.set(PARENT_SYM, parentInstance.providers);
+      }
     }
-  }
 
-  return () => runInContext(currentInstance, fn);
+    return runInContext(currentInstance, fn);
+  };
 }
 
 /**
