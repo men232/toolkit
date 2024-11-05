@@ -16,8 +16,7 @@ import { getWords } from '../getWords';
  *
  * @group Strings
  */
-export const kebabCase = (str?: string): string => {
-  return getWords(str)
-    .map(word => word.toLowerCase())
-    .join('-');
-};
+export function kebabCase(str: string): string {
+  const words = getWords(str);
+  return words.map(word => word.toLowerCase()).join('-');
+}
