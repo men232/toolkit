@@ -26,6 +26,7 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
   for (let idx = 0; idx < lineLen; idx++) {
     currentChar = line.charCodeAt(idx);
 
+    // "%" found
     if (currentChar === 37) {
       opened = true;
       continue;
@@ -36,9 +37,10 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
     opened = false;
 
     switch (currentChar) {
-      case 100: // 'd'
+      // 'd'
+      case 100:
+      // 'f'
       case 102: {
-        // 'f'
         result += line.slice(lastPos, idx - 1);
         result += Number(args[argsIndex]);
         lastPos = idx + 1;
@@ -46,8 +48,8 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
         break;
       }
 
+      // 'i'
       case 105: {
-        // 'i'
         result += line.slice(lastPos, idx - 1);
         result += Math.floor(Number(args[argsIndex]));
         lastPos = idx + 1;
@@ -55,10 +57,12 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
         break;
       }
 
-      case 79: // 'O'
-      case 111: // 'o'
+      // 'O'
+      case 79:
+      // 'o'
+      case 111:
+      // 'j'
       case 106: {
-        // 'j'
         result += line.slice(lastPos, idx - 1);
         result += tryStringify(args[argsIndex]);
         lastPos = idx + 1;
@@ -66,8 +70,8 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
         break;
       }
 
+      // 's'
       case 115: {
-        // 's'
         result += line.slice(lastPos, idx - 1);
         result += String(args[argsIndex]);
         lastPos = idx + 1;
