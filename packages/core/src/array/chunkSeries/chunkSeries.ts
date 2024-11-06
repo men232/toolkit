@@ -11,7 +11,7 @@
  *
  * chunkSeries(numbers); // [[1, 3], [8, 10], [15]]
  *
- * @group Numbers
+ * @group Array
  */
 export function chunkSeries(list: number[], step = 1): number[][] {
   const result: number[][] = [];

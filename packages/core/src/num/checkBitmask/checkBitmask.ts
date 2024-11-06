@@ -1,6 +1,3 @@
-export function checkBitmask(scope: number, flag: number): boolean;
-export function checkBitmask(scope: bigint, flag: bigint): boolean;
-
 /**
  * Check if bits are set in bitmask
  *
@@ -12,6 +9,19 @@ export function checkBitmask(scope: bigint, flag: bigint): boolean;
  *
  * @group Numbers
  */
+export function checkBitmask(scope: number, flag: number): boolean;
+
+/**
+ * @example
+ * const scope = (1n << 1n | 1n << 2n | 1n << 3n);
+ *
+ * checkBitmask(scope, 1n << 2n); // true
+ * checkBitmask(scope, 1n << 5n); // false
+ *
+ * @group Numbers
+ */
+export function checkBitmask(scope: bigint, flag: bigint): boolean;
+
 export function checkBitmask(scope: any, flag: any): boolean {
   return (scope & flag) === flag;
 }

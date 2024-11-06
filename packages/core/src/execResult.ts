@@ -4,6 +4,9 @@ import type {
   ExecResultToSuccess,
 } from './types';
 
+/**
+ * @group Utility Functions
+ */
 export function isSuccess<T extends ExecResult>(
   value: T,
   // @ts-expect-error
@@ -11,6 +14,9 @@ export function isSuccess<T extends ExecResult>(
   return value.success === true;
 }
 
+/**
+ * @group Utility Functions
+ */
 export function isSkip<T extends ExecResult>(
   value: T,
   // @ts-expect-error

@@ -2,6 +2,7 @@ import { isDate, isFunction, isObject } from './is.js';
 
 /**
  * Simple function to transform object into query string (not standards)
+ * @group Utility Functions
  */
 export function qs(obj: object): string {
   const urlSearchParams = new URLSearchParams();

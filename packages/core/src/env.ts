@@ -102,7 +102,7 @@ export interface EnvParser {
  * const RETRY_ATTEMPTS = env.int('RETRY_ATTEMPTS', 5);
  *
  * // env.decimal
- * const DELAY_SECONDS = env.int('DELAY_SECONDS', 2, 5); // round to 2 dights
+ * const DELAY_SECONDS = env.decimal('DELAY_SECONDS', 2, 5); // round to 2 dights
  *
  * // env.list
  * const TARGET_ROLES = env.list('TARGET_ROLES', 'string', ['ADMIN']);

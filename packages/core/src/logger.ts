@@ -13,7 +13,7 @@ const IS_DEV = env.isDevelopment || env.bool('DEV', false);
  *
  * log.info('Create user: %s', 'user_1'); // Create user: %s
  *
- * @group Others
+ * @group Utility Functions
  */
 export const logger = (...baseArgs: any[]): Logger => {
   // normalize meta.url
