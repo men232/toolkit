@@ -1,0 +1,34 @@
+{
+  "name": "@andrew_l/ioc",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "unbuild",
+    "prepack": "unbuild",
+    "test": "vitest run --typecheck",
+    "test:watch": "vitest watch --typecheck"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "unbuild": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@types/glob": "^8.1.0"
+  },
+  "dependencies": {
+    "@andrew_l/toolkit": "workspace:*",
+    "glob": "^11.0.0"
+  }
+}
