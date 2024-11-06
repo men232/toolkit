@@ -10,7 +10,7 @@
   "docsRoot": "./docs",
   "disableSources": true,
   "cleanOutputDir": true,
-  "out": "./docs/typedocs",
+  "out": "./docs/reference",
   "categorizeByGroup": true,
   "defaultCategory": "Other",
   "excludePrivate": true,

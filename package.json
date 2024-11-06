@@ -12,7 +12,7 @@
     "format": "prettier --write --cache .",
     "format-check": "prettier --check --cache .",
     "preinstall": "npx only-allow pnpm",
-    "typedocs": "typedoc --options typedoc.json",
+    "docs:generate": "node ./scripts/generate-docs.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "pnpm typedoc && vitepress build docs",
     "docs:preview": "vitepress preview docs"

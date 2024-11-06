@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress';
-import typedocSidebar from '../typedocs/typedoc-sidebar.json';
+import typedocSidebar from '../reference/typedoc-sidebar.json';
 
 const EXCLUDE_TYPEDOC_GROUPS = new Set([
   'Classes',
@@ -22,7 +22,7 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Type Docs', link: '/typedocs/' },
+      { text: 'Reference', link: '/reference/' },
     ],
 
     sidebar: (typedocSidebar as any[]).map(pkg => {

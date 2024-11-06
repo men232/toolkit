@@ -8,10 +8,16 @@ hero:
 features:
   - title: Core
     details: General utility functions
-    link: /typedocs/@andrew_l/toolkit/
+    link: /reference/@andrew_l/toolkit/
   - title: Context
     details: Like composition api but for Node.
-    link: /typedocs/@andrew_l/context/
+    link: /reference/@andrew_l/context/
+  - title: Graceful
+    details: Utility to manage application shutdown.
+    link: /reference/@andrew_l/graceful/
+  - title: IOC
+    details: Pretty simple IOC Container.
+    link: /reference/@andrew_l/ioc/
 ---
 
 ## Getting Started
