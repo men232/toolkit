@@ -20,34 +20,40 @@ import { Queue } from '../Queue';
  * @group Promise
  */
 export class AsyncIterableQueue<T> implements AsyncIterable<T> {
-  private queue: Queue<T | typeof AsyncIterableQueue.QUEUE_END_MARKER>;
-  private closed = false;
+  private _queue: Queue<T | typeof AsyncIterableQueue.QUEUE_END_MARKER>;
+  private _closed = false;
   private static readonly QUEUE_END_MARKER = Symbol('QUEUE_END_MARKER');
 
   constructor() {
-    this.queue = new Queue<T | typeof AsyncIterableQueue.QUEUE_END_MARKER>();
+    this._queue = new Queue<T | typeof AsyncIterableQueue.QUEUE_END_MARKER>();
+  }
+
+  get closed(): boolean {
+    return this._closed;
   }
 
   put(item: T): void {
-    if (this.closed) {
+    if (this._closed) {
       throw new Error('Queue is closed');
     }
-    this.queue.put(item);
+    this._queue.put(item);
   }
 
   close(): void {
-    this.closed = true;
-    this.queue.put(AsyncIterableQueue.QUEUE_END_MARKER);
+    if (this._closed) return;
+
+    this._closed = true;
+    this._queue.put(AsyncIterableQueue.QUEUE_END_MARKER);
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
     return {
       next: async (): Promise<IteratorResult<T>> => {
-        if (this.closed && this.queue.items.length === 0) {
+        if (this._closed && this._queue.items.length === 0) {
           return { value: undefined, done: true };
         }
-        const item = await this.queue.get();
-        if (item === AsyncIterableQueue.QUEUE_END_MARKER && this.closed) {
+        const item = await this._queue.get();
+        if (item === AsyncIterableQueue.QUEUE_END_MARKER && this._closed) {
           return { value: undefined, done: true };
         }
         return { value: item as T, done: false };

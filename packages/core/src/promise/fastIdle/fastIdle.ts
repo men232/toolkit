@@ -1,7 +1,19 @@
 import { isFunction } from '@/is';
-import type { Fn } from '@/types';
+import type { AnyFunction, Fn } from '@/types';
 
 const defaultWindow = (globalThis as any)?.window;
+
+const idle: (fn: AnyFunction) => void = (() => {
+  if (defaultWindow?.requestIdleCallback) {
+    return defaultWindow.requestIdleCallback;
+  } else if (defaultWindow?.requestAnimationFrame) {
+    return defaultWindow.requestAnimationFrame;
+  } else if (isFunction(process?.nextTick)) {
+    return process.nextTick;
+  } else {
+    return fn => setTimeout(fn, 0);
+  }
+})();
 
 /**
  * Fast idle capability to run callback at next tick
@@ -19,15 +31,7 @@ const defaultWindow = (globalThis as any)?.window;
  * @group Promise
  */
 export function fastIdle(callback: Fn) {
-  if (defaultWindow?.requestIdleCallback) {
-    defaultWindow?.requestIdleCallback(callback);
-  } else if (defaultWindow?.requestAnimationFrame) {
-    defaultWindow?.requestAnimationFrame(callback);
-  } else if (isFunction(process?.nextTick)) {
-    process.nextTick(callback);
-  } else {
-    setTimeout(callback, 0);
-  }
+  return idle(callback);
 }
 
 /**
@@ -46,5 +50,5 @@ export function fastIdle(callback: Fn) {
  * @group Promise
  */
 export function fastIdlePromise() {
-  return new Promise<void>(resolve => fastIdle(resolve));
+  return new Promise<void>(resolve => idle(resolve));
 }

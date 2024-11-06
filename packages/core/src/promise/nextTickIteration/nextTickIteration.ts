@@ -18,13 +18,15 @@ export function nextTickIteration(
 ): () => Promise<void> {
   let counter = 0;
 
+  const tickInterval = delay === 'tick';
+
   return () => {
     counter++;
 
     if (counter >= amount) {
       counter = 0;
       return new Promise(resolve => {
-        if (delay === 'tick') {
+        if (tickInterval) {
           fastIdle(resolve);
         } else {
           setTimeout(resolve, delay);

@@ -113,7 +113,7 @@ export class SimpleEventEmitter<
     };
 
     // @ts-expect-error
-    this.emit(eventName, wrapped);
+    this.on(eventName, wrapped);
 
     return this;
   }

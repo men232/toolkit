@@ -1,3 +1,7 @@
+import { catchError } from '@/catchError';
+import { toError } from '@/toError';
+import type { AnyFunction } from '@/types';
+
 /**
  * Same as promise but with cancellable feature
  *
@@ -23,7 +27,7 @@
  */
 export class CancellablePromise<T> implements Promise<T> {
   #promise: Promise<T>;
-  #cancelFn: () => void;
+  #cancelFns: (() => void)[];
   #isCancelled: boolean = false;
   #error: Error | null = null;
 
@@ -34,26 +38,19 @@ export class CancellablePromise<T> implements Promise<T> {
       onCancel: (cancelFn: () => void) => void,
     ) => void,
   ) {
-    let cancel: () => void;
-
+    this.#cancelFns = [];
     this.#promise = new Promise<T>((resolve, reject) => {
       executor(
         resolve,
         reason => {
-          this.#error =
-            reason instanceof Error ? reason : new Error(String(reason));
+          this.#error = toError(reason, 'Unknown rejection reason.');
           reject(reason);
         },
-        cancelFn => {
-          cancel = () => {
-            this.#isCancelled = true;
-            cancelFn();
-          };
+        (fn: AnyFunction) => {
+          this.#cancelFns.push(fn);
         },
       );
     });
-
-    this.#cancelFn = cancel!;
   }
 
   get [Symbol.toStringTag](): string {
@@ -89,7 +86,13 @@ export class CancellablePromise<T> implements Promise<T> {
   }
 
   cancel(): void {
-    this.#cancelFn();
+    if (this.#isCancelled) return;
+
+    this.#isCancelled = true;
+
+    for (const fn of this.#cancelFns) {
+      catchError(fn);
+    }
   }
 
   static from<T>(promise: Promise<T>): CancellablePromise<T> {
