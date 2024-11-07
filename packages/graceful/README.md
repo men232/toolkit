@@ -1,6 +1,6 @@
 # Description
 
-Gracefully application shutdown using dependencies.
+Gracefully shuts down the application using dependencies.
 
 # Usage
 

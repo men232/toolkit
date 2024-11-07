@@ -28,7 +28,7 @@ catchError(async () => {
 });
 
 /**
- * Create a function within injection context and returns its return value. The providers/injection is not accessible outside of the callback function.
+ * Creates a function within the injection context and returns its result. Providers/injections are only accessible within the callback function.
  * @param isolated Do not inject parent providers into this context (Default: `false`)
  *
  * @example
@@ -62,7 +62,7 @@ export function withContext<T = any>(fn: () => T, isolated = false): () => T {
 }
 
 /**
- * Runs a function within injection context and returns its return value. The providers/injection is not accessible outside of the callback function.
+ * Runs a function within the injection context and returns its result. Providers/injections are only accessible inside the callback function.
  * @param isolated Do not inject parent providers into this context (Default: `false`)
  * @group Main
  */
@@ -92,10 +92,7 @@ function runInContext<T>(instance: Instance, fn: () => T) {
 }
 
 /**
- * Bind current context to provided function.
- *
- * Useful when you need to create callback with current context, for example `setTimeout` or `EventEmitter` event handler.
- *
+ * Binds the current context to the provided function. Useful for creating callbacks with the current context, such as `setTimeout` or `EventEmitter` handlers.
  * @example
  * const main = withContext(() => {
  *   provide("user", { id: 1, name: "Andrew" });
