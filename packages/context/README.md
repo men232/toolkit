@@ -2,6 +2,8 @@
 
 Bind async context like vue composition api.
 
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/context/)
+
 # Usage
 
 ```js

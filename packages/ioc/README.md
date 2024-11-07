@@ -1,10 +1,10 @@
 # Description
 
-IOC Container
+Before running the application code, set up the service container. This example auto-imports all `*.service.js` files from the service directories.
+
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/ioc/)
 
 # Setup
-
-Before running the application code, set up the service container. This example auto-imports all `*.service.js` files from the service directories.
 
 ```js
 import { ServiceContainer } from '@andrew_l/ioc';
