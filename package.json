@@ -14,7 +14,7 @@
     "preinstall": "npx only-allow pnpm",
     "docs:generate": "node ./scripts/generate-docs.mjs",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "pnpm typedoc && vitepress build docs",
+    "docs:build": "pnpm docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "engines": {
