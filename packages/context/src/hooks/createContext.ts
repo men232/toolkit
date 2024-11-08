@@ -1,11 +1,30 @@
 import { type InjectionKey, inject, provide } from './provide';
 
 /**
+ * Wrapper around `provide/inject` function to simple usage.
+ *
  * @param providerName - The name(s) of the providing the context.
  *
  * There are situations where context can come from multiple scopes. In such cases, you might need to give an array of names to provide your context, instead of just a single string.
  *
  * @param contextName The description for injection key symbol.
+ *
+ * @example
+ * const [injectTraceId, provideTraceId] = createContext<string>('withContext');
+ *
+ * // this function will returns the same trace if for execution context
+ * export const useTraceId = () => {
+ *   let traceId = injectTraceId(null);
+ *
+ *   if (!traceId) {
+ *     traceId = uuidv4();
+ *     provideTraceId(traceId);
+ *   }
+ *
+ *   return traceId;
+ * };
+ *
+ * @group Main
  */
 export function createContext<ContextValue>(
   providerName: string | string[],
