@@ -30,8 +30,13 @@ export default defineConfig({
         v => !EXCLUDE_TYPEDOC_GROUPS.has((v as any).text),
       );
 
-      if (pkg.items.length === 1 && pkg.items[0].text === 'Main') {
-        pkg.items = pkg.items[0].items;
+      const mainGroupIndex = pkg.items.findIndex(v => v.text === 'Main');
+
+      if (mainGroupIndex > -1) {
+        const mainGroupItems = pkg.items[mainGroupIndex].items;
+
+        pkg.items.splice(mainGroupIndex, 1);
+        pkg.items = [...mainGroupItems, ...pkg.items];
       }
 
       return pkg;

@@ -1,8 +1,10 @@
+import { defer } from '@andrew_l/toolkit';
 import { describe, expect, test } from 'vitest';
 import {
   bindContext,
-  getCurrentInstance,
+  getCurrentScope,
   inject,
+  onScopeDispose,
   provide,
   withContext,
 } from '.';
@@ -10,24 +12,34 @@ import {
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe('withContext', () => {
-  test('has instance - first level async', async () => {
+  test('this saved', async () => {
+    const thisValue = Symbol();
+
+    const fn = await withContext(function (this: any) {
+      return this;
+    });
+
+    expect(fn.call(thisValue)).toBe(thisValue);
+  });
+
+  test('has scope - first level async', async () => {
     const result = await withContext(async () => {
       await wait(10);
-      return !!getCurrentInstance();
+      return !!getCurrentScope();
     })();
 
     expect(result).toBe(true);
   });
 
-  test('has instance - second level async', async () => {
+  test('has scope - second level async', async () => {
     const level2 = async () => {
       await wait(10);
-      return getCurrentInstance();
+      return getCurrentScope();
     };
 
     const result = await withContext(async () => {
       await wait(10);
-      return getCurrentInstance() === (await level2());
+      return getCurrentScope() === (await level2());
     })();
 
     expect(result).toBe(true);
@@ -111,5 +123,79 @@ describe('withContext', () => {
     })();
 
     expect(result).toEqual([1, 2]);
+  });
+
+  test('onScopeDispose', () => {
+    let disposed = false;
+
+    const result = withContext(() => {
+      onScopeDispose(() => {
+        disposed = true;
+      });
+
+      return disposed;
+    })();
+
+    expect(result).toEqual(false);
+    expect(disposed).toEqual(true);
+  });
+
+  test('onScopeDispose when general all runs ends', async () => {
+    const tack: string[] = [];
+
+    await withContext(() => {
+      onScopeDispose(() => {
+        tack.push('dispose: main');
+      });
+
+      const q = defer<void>();
+
+      setTimeout(
+        bindContext(() => {
+          tack.push('start: setTimeout');
+          q.resolve();
+        }),
+        10,
+      );
+
+      return q.promise;
+    })();
+
+    expect(tack).toStrictEqual(['start: setTimeout', 'dispose: main']);
+  });
+
+  test('onScopeDispose once', async () => {
+    const tack: string[] = [];
+    const q = defer<void>();
+
+    withContext(() => {
+      onScopeDispose(() => {
+        tack.push('disposed: main');
+      });
+
+      tack.push('start: main');
+
+      setTimeout(
+        bindContext(() => {
+          onScopeDispose(() => {
+            tack.push('dispose: setTimeout');
+          });
+
+          tack.push('start: setTimeout');
+
+          q.resolve();
+        }),
+        10,
+      );
+    })();
+
+    await q.promise;
+
+    expect(tack).toStrictEqual([
+      'start: main',
+      'disposed: main',
+      'start: setTimeout',
+      'dispose: setTimeout',
+    ]);
   });
 });

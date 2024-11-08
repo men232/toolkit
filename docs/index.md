@@ -21,6 +21,9 @@ features:
   - title: Service Actor
     details: Forget about passing data like trace IDs between functions.
     link: /reference/@andrew_l/service-actor/
+  - title: Mongo Transaction
+    details: Manages side effects in MongoDB transactions, rollback on failure and preventing duplicates on retries.
+    link: /reference/@andrew_l/mongo-transaction/
 ---
 
 ## Getting Started
