@@ -17,4 +17,5 @@ export * from './qs';
 export * from './retryOnError';
 export * from './str';
 export * from './toError';
+export * from './typeOf';
 export * from './types/index';
