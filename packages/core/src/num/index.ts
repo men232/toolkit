@@ -1,5 +1,6 @@
 export * from './checkBitmask';
 export * from './clamp';
+export * from './findMean';
 export * from './formatMoney';
 export * from './formatNumber';
 export * from './getRandomInt';
