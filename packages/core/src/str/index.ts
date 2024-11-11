@@ -8,6 +8,7 @@ export * from './getWords';
 export * from './hasProtocol';
 export * from './kebabCase';
 export * from './lowerCase';
+export * from './maskingEmail';
 export * from './maskingWords';
 export * from './randomString';
 export * from './snakeCase';
