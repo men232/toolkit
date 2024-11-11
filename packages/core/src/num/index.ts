@@ -9,3 +9,4 @@ export * from './parsePercentage';
 export * from './percentOf';
 export * from './round2digits';
 export * from './timestamp';
+export * from './timestampToDate';
