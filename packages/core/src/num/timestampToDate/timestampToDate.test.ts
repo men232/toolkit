@@ -3,7 +3,7 @@ import { timestampToDate } from './timestampToDate';
 
 describe('timestampToDate', () => {
   test('from number', () => {
-    expect(timestampToDate(0).getTime()).toBe(new Date(0).getTime());
+    expect(timestampToDate(0)!.getTime()).toBe(new Date(0).getTime());
   });
 
   test('invalid', () => {
