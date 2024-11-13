@@ -69,6 +69,7 @@ const SYM_API = Symbol();
  *   console.log(actor);
  * });
  *
+ * @group Main
  */
 export function serviceActor<T extends Record<PropertyKey, any> = {}>(
   factory?: () => T,
