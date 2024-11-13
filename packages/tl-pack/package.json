@@ -1,6 +1,7 @@
 {
   "name": "@andrew_l/tl-pack",
   "version": "0.1.9",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "unbuild",
