@@ -1,5 +1,5 @@
 /**
- * Check if bits are set in bitmask
+ * Check if bits are set in `number` bitmask
  *
  * @example
  * const scope = (1 << 1 | 1 << 2 | 1 << 3);
@@ -12,6 +12,8 @@
 export function checkBitmask(scope: number, flag: number): boolean;
 
 /**
+ * Check if bits are set in `bigint` bitmask
+ *
  * @example
  * const scope = (1n << 1n | 1n << 2n | 1n << 3n);
  *

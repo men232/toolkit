@@ -192,7 +192,6 @@ declare module '@andrew_l/ioc' {
   },
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 function isConstructable(obj: any): obj is Function {
   // https://stackoverflow.com/a/46320004
   return !!obj.prototype && !!obj.prototype.constructor.name;
