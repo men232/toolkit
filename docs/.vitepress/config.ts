@@ -8,6 +8,7 @@ const EXCLUDE_TYPEDOC_GROUPS = new Set([
   'Type Aliases',
   'Variables',
   'Functions',
+  'Enumerations',
 ]);
 
 // https://vitepress.dev/reference/site-config

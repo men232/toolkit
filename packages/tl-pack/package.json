@@ -1,0 +1,38 @@
+{
+  "name": "@andrew_l/tl-pack",
+  "version": "0.1.9",
+  "type": "module",
+  "scripts": {
+    "build": "unbuild",
+    "prepack": "unbuild",
+    "test": "vitest run --typecheck",
+    "test:watch": "vitest watch --typecheck"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./stream": {
+      "import": "./dist/stream.mjs",
+      "require": "./dist/stream.cjs",
+      "types": "./dist/stream.d.ts"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "pako": "^2.1.0",
+    "@andrew_l/toolkit": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pako": "^2.0.3",
+    "typescript": "catalog:",
+    "unbuild": "catalog:",
+    "vitest": "catalog:"
+  }
+}
