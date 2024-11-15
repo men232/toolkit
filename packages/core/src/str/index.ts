@@ -4,6 +4,7 @@ export * from './convertToUnit';
 export * from './escapeHtml';
 export * from './escapeNumeric';
 export * from './escapeRegExp';
+export * from './getInitials';
 export * from './getWords';
 export * from './hasProtocol';
 export * from './hex';
