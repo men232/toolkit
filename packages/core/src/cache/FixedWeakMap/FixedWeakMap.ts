@@ -1,7 +1,31 @@
 import { assertCapacity } from '../FixedMap/utils';
 
 /**
- * Same as `WeakMap` but with fixed capacity
+ * A `WeakMap`-like class with a fixed capacity. Entries are automatically removed
+ * when the map exceeds the specified capacity. Unlike a regular `WeakMap`, the
+ * entries are limited to a defined size, and the oldest entries are evicted when
+ * new ones are added after the capacity is reached.
+ *
+ * This class behaves similarly to a `WeakMap`, but with the additional constraint
+ * of a fixed size. It automatically removes the least recently added key-value
+ * pairs when the map grows beyond the specified capacity.
+ *
+ * @example
+ * const cache = new FixedWeakMap<object, number>(3);
+ * const obj1 = { id: 1 };
+ * const obj2 = { id: 2 };
+ * const obj3 = { id: 3 };
+ *
+ * cache.set(obj1, 1);
+ * cache.set(obj2, 2);
+ * cache.set(obj3, 3);
+ *
+ * const obj4 = { id: 4 };
+ * cache.set(obj4, 4); // obj1 will be evicted as it's the oldest
+ *
+ * console.log(cache.get(obj1)); // undefined
+ * console.log(cache.get(obj2)); // 2
+ * console.log(cache.get(obj4)); // 4
  *
  * @group Cache
  */

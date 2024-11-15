@@ -1,5 +1,6 @@
 export * from './array';
 export * from './assert';
+export * from './cache';
 export * from './captureStackTrace';
 export * from './catchError';
 export * from './colors';

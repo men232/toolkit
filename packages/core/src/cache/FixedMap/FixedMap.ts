@@ -1,7 +1,22 @@
 import { assertCapacity } from './utils';
 
 /**
- * Same as `Map` but with fixed capacity
+ * A Map-like class with a fixed capacity, where entries are automatically removed
+ * when the capacity is exceeded. This allows for efficient caching behavior,
+ * ensuring that the map never grows beyond the specified capacity.
+ *
+ * When the map reaches its capacity, the oldest entries (in insertion order)
+ * are removed to make room for new ones.
+ *
+ * @example
+ * const cache = new FixedMap<string, number>(3);
+ * cache.set('a', 1);
+ * cache.set('b', 2);
+ * cache.set('c', 3);
+ * cache.set('d', 4); // 'a' will be evicted, as it's the oldest entry
+ *
+ * console.log(cache.get('a')); // undefined
+ * console.log(cache.get('b')); // 2
  *
  * @group Cache
  */

@@ -7,9 +7,6 @@ import {
 import type { ArgToKeyOptions } from '../createWithCache/utils';
 import { TimeBucket } from '../TimeBucket';
 
-/**
- * @group Cache
- */
 export interface WithCacheBucketOptions extends Partial<ArgToKeyOptions> {
   /**
    * Define cached records drops interval.

@@ -7,9 +7,6 @@ import {
 } from '../createWithCache';
 import type { ArgToKeyOptions } from '../createWithCache/utils';
 
-/**
- * @group Cache
- */
 export interface WithCacheOptions extends Partial<ArgToKeyOptions> {
   /**
    * Custom cache pointer

@@ -7,9 +7,6 @@ import {
 import type { ArgToKeyOptions } from '../createWithCache/utils';
 import { FixedMap } from '../FixedMap';
 
-/**
- * @group Cache
- */
 export interface WithCacheFixedOptions extends Partial<ArgToKeyOptions> {
   /**
    * Capacity of cached records

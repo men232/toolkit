@@ -7,9 +7,6 @@ import {
 import type { ArgToKeyOptions } from '../createWithCache/utils';
 import { LruCache } from '../LruCache';
 
-/**
- * @group Cache
- */
 export interface WithCacheLruOptions extends Partial<ArgToKeyOptions> {
   capacity: number;
   cachePointer?: WithCachePointer;

@@ -1,7 +1,15 @@
 import { isNumber } from '@/is';
 
 /**
- * Simple implementation of LRU cache
+ * A simple implementation of a Least Recently Used (LRU) cache. This cache stores
+ * key-value pairs and ensures that the most recently accessed items are kept
+ * in the cache, while the least recently used items are evicted when the cache
+ * reaches its capacity.
+ *
+ * The cache is implemented as a doubly linked list where the head represents
+ * the most recently accessed item, and the tail represents the least recently
+ * accessed item. When the cache is full, the least recently used item (tail)
+ * is removed to make space for new items.
  *
  * @group Cache
  */

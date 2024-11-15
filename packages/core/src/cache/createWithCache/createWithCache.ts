@@ -10,14 +10,8 @@ interface CreateWithCacheOptions<T extends AnyFunction>
   fn: T;
 }
 
-/**
- * @group Cache
- */
 export type WithCachePointer = object | Function | symbol;
 
-/**
- * @group Cache
- */
 export interface WithCacheStorage {
   get(key: unknown): unknown;
   has(key: unknown): boolean;
@@ -25,9 +19,6 @@ export interface WithCacheStorage {
   set(key: unknown, value: unknown): void;
 }
 
-/**
- * @group Cache
- */
 export interface WithCache {
   $cache: {
     getBucket: () => WithCacheStorage;
@@ -36,14 +27,8 @@ export interface WithCache {
   };
 }
 
-/**
- * @group Cache
- */
 export type WithCacheResult<T extends AnyFunction> = T & WithCache;
 
-/**
- * @group Cache
- */
 export function createWithCache<T extends AnyFunction>({
   fn,
   getPointer,
