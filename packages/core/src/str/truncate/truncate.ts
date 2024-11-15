@@ -29,6 +29,8 @@
  * // Handles strings with no spaces gracefully
  * truncate("ThisStringHasNoSpacesButIsVeryLong", 10);
  * // Returns: "ThisString..."
+ *
+ * @group Strings
  */
 export function truncate(
   value: string,
