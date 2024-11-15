@@ -1,12 +1,23 @@
 import { getWords } from '../getWords';
 
 /**
- * Pretty simple words masking.
+ * Masks the middle characters of each word in the given string, leaving the first and last characters intact.
+ * The characters in the middle of each word are replaced by a specified masking character (default is `*`).
  *
- * ⚠️ Returns empty string when invalid value passed.
+ * ⚠️ If the provided value is not a valid string, the function returns an empty string.
+ *
+ * **Note**: This function does not perform any validation or checks for non-alphabetic characters within words.
+ * It simply masks all characters between the first and last character of each word.
+ *
+ * @param {string} value - The input string containing words to be masked.
+ * @param {string} [withChar='*'] - The character used to replace the middle characters of each word. Default is `*`.
+ *
+ * @returns {string} The input string with middle characters of words masked, or an empty string if the input is invalid.
  *
  * @example
  * maskingWords('hello world'); // 'h**o w**d'
+ * maskingWords('John Doe');    // 'J**n D**e'
+ * maskingWords('a b c');       // '* * *'
  *
  * @group Strings
  */

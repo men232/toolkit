@@ -1,14 +1,34 @@
 /**
- * Allows you to create strings with specified formats.
+ * Formats a string by replacing format specifiers with values from the provided arguments.
+ * It supports a variety of format types, including strings, numbers, and objects.
  *
- * ⚠️ This function mutates arguments. Anything that is not included in the formatting will be added to `unusedArgs` array.
+ * ⚠️ This function mutates the `unusedArgs` array, which will contain any arguments
+ * that were not used in the formatting process.
+ *
+ * @param line - The format string containing placeholders to be replaced by arguments.
+ *   Format specifiers are indicated by the `%` symbol, followed by a character indicating
+ *   the type of argument to insert (e.g., `%s` for string, `%d` for integer, `%f` for float).
+ * @param args - The array of arguments to replace the format specifiers in the string.
+ *   The function will iterate over the arguments and substitute them into the format string
+ *   in the order they appear.
+ * @param [unusedArgs=[]] - The array that will collect any unused arguments
+ *   that were not needed for formatting. This array is mutated by the function.
+ *
+ * @returns {string} The formatted string with placeholders replaced by corresponding arguments.
  *
  * @example
  * const unusedArgs: any[] = [];
  *
- * console.log(sprintf('Hello %s', ['World', 'Great'], unusedArgs))
+ * console.log(sprintf('Hello %s', ['World', 'Great'], unusedArgs));
+ * // Output: 'Hello World'
+ * console.log(unusedArgs);
+ * // Output: ['Great']
  *
- * console.log(unusedArgs); // ['Great']
+ * @example
+ * console.log(sprintf('I have %d apples and %f.5 liters of water.', [5, 3.2], unusedArgs));
+ * // Output: 'I have 5 apples and 3.2 liters of water.'
+ * console.log(unusedArgs);
+ * // Output: []
  *
  * @group Strings
  */

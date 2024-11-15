@@ -7,10 +7,18 @@ const htmlEscapes: Record<number, string> = Object.freeze({
 });
 
 /**
- * Sanitize a string to escape html syntax
+ * Sanitizes a string by escaping HTML syntax to prevent XSS (Cross-site scripting) attacks.
+ * Converts special HTML characters like `<`, `>`, `&`, etc., into their corresponding HTML entities.
  *
  * @example
- * escapeHtml('<b>Strong</b> man.') // '&lt;b&gt;Strong&lt;/&gt; man.'
+ * // Escaping HTML tags to prevent HTML injection
+ * escapeHtml('<b>Strong</b> man.'); // '&lt;b&gt;Strong&lt;/b&gt; man.'
+ *
+ * // Escaping other HTML special characters
+ * escapeHtml('<script>alert("XSS")</script>'); // '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'
+ *
+ * @param unsafe - The string to be sanitized (escaped).
+ * @returns A sanitized string with HTML special characters replaced by their corresponding HTML entities.
  *
  * @group Strings
  */
