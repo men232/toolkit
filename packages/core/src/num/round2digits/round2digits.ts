@@ -1,10 +1,26 @@
 /**
- * Round a number to digits
+ * Rounds a given number to a specified number of decimal places.
+ * The rounding is done using a method that shifts the decimal point, rounds the number, and then shifts it back.
+ *
+ * @param {number} value - The number to be rounded.
+ * @param {number} [digits=2] - The number of decimal places to round to. Defaults to 2 if not provided.
+ * @returns {number} The rounded number with the specified number of decimal places.
  *
  * @example
- * round2digits(3.3333333, 1); // 3.3
- * round2digits(3.3333333, 2); // 3.33
- * round2digits(3.3333333, 3); // 3.333
+ * round2digits(3.3333333, 1);
+ * // Returns: 3.3
+ *
+ * @example
+ * round2digits(3.3333333, 2);
+ * // Returns: 3.33
+ *
+ * @example
+ * round2digits(3.3333333, 3);
+ * // Returns: 3.333
+ *
+ * @example
+ * round2digits(3.789, 0);
+ * // Returns: 4 (rounded to the nearest integer)
  *
  * @group Numbers
  */

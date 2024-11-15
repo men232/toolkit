@@ -1,8 +1,30 @@
 /**
- * Humanize a big number like 100K 1.2M
+ * Humanizes large numbers into a more readable format using suffixes like K, M, B, T (thousand, million, billion, trillion).
+ *
+ * @param {number | string} input - The number or string to humanize.
+ * If the input is a string, it will be parsed into a number.
+ * @param {number} [decimals=1] - The number of decimal places to display. Default is 1.
+ * @returns {string} A humanized string representation of the number.
  *
  * @example
- * humanize(1000000); // '1M'
+ * humanize(1000000);
+ * // Returns: '1M'
+ *
+ * @example
+ * humanize(1234567890);
+ * // Returns: '1.2B'
+ *
+ * @example
+ * humanize(9876543210, 2);
+ * // Returns: '9.88B'
+ *
+ * @example
+ * humanize(500);
+ * // Returns: '500'
+ *
+ * @example
+ * humanize('1000000');
+ * // Returns: '1M'
  *
  * @group Numbers
  */

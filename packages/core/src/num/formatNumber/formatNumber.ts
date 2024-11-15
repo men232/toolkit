@@ -20,10 +20,25 @@ const defaultFormat: FormatNumber = {
 const regExp = /\B(?=(\d{3})+(?!\d))/g;
 
 /**
- * Simple formatting money number
+ * Formats a number (or string representing a number) into a string with thousands separators and optional decimal points.
+ * The function supports customizing the formatting style using the `FormatNumber` object.
+ *
+ * @param {number | string} value - The number or string to format.
+ * If a string is passed, it is parsed to a number before formatting.
+ * @param {FormatNumber} [format=defaultFormat] - The format settings for thousands and decimal separators.
+ * By default, it uses the `{ thousands: ',', decimal: '.' }`.
+ *
+ * @returns {string} The formatted number string with appropriate thousands separators and decimal formatting.
  *
  * @example
- * formatNumber(1500); // '1 500'
+ * // Format a number with default thousands separator
+ * formatNumber(1500);
+ * // Returns: '1,500'
+ *
+ * @example
+ * // Format a number with a custom format (e.g., using a comma as the thousands separator)
+ * formatNumber(1500.75, { thousands: ' ', decimal: '.' });
+ * // Returns: '1 500.75'
  *
  * @group Numbers
  */
