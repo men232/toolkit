@@ -3,6 +3,11 @@
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "dom",
+    "utility",
+    "functions"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",

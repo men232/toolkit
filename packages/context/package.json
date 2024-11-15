@@ -3,6 +3,15 @@
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "async",
+    "context",
+    "local",
+    "storage",
+    "provide",
+    "inject",
+    "hooks"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",

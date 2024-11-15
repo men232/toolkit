@@ -1,4 +1,6 @@
-# Description
+# Description <!-- omit in toc -->
+
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fcontext) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fcontext) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fcontext) <!-- omit in toc -->
 
 Bind async context like vue composition api.
 

@@ -4,13 +4,13 @@
 
 This library is an alternative binary serialization, like MessagePack, inspired by TL (Type Language) from the original VK team. Unlike official TL, it requires no schema for serialization/deserialization in this version.
 
-## Benchmark
+# Benchmark
 
 A bit faster and a bit more compact than **@msgpack/msgpack**
 
 ⚠️ May not be true
 
-## Example
+# Example
 
 ```javascript
 import { BinaryWriter, BinaryReader } from '@andrew_l/tl-pack';

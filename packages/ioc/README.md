@@ -1,4 +1,6 @@
-# Description
+# Description <!-- omit in toc -->
+
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fioc) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fioc) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fioc) <!-- omit in toc -->
 
 Before running the application code, set up the service container. This example auto-imports all `*.service.js` files from the service directories.
 

@@ -5,3 +5,14 @@ This mono repo houses a collection of various useful packages I've developed and
 I am deeply grateful to the open-source community and the authors of these functions, whose work has greatly influenced and inspired these packages. I will definitely find time to mention all the authors and give credit where it's due. This repo is a tribute to the collective effort and collaboration within the tech community.
 
 [Documentation](https://men232.github.io/toolkit)
+
+# Packages
+
+- [Toolkit (Core)](https://men232.github.io/toolkit/reference/@andrew_l/toolkit/)
+- [DOM](https://men232.github.io/toolkit/reference/@andrew_l/dom/)
+- [Context](https://men232.github.io/toolkit/reference/@andrew_l/context/)
+- [Graceful](https://men232.github.io/toolkit/reference/@andrew_l/graceful/)
+- [IOC](https://men232.github.io/toolkit/reference/@andrew_l/ioc/)
+- [Service Actor](https://men232.github.io/toolkit/reference/@andrew_l/service-actor/)
+- [Mongo Transaction](https://men232.github.io/toolkit/reference/@andrew_l/mongo-transaction/)
+- [TL Pack](https://men232.github.io/toolkit/reference/@andrew_l/tl-pack/)

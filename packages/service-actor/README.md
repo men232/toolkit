@@ -1,4 +1,6 @@
-# Description
+# Description <!-- omit in toc -->
+
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fservice-actor) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fservice-actor) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
 
 This package aims to avoid passing data like trace IDs between functions.
 

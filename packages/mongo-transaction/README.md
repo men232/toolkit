@@ -1,4 +1,6 @@
-# Description
+# Description <!-- omit in toc -->
+
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-transaction) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-transaction) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
 
 This package addresses the issue where MongoDB's `session.withTransaction` may call the provided function multiple times if it retries operations.
 
