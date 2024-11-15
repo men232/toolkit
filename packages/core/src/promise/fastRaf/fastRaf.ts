@@ -14,16 +14,24 @@ let fastRafFallbackCallbacks: Set<NoneToVoidFunction> | undefined;
 let fastRafFallbackTimeout: any;
 
 /**
- * Stack request animation frame into single execution callback.
+ * Stacks callbacks for `requestAnimationFrame` into a single execution call.
  *
- * May result in an immediate execution if called from another RAF callback which was scheduled
- * (and therefore is executed) earlier than RAF callback scheduled by `fastRaf`
+ * This function allows multiple `fastRaf` calls to be batched into a single animation frame callback.
+ * The callbacks are executed in the same frame, one after the other. Additionally, if `withTimeoutFallback` is true,
+ * the callbacks will be executed after a fallback timeout if `requestAnimationFrame` is not available.
+ * If called from within another RAF callback, the execution might be immediate.
  *
  * @example
- * // will be called in same requestAnimationFrame
+ * // Callbacks will be executed in the same `requestAnimationFrame` cycle
  * fastRaf(() => console.log(1));
  * fastRaf(() => console.log(2));
  *
+ * // Output:
+ * // 1
+ * // 2
+ *
+ * @param callback The callback function to be executed in the next `requestAnimationFrame`.
+ * @param [withTimeoutFallback=false] Optional flag to execute callbacks after a fallback timeout if `requestAnimationFrame` is not available.
  * @group Promise
  */
 export function fastRaf(

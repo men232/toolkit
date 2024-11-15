@@ -3,25 +3,28 @@ import { toError } from '@/toError';
 import type { AnyFunction } from '@/types';
 
 /**
- * Same as promise but with cancellable feature
+ * A custom promise that supports cancellation.
+ * Allows users to cancel the promise operation before it completes, avoiding unnecessary execution.
+ * This class provides a mechanism to perform asynchronous tasks that can be stopped midway by calling the `cancel` method.
  *
  * @example
  * const task = new CancellablePromise<void>(async (resolve, reject, onCancel) => {
  *   let cancelled = false;
  *   onCancel(() => {
- *     cancelled = true;
+ *     cancelled = true;  // Define the cancellation logic here
  *   });
  *
  *   while (!cancelled) {
- *     await delay(1000);
- *     console.log('handle');
+ *     await delay(1000);  // Simulate async work
+ *     console.log('handling task...');
  *   }
  * });
  *
+ * // Cancel the task after 5 seconds
  * setTimeout(() => task.cancel(), 5000);
  *
- * await task;
- * console.log('complete');
+ * await task;  // This will be cancelled before it completes
+ * console.log('Task completed or cancelled');
  *
  * @group Promise
  */

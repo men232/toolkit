@@ -16,7 +16,13 @@ const idle: (fn: AnyFunction) => void = (() => {
 })();
 
 /**
- * Fast idle capability to run callback at next tick
+ * Executes the provided callback as soon as the event loop is idle.
+ * This function allows you to run tasks at the earliest available opportunity
+ * without blocking the main execution flow, making it ideal for tasks that can
+ * be deferred until the browser is idle or the process is idle.
+ *
+ * It uses `requestIdleCallback` if available, otherwise it falls back to
+ * `requestAnimationFrame`, `process.nextTick`, or `setTimeout` depending on the environment.
  *
  * @example
  * fastIdle(() => {
@@ -25,8 +31,11 @@ const idle: (fn: AnyFunction) => void = (() => {
  *
  * console.log('2');
  *
+ * // Output:
  * // 2
  * // 1
+ *
+ * @param callback - The callback function to be executed when the event loop is idle.
  *
  * @group Promise
  */

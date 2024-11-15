@@ -1,6 +1,10 @@
 import { Queue } from '../Queue';
 
 /**
+ * An asynchronous queue implementation that can be iterated using an async iterator.
+ * It allows items to be added (`put`) and consumed asynchronously, with the ability to signal when the queue is closed.
+ * This class supports async iteration, enabling users to process items as they become available, and provides an end signal once the queue is closed.
+ *
  * @example
  * const textStream = new AsyncIterableQueue<string>();
  *

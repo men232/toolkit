@@ -2,23 +2,36 @@ import { isFunction, isPromise } from '@/is';
 import type { Awaitable } from '@/types';
 
 /**
- * Throw an error if provided promise or callback has not been resolved in timeout
+ * Throws an error if the provided promise or callback is not resolved within the specified timeout period.
+ *
+ * This function can be used to ensure that an asynchronous operation does not take too long to complete.
+ * If the operation exceeds the specified time limit, the provided `timeoutError` is thrown.
  *
  * @example
- * // throw error if no response within 1 second
+ * // Example usage: Throw an error if no response is received within 1 second
  * await timeout(
- *   1000,
+ *   1000, // Timeout duration in milliseconds
  *   (signal) => {
  *     const account = await http.get('/api/users/me');
  *
- *     if (signal.aborted) return;
+ *     if (signal.aborted) return; // If the timeout occurs, abort the operation
  *
  *     const statistics = await http.get('/api/users/me/statistics');
  *
- *     return { ...account, statistics }
+ *     return { ...account, statistics };
  *   },
- *   new Error('Request account timeout')
+ *   new Error('Request account timeout') // Custom error to throw on timeout
  * );
+ *
+ * @param ms - The maximum time (in milliseconds) to wait for the promise or callback to resolve.
+ * @param promiseOrCallback - The asynchronous operation to execute. This can either be:
+ *   - A `Promise` that will be awaited until completion, or
+ *   - A function that takes an `AbortSignal` and returns a `Promise` or a value.
+ * @param timeoutError - The error that will be thrown if the timeout is reached before the promise or callback resolves.
+ *   (Defaults to `Error('Timeout')` if not provided).
+ * @returns A `Promise` that resolves with the result of the provided `promiseOrCallback`, or rejects with the `timeoutError` if the timeout occurs.
+ *
+ * @throws {Error} - Throws the `timeoutError` if the operation exceeds the specified timeout.
  *
  * @group Promise
  */

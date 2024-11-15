@@ -7,6 +7,7 @@ export * from './CancellablePromise';
 export * from './defer';
 export * from './delay';
 export * from './fastIdle';
+export * from './fastRaf';
 export * from './nextTickIteration';
 export * from './Queue';
 export * from './SimpleEventEmitter';

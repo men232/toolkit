@@ -1,9 +1,19 @@
 import { nextTickIteration } from '@/promise';
 
 /**
- * Same as `arr.filter()` but with async predicate
+ * Asynchronously filters an array using an async predicate function.
  *
- * Basic idea to avoid block event loop while iteration over large array.
+ * This function processes an array using an async function as the predicate,
+ * allowing you to avoid blocking the event loop while iterating over large arrays.
+ * It ensures that the iteration happens asynchronously with minimal impact on the event loop,
+ * making it useful for processing large datasets or performing async operations on each element.
+ *
+ * @param array - The array to be filtered.
+ * @param predicate - The async predicate function.
+ *  It takes three arguments: the current value, the index of the current value, and the full array.
+ *  It should return a boolean value or a promise that resolves to a boolean indicating whether the value should be kept in the result array.
+ *
+ * @returns {Promise<T[]>} A promise that resolves to a new array containing the elements that satisfy the predicate.
  *
  * @example
  * const users = Array.from({ length: 100000 }).map((_, idx) => ({
