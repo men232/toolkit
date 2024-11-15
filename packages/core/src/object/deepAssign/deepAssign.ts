@@ -1,7 +1,17 @@
 import { isObject } from '@/is';
 
 /**
- * Same as `Object.assign()` but deep
+ * Performs a deep merge of the source object into the destination object.
+ *
+ * This function recursively copies properties from the source object to the destination object.
+ * If a property is an object itself, it will recursively merge its properties. Otherwise,
+ * the value will be directly assigned to the destination object.
+ *
+ * ⚠️ **Mutates the destination object**: The destination object is modified in place.
+ *
+ * @param {object} dest - The target object that will be modified with properties from the source.
+ * @param {object} source - The source object whose properties will be copied to the destination.
+ * @returns {void} This function does not return a value, as it mutates the destination object.
  *
  * @example
  * const user = {
@@ -12,7 +22,17 @@ import { isObject } from '@/is';
  *
  * deepAssign(user, { data: { c: 3 } });
  *
- * console.log(user); // '{ id: 1, name: 'Andrew', data: { a: 1, b: 2, c: 3 } }'
+ * console.log(user);
+ * // Outputs: '{ id: 1, name: 'Andrew', data: { a: 1, b: 2, c: 3 } }'
+ *
+ * @example
+ * const config = { theme: { dark: true }, version: '1.0' };
+ * const updates = { theme: { light: false }, version: '2.0' };
+ *
+ * deepAssign(config, updates);
+ *
+ * console.log(config);
+ * // Outputs: '{ theme: { dark: true, light: false }, version: '2.0' }'
  *
  * @group Object
  */
