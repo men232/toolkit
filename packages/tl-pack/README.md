@@ -1,6 +1,6 @@
-# TLPack for JavaScript/NodeJs <!-- omit in toc -->
+# Description <!-- omit in toc -->
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Ftl-pack) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Ftl-pack) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Ftl-pack)
+![license](https://img.shields.io/npm/l/%40andrew_l%2Ftl-pack) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Ftl-pack) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
 
 This library is an alternative binary serialization, like MessagePack, inspired by TL (Type Language) from the original VK team. Unlike official TL, it requires no schema for serialization/deserialization in this version.
 
