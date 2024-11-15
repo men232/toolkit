@@ -21,9 +21,9 @@ export function channelsToHex(
   const [r, g, b, a] = channels;
 
   const outParts = [
-    r.toString(16).toUpperCase(),
-    g.toString(16).toUpperCase(),
-    b.toString(16).toUpperCase(),
+    r.toString(16).toUpperCase().padStart(2, '0'),
+    g.toString(16).toUpperCase().padStart(2, '0'),
+    b.toString(16).toUpperCase().padStart(2, '0'),
   ];
 
   if (withAlpha && isNumber(a)) {
@@ -31,16 +31,10 @@ export function channelsToHex(
       Math.round(a * 255)
         .toString(16)
         .substring(0, 2)
-        .toUpperCase(),
+        .toUpperCase()
+        .padStart(2, '0'),
     );
   }
-
-  // Pad single-digit output values
-  outParts.forEach(function (part, i) {
-    if (part.length === 1) {
-      outParts[i] = '0' + part;
-    }
-  });
 
   return '#' + outParts.join('');
 }
