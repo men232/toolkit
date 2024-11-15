@@ -20,7 +20,7 @@ export interface Defer<T = unknown> {
  *
  * @group Promise
  */
-export function defer<T>(): Defer<T> {
+export function defer<T = void>(): Defer<T> {
   let resolve: any;
   let reject: any;
 
