@@ -23,3 +23,4 @@ export * from './startCase';
 export * from './strAssign';
 export * from './truncate';
 export * from './twemojiRegex';
+export * from './wrapText';
