@@ -60,7 +60,7 @@ export function withResolve<
     const defers = cache.get(cacheKey) || [];
     const size = defers.length;
 
-    const q = defer();
+    const q = defer<unknown>();
     defers.push(q);
     cache.set(cacheKey, defers);
 
