@@ -18,3 +18,4 @@ export * from './snakeCase';
 export * from './sprintf';
 export * from './startCase';
 export * from './strAssign';
+export * from './truncate';
