@@ -9,6 +9,7 @@ export * from './getWords';
 export * from './hasProtocol';
 export * from './hex';
 export * from './isOneEmoji';
+export * from './isoToFlagEmoji';
 export * from './kebabCase';
 export * from './lowerCase';
 export * from './maskingEmail';
