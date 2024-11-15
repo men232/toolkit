@@ -1,7 +1,7 @@
 import { isFunction } from '@/is';
 import type { AnyFunction, Fn } from '@/types';
 
-const defaultWindow = (globalThis as any)?.window;
+const defaultWindow = (globalThis as any)?.window as Window | undefined;
 
 const idle: (fn: AnyFunction) => void = (() => {
   if (defaultWindow?.requestIdleCallback) {

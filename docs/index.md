@@ -9,6 +9,9 @@ features:
   - title: Core
     details: General utility functions
     link: /reference/@andrew_l/toolkit/
+  - title: DOM
+    details: Utility functions to simplify animations, clipboard operations, and smooth scrolling.
+    link: /reference/@andrew_l/dom/
   - title: Context
     details: Like composition api but for Node.
     link: /reference/@andrew_l/context/

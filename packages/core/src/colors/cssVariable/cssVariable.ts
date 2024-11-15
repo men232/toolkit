@@ -1,6 +1,6 @@
 import { noop } from '@/is';
 
-const defaultWindow = (globalThis as any)?.window;
+const defaultWindow = (globalThis as any)?.window as Window | undefined;
 
 /**
  * Create a getter of css variable for container

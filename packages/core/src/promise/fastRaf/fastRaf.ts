@@ -4,7 +4,7 @@ type NoneToVoidFunction = () => void;
 
 const FAST_RAF_TIMEOUT_FALLBACK_MS = 300;
 
-const defaultWindow = (globalThis as any)?.window;
+const defaultWindow = (globalThis as any)?.window as Window | undefined;
 const raf =
   defaultWindow?.requestAnimationFrame ||
   ((cb: AnyFunction) => setTimeout(cb, 0));
