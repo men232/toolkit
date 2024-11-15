@@ -8,12 +8,22 @@ type ItemType<T> =
       : Exclude<T, null | undefined>;
 
 /**
- * Converts value into array
+ * Converts a value into an array. This function handles different types of input,
+ * converting them to arrays as follows:
+ * - If the value is already an array, it returns it as-is.
+ * - If the value is a string, it splits the string by commas and trims the elements.
+ * - If the value is null or undefined, it returns an empty array.
+ * - Otherwise, it wraps the value in an array.
  *
  * @example
- * function sum(value: number | number[]) {
- *   return arrayable(value).reduce((a, b) => a + b, 0);
- * }
+ * arrayable(42); // [42]
+ * arrayable('a, b, c'); // ['a', 'b', 'c']
+ * arrayable([1, 2, 3]); // [1, 2, 3]
+ * arrayable(null); // []
+ * arrayable(undefined); // []
+ *
+ * @param value The value to convert into an array. It can be of any type.
+ * @returns An array derived from the input value.
  *
  * @group Array
  */

@@ -1,12 +1,19 @@
 import { isNumber } from '@/is';
 
 /**
- * Calculate average value from numbers array
+ * Calculates the average value from an array of numbers.
  *
- * Returns `0` when empty values array.
+ * The function sums up all valid numbers in the array and divides by the count of those valid numbers.
+ * If the array is empty or contains no valid numbers, it returns `0`.
  *
  * @example
  * avg([5, 5, 5]); // 5
+ * avg([10, 20, 30]); // 20
+ * avg([1, 2, 'three', 4]); // 2.33 (ignores non-numeric values)
+ * avg([]); // 0
+ *
+ * @param values An array of numbers (could include invalid values, which will be ignored).
+ * @returns The average value of the valid numbers in the array, or `0` if no valid numbers exist.
  *
  * @group Array
  */
