@@ -28,7 +28,7 @@ export { getCurrentScope } from './scope';
 export function withContext<T extends AnyFunction>(fn: T, detached = false): T {
   return function (this: any, ...args: any[]) {
     const scope = createScope(detached);
-    return scope.run(fn.bind(this, args));
+    return scope.run(fn.bind(this, ...args));
   } as T;
 }
 

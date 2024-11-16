@@ -12,7 +12,7 @@ import {
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 describe('withContext', () => {
-  test('this saved', async () => {
+  test('should keep this', async () => {
     const thisValue = Symbol();
 
     const fn = await withContext(function (this: any) {
@@ -22,7 +22,17 @@ describe('withContext', () => {
     expect(fn.call(thisValue)).toBe(thisValue);
   });
 
-  test('has scope - first level async', async () => {
+  test('should keep arguments', async () => {
+    const thisValue = Symbol();
+
+    const fn = await withContext(function (this: any, ...args: any[]) {
+      return args;
+    });
+
+    expect(fn(1, 2, 3, 4, 5)).toStrictEqual([1, 2, 3, 4, 5]);
+  });
+
+  test('should have context at first level async', async () => {
     const result = await withContext(async () => {
       await wait(10);
       return !!getCurrentScope();
@@ -31,7 +41,7 @@ describe('withContext', () => {
     expect(result).toBe(true);
   });
 
-  test('has scope - second level async', async () => {
+  test('should have context at the second level async', async () => {
     const level2 = async () => {
       await wait(10);
       return getCurrentScope();
@@ -45,7 +55,7 @@ describe('withContext', () => {
     expect(result).toBe(true);
   });
 
-  test('provide/inject', async () => {
+  test('should inject', async () => {
     const level2 = async () => {
       await wait(10);
       return inject('key1');
@@ -64,7 +74,7 @@ describe('withContext', () => {
     expect(result).toBe(true);
   });
 
-  test('second context should to affect to parent', async () => {
+  test('should not affects child injection to parent context', async () => {
     const level2 = withContext(async () => {
       await wait(10);
 
@@ -84,7 +94,7 @@ describe('withContext', () => {
     expect(result).toEqual([1, undefined]);
   });
 
-  test('isolated context', async () => {
+  test('should isolate context', async () => {
     const level2 = withContext(async () => {
       await wait(10);
       provide('childValue', 2);
