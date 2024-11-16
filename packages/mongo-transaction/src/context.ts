@@ -2,6 +2,7 @@ import {
   type Awaitable,
   asyncForEach,
   catchError,
+  env,
   isFunction,
 } from '@andrew_l/toolkit';
 import { log } from './constants';
@@ -61,24 +62,38 @@ export class TransactionContext<T = any> {
 export async function effectsApply(
   context: TransactionContext,
   reason: string,
-) {
+): Promise<Error | undefined> {
+  let error: Error | undefined;
+
+  const onComplete = (err: Error | undefined) => void (error = err || error);
+
   await asyncForEach(
     context.effects,
-    effect => void applyEffect(context, effect, reason),
+    effect => applyEffect(context, effect, reason).then(onComplete),
     {
       concurrency: 4,
     },
   );
+
+  return error;
 }
 
-export async function effectsRollback(context: TransactionContext) {
+export async function effectsRollback(
+  context: TransactionContext,
+): Promise<Error | undefined> {
+  let error: Error | undefined;
+
+  const onComplete = (err: Error | undefined) => void (error = err || error);
+
   await asyncForEach(
     context.effects,
-    effect => void rollbackEffect(context, effect),
+    effect => rollbackEffect(context, effect).then(onComplete),
     {
       concurrency: 4,
     },
   );
+
+  return error;
 }
 
 export async function applyEffect(
@@ -88,7 +103,7 @@ export async function applyEffect(
 ): Promise<Error | undefined> {
   if (context.applied.has(effect)) return;
 
-  log.info(
+  log.debug(
     '[effect:execute] name = %s, flush = %s, reason = %s',
     effect.name,
     effect.flush,
@@ -98,7 +113,7 @@ export async function applyEffect(
   const [err, effectResult] = await catchError(effect.callback);
 
   if (err) {
-    log.error('[effect:error] name = %s, flush = %s', err);
+    !env.isTest && log.error('[effect:error] name = %s, flush = %s', err);
     return err;
   }
 
@@ -118,7 +133,7 @@ export async function rollbackEffect(
   if (!context.applied.has(effect)) return;
   if (!effect.rollback) return;
 
-  log.info(
+  log.debug(
     '[effect:rollback] name = %s, flush = %s, reason = error',
     effect.name,
     effect.flush,
@@ -127,12 +142,13 @@ export async function rollbackEffect(
   const [err] = await catchError(effect.rollback);
 
   if (err) {
-    log.error(
-      '[effect:rollback] name = %s, flush = %s, reason = error',
-      effect.name,
-      effect.flush,
-      err,
-    );
+    !env.isTest &&
+      log.error(
+        '[effect:rollback] name = %s, flush = %s, reason = error',
+        effect.name,
+        effect.flush,
+        err,
+      );
     return err;
   }
 

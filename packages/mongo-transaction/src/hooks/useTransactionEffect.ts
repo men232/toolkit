@@ -28,7 +28,7 @@ export async function useTransactionEffect(
   };
 
   if (context.effectsCursor < context.effects.length) {
-    log.info(
+    log.debug(
       '[effect:skip] name = %s, flush = %s, reason = cursor',
       effect.name,
       effect.flush,

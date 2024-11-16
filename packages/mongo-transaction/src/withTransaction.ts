@@ -61,14 +61,20 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
 
     processing = true;
 
-    const [cbError, cbResult] = await execute.call(this, args);
+    const [cbError, cbResult] = await execute.apply(this, args);
 
     if (cbError) {
       context.error = cbError;
       await effectsRollback(context);
     } else {
-      context.result = cbResult;
-      await effectsApply(context, 'post');
+      const applyError = await effectsApply(context, 'post');
+
+      if (applyError) {
+        await effectsRollback(context);
+        context.error = applyError;
+      } else {
+        context.result = cbResult;
+      }
     }
 
     processing = false;
@@ -76,7 +82,7 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
     const { result, error } = context;
 
     if (error) {
-      throw error;
+      return Promise.reject(error);
     }
 
     return result;
