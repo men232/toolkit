@@ -37,6 +37,11 @@ export interface EnvParser {
   isStage: boolean;
 
   /**
+   * NODE_ENV is `test`
+   */
+  isTest: boolean;
+
+  /**
    * Returns `true` when environment key has set to `"true"`
    *
    * Returns `defaultValue` when key is not defined
