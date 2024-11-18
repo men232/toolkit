@@ -1,14 +1,14 @@
 import { isPromise } from './is';
 import { toError } from './toError';
 
-type ToCatchResult<T> =
-  T extends Promise<any>
-    ? Promise<CatchSuccessResult<Awaited<T>> | CatchErrorResult>
-    : CatchSuccessResult<T> | CatchErrorResult;
+export type CatchErrorResult<T> =
+  T extends Promise<unknown>
+    ? Promise<OkResult<Awaited<T>> | ErrorResult>
+    : OkResult<T> | ErrorResult;
 
-type CatchErrorResult = [Error, undefined];
+type ErrorResult = [Error, undefined];
 
-type CatchSuccessResult<T> = [undefined, T];
+type OkResult<T> = [undefined, T];
 
 /**
  * You're tired to write `try... catch`, and so are we.
@@ -22,7 +22,7 @@ type CatchSuccessResult<T> = [undefined, T];
  *
  * @group Errors
  */
-export function catchError<T>(fn: () => T): ToCatchResult<T> {
+export function catchError<T>(fn: () => T): CatchErrorResult<T> {
   try {
     const res = fn();
 
@@ -36,7 +36,7 @@ export function catchError<T>(fn: () => T): ToCatchResult<T> {
   }
 }
 
-function onError(error: unknown): CatchErrorResult {
+function onError(error: unknown): ErrorResult {
   const err = toError(error);
   return [err, undefined];
 }
