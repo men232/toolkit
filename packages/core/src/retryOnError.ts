@@ -1,6 +1,8 @@
 import { delay } from './promise/delay';
 import type { AnyFunction } from './types';
 
+const noopShouldRetryBasedOnError = () => true;
+
 export type RetryOnErrorConfig = {
   /**
    * The function to execute before retry attempt; Allows to update parameters for the main function by returning then in an array
@@ -12,7 +14,7 @@ export type RetryOnErrorConfig = {
   /**
    * Error validation function. If returns true, the main callback's considered ready to be executed again
    */
-  shouldRetryBasedOnError: (error: unknown, attempt: number) => boolean;
+  shouldRetryBasedOnError?: (error: unknown, attempt: number) => boolean;
   /**
    * Number of retries until the execution fails
    */
@@ -53,8 +55,8 @@ export type RetryOnErrorConfig = {
 export function retryOnError<T extends AnyFunction>(
   {
     beforeRetryCallback,
+    shouldRetryBasedOnError = noopShouldRetryBasedOnError,
     maxRetriesNumber,
-    shouldRetryBasedOnError,
     delayFactor = 0,
     delayMaxMs = 1000,
     delayMinMs = 100,
