@@ -1,16 +1,25 @@
-# Description <!-- omit in toc -->
+# Service Actor Toolkit <!-- omit in toc -->
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fservice-actor) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fservice-actor) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
 
-This package aims to avoid passing data like trace IDs between functions.
-
-Actor object is structured like a simple, plain JavaScript object. This means it only contains properties (key-value pairs) without any special behaviors, so it can be used as a value in database queries without causing issues.
-
-It also means you can add functions (methods) to Actor object. These custom methods won’t interfere with the data stored in the object or show up when you loop through (iterate over) the object's properties.
+The package is designed to help manage contextual data, such as trace IDs, across functions without explicitly passing them around. This allows you to easily track and manage contexts (like user actions or requests) while keeping your code clean and decoupled from context-passing logic.
 
 [Documentation](https://men232.github.io/toolkit/reference/@andrew_l/service-actor/)
 
-# Example
+<!-- install placeholder -->
+
+## ✨ Features
+
+- **Contextual Data Management**: Allows you to manage context (such as trace IDs or user info) in a central "actor" object.
+- **No Context Passing**: Eliminates the need to manually pass context data between functions.
+- **Custom Methods**: Actor objects can contain custom methods without affecting the data or iteration logic.
+- **Compatible with Databases**: Actor objects are simple JavaScript objects and can be safely used in database queries.
+
+## 🚀 Example Usage
+
+### Setting up Actor Context
 
 ```js
 import { serviceActor } from '@andrew_l/service-actor';
@@ -24,7 +33,7 @@ const { with: withServiceActor, inject: injectServiceActor } = serviceActor(
   }),
 );
 
-// Bind actor context to the request
+// Bind actor context to the request in your middleware
 app.use((ctx, next) => {
   return withServiceActor(
     {
@@ -45,7 +54,9 @@ app.patch('/users/:id', async ctx => {
 });
 ```
 
-# Usage
+In the above example, the `traceId` and `ipAddress` are automatically associated with the current context (request), eliminating the need to manually pass them through function calls.
+
+### Using Service Actor in a Service
 
 ```js
 class UserService {
@@ -59,3 +70,12 @@ class UserService {
   }
 }
 ```
+
+In this example, the `UserService.updateById` method retrieves the `actor` object, which contains contextual information, such as the trace ID, without explicitly passing it as an argument.
+
+## 🤔 Why Use This Package?
+
+1. **No Context Passing:** Automatically manages contextual information (e.g., trace IDs, user info) across different parts of your application.
+2. **Cleaner Code:** Avoids cluttering your function signatures with unnecessary context arguments.
+3. **Flexible and Extendable:** Actor objects can be extended with custom methods to suit your application's needs without interfering with the data.
+4. **Database Safe:** Since the actor is just a plain object, it can be safely stored and used in database queries.

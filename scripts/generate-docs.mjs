@@ -4,7 +4,11 @@ import { glob, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const BLOCK_SEP = '```';
-const installExample = packageName => `::: code-group
+const installExample = packageName =>
+  `
+## 🔧 Installation
+
+::: code-group
 
 ${BLOCK_SEP}sh [npm]
 $ npm add -D ${packageName}
@@ -17,7 +21,7 @@ ${BLOCK_SEP}
 ${BLOCK_SEP}sh [yarn]
 $ yarn add -D ${packageName}
 ${BLOCK_SEP}
-:::`;
+:::`.trim();
 
 async function getPackages() {
   const result = [];
@@ -48,16 +52,14 @@ async function main() {
   for (const pkg of packages) {
     const readmeFile = path.resolve(pkg.path, 'README.md');
     const pkgIndexFile = path.join(docsRoot, pkg.name, 'index.md');
-    const readme = fs.existsSync(readmeFile) ? await readFile(readmeFile) : '';
+    const readme = fs.existsSync(readmeFile)
+      ? await readFile(readmeFile, { encoding: 'utf-8' })
+      : '';
 
-    const content = `
-# Installation
-
-${installExample(pkg.name)}
-
-
-${readme}
-`.trim();
+    const content = readme.replace(
+      '<!-- install placeholder -->',
+      installExample(pkg.name),
+    );
 
     await writeFile(pkgIndexFile, content, { encoding: 'utf-8' });
   }

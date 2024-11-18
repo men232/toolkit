@@ -1,22 +1,32 @@
-# Description <!-- omit in toc -->
+# Mongo Transaction Toolkit <!-- omit in toc -->
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-transaction) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-transaction) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
 
-This package addresses the issue where MongoDB's `session.withTransaction` may call the provided function multiple times if it retries operations.
-
-Often, you may want side effects in this function that can be easily canceled if needed.
+This package solves a common issue with MongoDB's `session.withTransaction`, where the provided function might be executed multiple times due to retries. This can create challenges for managing side effects that need to be rolled back consistently during transaction retries or failures.
 
 [Documentation](https://men232.github.io/toolkit/reference/@andrew_l/mongo-transaction/)
 
-# ⚠️ Cautions
+<!-- install placeholder -->
 
-- Note: If your effects throw an error, the transaction will roll back, except for `flush: post` effects.
-- Always await your `useTransactionEffect()`.
-- Avoid using `useTransactionEffect()` in nested blocks (e.g., inside conditions); it should be called in the main function block, similar to React hooks.
+## ✨ Features
 
-# Example
+- **Transactional Effects:** Easily register actions to be rolled back if a transaction fails.
+- **Retry-Safe Operations:** Avoid duplicating side effects during transaction retries.
+- **Cleanup Support:** Ensure that all registered effects are undone if the transaction is canceled.
 
-This example demonstrates how to leverage the transaction context to automatically roll back actions if an error occurs during the transaction.
+## ⚠️ Cautions
+
+To ensure smooth usage, please keep the following in mind:
+
+- **Error Handling:** If your effects throw an error, the transaction will roll back.
+- **Calls:** Always `await` the promises returned by `useTransactionEffect()`.
+- **Placement:** Do not use `useTransactionEffect()` inside nested blocks like conditionals or loops.
+
+## 🚀 Example: Automatic Rollback of Side Effects
+
+This example demonstrates how to use the transaction context to automatically manage side effects and roll back actions if an error occurs during execution.
 
 ```js
 const confirmOrder = withTransaction(async orderId => {
@@ -36,13 +46,13 @@ const confirmOrder = withTransaction(async orderId => {
     return () => statService.decrement('orders_amount', 1);
   });
 
-  throw new Error('Cancel transaction.');
+  throw new Error('Oops.');
 });
 ```
 
-# Example (Mongo)
+## 🚀 Example: Usage MongoDB
 
-In the example below, we show how to remove a previously created alert if the transaction fails, while also ensuring that duplicate alerts are not triggered when MongoDB retries the transaction. This leverages the transaction context to manage side effects and handle retries effectively.
+Below is an example demonstrating how to use `withMongoTransaction` to manage side effects like creating and removing alerts during a transaction. If the transaction fails, the created alert is automatically removed. Additionally, the logic ensures duplicate alerts are not created during MongoDB's retry mechanism.
 
 ```js
 import mongoose from 'mongoose';
@@ -51,31 +61,34 @@ import {
   withMongoTransaction,
 } from '@andrew_l/mongo-transaction';
 
-const executeTransaction = withMongoTransaction({
+const confirmOrder = withMongoTransaction({
   connection: () => mongoose.connection,
   async fn(session) {
-    const orders = mongoose.connection.collection('orders');
+    // Register an alert as a transactional effect
+    await useTransactionEffect(async () => {
+      const alertId = await alertService.create({
+        title: `Order Confirmed: ${orderId}`,
+      });
 
-    const { modifiedCount } = await orders.updateMany(
-      { status: 'pending' },
-      { $set: { status: 'confirmed' } },
-      { session },
-    );
+      // Define cleanup logic to remove the alert on rollback
+      return () => alertService.removeById(alertId);
+    });
 
-    await useTransactionEffect(
-      async () => {
-        // Publish alert immediately
-        const alertId = await AlertService.publish({
-          text: `${modifiedCount} orders confirmed.`,
-        });
+    // Simulate order processing (e.g., database updates)
+    await db
+      .collection('orders')
+      .updateOne({ orderId }, { $set: { status: 'confirmed' } }, { session });
 
-        // Remove alert if transaction fails
-        return () => AlertService.removeById(alertId);
-      },
-      { flush: 'pre' }, // Use `post` to execute the effect after the transaction function.
-    );
+    // Simulate an error to test rollback
+    throw new Error('Simulated transaction failure');
   },
 });
 
-executeTransaction().catch(console.error);
+confirmOrder('673b907dddd8ae43262aec0d').catch(console.error);
 ```
+
+## 🤔 Why Use This Package?
+
+1. **Safe Retries:** MongoDB retries can cause duplicate actions if not handled properly. This package ensures all side effects are idempotent and reversible.
+2. **Streamlined Rollbacks:** Simplifies managing complex operations by integrating rollback mechanisms into your transaction workflow.
+3. **Ease of Use:** API design mimics React's hooks, making it intuitive for developers familiar with React patterns.

@@ -1,24 +1,33 @@
-# Description <!-- omit in toc -->
+# TL Pack - Binary Serialization Library <!-- omit in toc -->
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Ftl-pack) ![npm version](https://img.shields.io/npm/v/%40andrew_l%2Ftl-pack) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
 
-This library is an alternative binary serialization, like MessagePack, inspired by TL (Type Language) from the original VK team. Unlike official TL, it requires no schema for serialization/deserialization in this version.
+Binary serialization library, inspired by the TL (Type Language) format, created by the VK team. Unlike official TL, this version does not require a schema for serialization/deserialization. It provides a compact and fast alternative to other binary serialization formats like MessagePack.
 
-# Benchmark
+⚡ **Benchmark**: Slightly faster and more compact than **@msgpack/msgpack**  
+⚠️ **Note**: Benchmark claims may vary.
 
-A bit faster and a bit more compact than **@msgpack/msgpack**
+<!-- install placeholder -->
 
-⚠️ May not be true
+## ✨ Features
 
-# Example
+- **No Schema Required**: Unlike traditional serialization formats, this version does not require a predefined schema for object serialization.
+- **Compact & Fast**: Designed to be lightweight and fast, with smaller binary output.
+- **Custom Extension Support**: Easily extend serialization to custom types.
+- **Stream Support**: Supports streaming serialization/deserialization in Node.js.
+
+## 🚀 Example Usage
+
+### Basic Example
 
 ```javascript
 import { BinaryWriter, BinaryReader } from '@andrew_l/tl-pack';
 
 const writer = new BinaryWriter();
 
-// use to compress this part of data
-// writer.writeObjectGzip
+// Serialize an object with various data types
 writer.writeObject({
   null: null,
   uint8: 255,
@@ -55,31 +64,7 @@ console.log(reader.readObject());
  */
 ```
 
-## Supported Types
-
-| Constructor ID | Byte Size          |
-| -------------- | ------------------ |
-| Binary         | 5 + sizeof(object) |
-| BoolFalse      | 1                  |
-| BoolTrue       | 1                  |
-| Null           | 1                  |
-| Date           | 4                  |
-| Vector         | 5 + n \* sizeof(n) |
-| VectorDynamic  | 2 + n \* sizeof(n) |
-| Int8           | 1                  |
-| Int16          | 2                  |
-| Int32          | 4                  |
-| UInt8          | 1                  |
-| UInt16         | 2                  |
-| UInt32         | 4                  |
-| Float          | 4                  |
-| Double         | 8                  |
-| Map            | 2 + sizeof(object) |
-| String         | 5 + sizeof(object) |
-| Repeat         | 5                  |
-| GZIP           | 5 + sizeof(object) |
-
-## Stream Example (NodeJs Only)
+### Stream Example (Node.js Only)
 
 ```javascript
 import { Readable } from 'node:stream';
@@ -104,7 +89,33 @@ decode.on('data', data => console.log('stream', data));
 decode.on('error', console.error);
 ```
 
+## Supported Types
+
+| Constructor ID | Byte Size          |
+| -------------- | ------------------ |
+| Binary         | 5 + sizeof(object) |
+| BoolFalse      | 1                  |
+| BoolTrue       | 1                  |
+| Null           | 1                  |
+| Date           | 4                  |
+| Vector         | 5 + n \* sizeof(n) |
+| VectorDynamic  | 2 + n \* sizeof(n) |
+| Int8           | 1                  |
+| Int16          | 2                  |
+| Int32          | 4                  |
+| UInt8          | 1                  |
+| UInt16         | 2                  |
+| UInt32         | 4                  |
+| Float          | 4                  |
+| Double         | 8                  |
+| Map            | 2 + sizeof(object) |
+| String         | 5 + sizeof(object) |
+| Repeat         | 5                  |
+| GZIP           | 5 + sizeof(object) |
+
 ## Custom Types
+
+You can extend tl-pack to handle custom types. For example, handling ObjectId from Mongoose:
 
 ```javascript
 import mongoose from 'mongoose';
@@ -170,15 +181,12 @@ function hex(arrayBuffer: Uint8Array) {
 }
 ```
 
-## Dictionary
+## Dictionary Support
 
-A dictionary is used to replace strings with numeric indexes, which saves the resulting buffer size. In stream mode, the dictionary is grown while the stream is alive.
+The dictionary helps optimize serialization by replacing strings with numeric indexes, saving buffer space.
 
-**Static**
-Dictionary with you initialize a BinaryWriter/BinaryReader.
-
-**Dynamic**
-Dictionary which appends while encoding and decoding keys of an object (Map).
+- **Static Dictionary:** Pre-defined dictionary initialized when creating the BinaryWriter/BinaryReader.
+- **Dynamic Dictionary:** Grows dynamically during encoding and decoding, especially useful for objects (Maps).
 
 ## Production
 
