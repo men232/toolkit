@@ -6,10 +6,8 @@ import {
   isFunction,
   noop,
 } from '@andrew_l/toolkit';
-import { type TransactionContext, effectsRollback } from './context';
-import { provideMongoSession } from './hooks/mongoSession';
-import { injectTransactionContext } from './hooks/transactionContext';
-import { withTransaction } from './withTransaction';
+import { provideMongoSession } from './hooks/useMongoSession';
+import { createTransactionScope } from './scope';
 
 export interface WithMongoTransactionOptions<
   T,
@@ -90,30 +88,34 @@ export function withMongoTransaction<
       },
     });
 
-    let fnResult: any;
-    let context: TransactionContext | undefined;
+    const scope = createTransactionScope(function (this: K, ...args: Args) {
+      provideMongoSession(session);
+      return fn.call(this, session, ...args);
+    });
 
-    const [transactionError, transactionResult] = await catchError(() =>
-      session.withTransaction(
-        withTransaction(async () => {
-          provideMongoSession(session);
-          context = injectTransactionContext();
-          fnResult = await fn.call(this, session, ...args);
-        }),
-      ),
+    let [transactionError, transactionResult] = await catchError(() =>
+      session.withTransaction(async () => {
+        await scope.run.apply(this, args);
+
+        if (scope.error) {
+          return Promise.reject(scope.error);
+        }
+      }),
     );
 
     await session.endSession().catch(noop);
 
-    // transaction aborted
-    if (!transactionError && context && transactionResult === undefined) {
-      await effectsRollback(context);
+    if (transactionResult === undefined && !transactionError) {
+      transactionError = new Error('Transaction is explicitly aborted');
     }
 
     if (transactionError) {
+      await scope.rollback();
       return Promise.reject(transactionError);
     }
 
-    return fnResult;
+    await scope.commit();
+
+    return scope.result;
   } as any;
 }

@@ -1,17 +1,16 @@
-export {
-  onMongoSessionCommitted,
-  useMongoSession,
-  type OnMongoSessionCommittedResult,
-} from './hooks/mongoSession';
-
-export {
-  useTransactionEffect,
-  type UseTransactionEffectOptions,
-} from './hooks/useTransactionEffect';
+export * from './hooks';
 
 export {
   withMongoTransaction,
   type WithMongoTransactionOptions,
 } from './withMongoTransaction';
 
-export { withTransaction } from './withTransaction';
+export {
+  withTransaction,
+  type WithTransactionOptions,
+} from './withTransaction';
+
+export {
+  withTransactionControlled,
+  type TransactionControlled,
+} from './withTransactionControlled';

@@ -1,4 +1,3 @@
-import { createContext } from '@andrew_l/context';
 import {
   type AnyFunction,
   type Awaitable,
@@ -6,28 +5,7 @@ import {
   isPromise,
 } from '@andrew_l/toolkit';
 import type { ClientSession } from 'mongodb';
-
-export const [injectMongoSession, provideMongoSession] =
-  createContext<ClientSession>('withMongoTransaction');
-
-/**
- * Returns the current transaction session if executed within `withMongoTransaction()`
- *
- * @example
- * async function createAlert() {
- *   const session = useMongoSession();
- *
- *   await db.alerts.insertOne(
- *     { title: 'Order Created' },
- *     { session: session ?? undefined }
- *   );
- * }
- *
- * @group Hooks
- */
-export function useMongoSession(): ClientSession | null {
-  return injectMongoSession(null);
-}
+import { injectMongoSession } from './useMongoSession';
 
 export type OnMongoSessionCommittedResult<T> = {
   /**
@@ -35,11 +13,11 @@ export type OnMongoSessionCommittedResult<T> = {
    *
    * Returns `T` if the transaction is committed and the function completes successfully.
    *
-   * Returns `false` if the transaction ends without committing.
+   * Returns `undefined` if the transaction is explicitly aborted or ends without committing.
    *
    * Rejects if the function throws an error.
    */
-  promise: Promise<false | T>;
+  promise: Promise<T | undefined>;
 
   cancel: () => void;
 };
@@ -78,7 +56,7 @@ export function onMongoSessionCommitted<T>(
 
 export function onMongoSessionCommitted(
   ...args: any[]
-): OnMongoSessionCommittedResult<any> {
+): OnMongoSessionCommittedResult<unknown> {
   let session: ClientSession;
   let fn: AnyFunction;
 
@@ -89,11 +67,11 @@ export function onMongoSessionCommitted(
     fn = args[0];
   }
 
-  const q = defer<false | any>();
+  const q = defer<undefined | unknown>();
 
   const onEnded = () => {
     if (!session.transaction.isCommitted) {
-      return q.resolve(false);
+      return q.resolve(undefined);
     }
 
     try {

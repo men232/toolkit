@@ -1,13 +1,18 @@
-import { log } from '../constants';
-import { type TransactionEffect, applyEffect } from '../context';
-import { injectTransactionContext } from './transactionContext';
+import { isEqual } from '@andrew_l/toolkit';
+import {
+  type TransactionEffect,
+  type TransactionScope,
+  applyEffect,
+  cleanupEffect,
+} from '../scope';
+import { injectTransactionScope } from './scope';
 
 export type UseTransactionEffectOptions = Partial<
-  Omit<TransactionEffect, 'callback' | 'rollback'>
+  Pick<TransactionEffect, 'name' | 'flush' | 'dependencies'>
 >;
 
 /**
- * Executes a callback and calls the rollback function on error.
+ * Executes a callback and calls the cleanup function on error.
  *
  * The provided function is guaranteed to run only once, even if the MongoDB driver retries the original function.
  *
@@ -16,37 +21,70 @@ export type UseTransactionEffectOptions = Partial<
  * @group Hooks
  */
 export async function useTransactionEffect(
-  fn: TransactionEffect['callback'],
-  options?: UseTransactionEffectOptions,
+  setup: TransactionEffect['setup'],
+  options: UseTransactionEffectOptions = {},
 ): Promise<void> {
-  const context = injectTransactionContext();
+  const scope = injectTransactionScope();
 
-  const effect: TransactionEffect = {
-    callback: fn,
-    flush: options?.flush || 'pre',
-    name: options?.name || `Effect #${context.effects.length + 1}`,
+  const { cursor, byCursor } = scope.hooks.effects;
+
+  const effectConfig: Partial<TransactionEffect> = byCursor[cursor] ?? {};
+
+  const flush = options?.flush || 'pre';
+  const name = options?.name || `Effect #${cursor + 1}`;
+  const dependencies = options.dependencies ?? [];
+  const prevDependencies = effectConfig.dependencies;
+
+  byCursor[cursor] = {
+    ...effectConfig,
+    dependencies,
+    flush,
+    name,
+    setup,
   };
 
-  if (context.effectsCursor < context.effects.length) {
-    log.debug(
-      '[effect:skip] name = %s, flush = %s, reason = cursor',
-      effect.name,
-      effect.flush,
+  if (dependencies && prevDependencies) {
+    if (!isEqual(dependencies, prevDependencies)) {
+      scope.log.debug(
+        'Effect name = %s, flush = %s, caused by dependencies',
+        name,
+        flush,
+        {
+          prevDependencies,
+          newDependencies: dependencies,
+        },
+      );
+
+      await scheduleEffect(scope, cursor);
+    }
+  } else {
+    scope.log.debug(
+      'Effect name = %s, flush = %s, caused by missing dependencies',
+      name,
+      flush,
     );
 
-    context.effectsCursor++;
-    return;
+    await scheduleEffect(scope, cursor);
   }
 
-  context.effectsCursor++;
+  scope.hooks.effects.cursor++;
+}
+
+async function scheduleEffect(scope: TransactionScope, cursor: number) {
+  const { byCursor } = scope.hooks.effects;
+  const effect = byCursor[cursor]!;
+
+  const cleanupErr = await cleanupEffect(scope, effect, 'schedule pre');
+
+  if (cleanupErr) {
+    return Promise.reject(cleanupErr);
+  }
 
   if (effect.flush === 'pre') {
-    const err = await applyEffect(context, effect, 'pre');
+    const err = await applyEffect(scope, effect, 'schedule pre');
 
     if (err) {
       return Promise.reject(err);
     }
   }
-
-  context.effects.push(effect);
 }
