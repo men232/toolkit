@@ -138,4 +138,30 @@ describe('useTransactionEffect', () => {
     expect(executes).toBe(2); // should execute effect again
     expect(cleanups).toBe(1); // should not execute cleanup
   });
+
+  it('should handle dependencies', async () => {
+    let runs = 0;
+    let executes = 0;
+    let cleanups = 0;
+
+    const t = createTransactionScope(async () => {
+      const attemptNumber = ++runs;
+
+      await useTransactionEffect(
+        () => {
+          executes++;
+          return () => void cleanups++;
+        },
+        { flush: 'pre', dependencies: [attemptNumber] },
+      );
+    });
+
+    await t.run();
+    await t.run();
+    await t.commit();
+
+    expect(runs).toBe(2);
+    expect(executes).toBe(2);
+    expect(cleanups).toBe(1);
+  });
 });

@@ -59,8 +59,8 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
     delayMaxMs = 1000,
     delayMinMs = 100,
   }: WithTransactionOptions = {},
-): (this: K, ...args: Args) => Promise<T> {
-  return async function (this: K, ...args: Args) {
+): (this: K, ...args: Args) => Promise<Awaited<T>> {
+  return async function (this: K, ...args: Args): Promise<Awaited<T>> {
     const scope = createTransactionScope(fn);
 
     await retryOnError(
@@ -86,11 +86,11 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
 
     if (error) {
       await scope.rollback();
-      return Promise.reject(error);
+      return Promise.reject(error) as any;
     } else {
       await scope.commit();
     }
 
-    return result!;
+    return result as Awaited<T>;
   };
 }

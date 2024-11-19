@@ -202,8 +202,8 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
 
 export function createTransactionScope<T = any, Args extends any[] = any[]>(
   fn: (...args: Args) => T,
-): TransactionScope<T, Args> {
-  return new TransactionScope(fn);
+): TransactionScope<Awaited<T>, Args> {
+  return new TransactionScope<any>(fn);
 }
 
 export async function effectsApply(

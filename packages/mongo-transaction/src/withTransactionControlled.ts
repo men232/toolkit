@@ -54,7 +54,9 @@ export function withTransactionControlled<
   T,
   K = any,
   Args extends Array<any> = any[],
->(fn: (this: K, ...args: Args) => T): TransactionControlled<T, K, Args> {
+>(
+  fn: (this: K, ...args: Args) => T,
+): TransactionControlled<Awaited<T>, K, Args> {
   const scope = createTransactionScope(fn);
 
   const controlled = {

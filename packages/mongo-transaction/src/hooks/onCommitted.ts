@@ -16,8 +16,7 @@ import { injectTransactionScope } from './scope';
  * @param {readonly any[]} [dependencies=[]] - An optional array of dependencies
  *   to determine if the callback should be re-registered. If the dependencies
  *   differ from the previously registered ones, the callback is updated.
- * @returns {Fn} A cleanup function that, when called, replaces the callback
- *   with a no-op function.
+ * @returns {Fn} A cleanup function to cancel event listener.
  *
  * @example
  * // Basic usage without dependencies
@@ -33,17 +32,20 @@ import { injectTransactionScope } from './scope';
  * }, [count]);
  *
  * @example
- * // Cleanup after use
- * const cleanup = onCommitted(() => {
+ * //  Cancel by request
+ * const cancel = onCommitted(() => {
  *   console.log('This will run only once!');
  * });
- * cleanup(); // Prevents the callback from running
+ *
+ * if (orderReceived) {
+ *   cancel(); // Prevents onCommitted from running
+ * }
  *
  * @group Hooks
  */
 export function onCommitted(
   callback: OnCommittedCallback,
-  dependencies: readonly any[] = [],
+  dependencies?: readonly any[],
 ): Fn {
   const scope = injectTransactionScope();
   const { cursor, byCursor } = scope.hooks.committed;

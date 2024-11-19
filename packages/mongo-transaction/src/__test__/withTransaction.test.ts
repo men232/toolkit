@@ -12,18 +12,23 @@ describe('withTransaction', () => {
 
   it('should returns function async result', () => {
     const run = withTransaction(() => {
-      return new Promise(resolve => setTimeout(() => resolve(5), 10));
+      return new Promise<number>(resolve => setTimeout(() => resolve(5), 10));
     });
 
     expect(run()).resolves.toBe(5);
   });
 
   it('should handle function arguments', async () => {
+    const argsPassed = [1, 2, 3, 4];
+    let argsReceived: any;
+
     const run = withTransaction((...args: any[]) => {
-      return args;
+      argsReceived = args;
     });
 
-    expect(await run(1, 2, 3)).toStrictEqual([1, 2, 3]);
+    await run(...argsPassed);
+
+    expect(argsReceived).toStrictEqual(argsPassed);
   });
 
   it('should handle function this', async () => {

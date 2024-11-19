@@ -12,11 +12,37 @@ export type UseTransactionEffectOptions = Partial<
 >;
 
 /**
- * Executes a callback and calls the cleanup function on error.
+ * Executes a transactional effect with cleanup on error or rollback.
  *
- * The provided function is guaranteed to run only once, even if the MongoDB driver retries the original function.
+ * Ensures the `callback` function is executed only once per transaction, even during retries.
+ * On errors or dependency changes, the cleanup logic is invoked before re-execution to maintain consistency.
  *
- * @param fn This function will be called once.
+ * @param setup A function defining the transactional effect. It is guaranteed to run once per transaction
+ *              and may be re-executed after cleanup if dependencies change.
+ *
+ * @example
+ * const confirmOrder = withMongoTransaction({
+ *   connection: () => mongoose.connection,
+ *   async fn(session) {
+ *     // Register an alert as a transactional effect
+ *     await useTransactionEffect(async () => {
+ *       const alertId = await alertService.create({
+ *         title: `Order Confirmed: ${orderId}`,
+ *       });
+ *
+ *       // Define cleanup logic to remove the alert on rollback
+ *       return () => alertService.removeById(alertId);
+ *     });
+ *
+ *     // Simulate order processing (e.g., database updates)
+ *     await db
+ *       .collection('orders')
+ *       .updateOne({ orderId }, { $set: { status: 'confirmed' } }, { session });
+ *
+ *     // Simulate an error to test rollback
+ *     throw new Error('Simulated transaction failure');
+ *   },
+ * });
  *
  * @group Hooks
  */

@@ -1,4 +1,10 @@
-import type { ClientSession, ClientSessionOptions, MongoClient } from 'mongodb';
+import {
+  type ClientSession,
+  type ClientSessionOptions,
+  type MongoClient,
+  MongoTransactionError,
+  type Transaction,
+} from 'mongodb';
 
 import {
   type Awaitable,
@@ -33,12 +39,27 @@ export interface WithMongoTransactionOptions<
   sessionOptions?: ClientSessionOptions;
 
   /**
+   * Configures a timeoutMS expiry for the entire withTransactionCallback.
+   *
+   * @remarks
+   * - The remaining timeout will not be applied to callback operations that do not use the ClientSession.
+   * - Overriding timeoutMS for operations executed using the explicit session inside the provided callback will result in a client-side error.
+   */
+  timeoutMS?: number;
+
+  /**
    * Transaction function that will be executed
    *
    * ⚠️ Possible several times!
    */
   fn: (this: K, session: ClientSession, ...args: Args) => Promise<T>;
 }
+
+type WithMongoTransactionWrapped<
+  T,
+  K = any,
+  Args extends Array<any> = any[],
+> = (this: K, ...args: Args) => Promise<T>;
 
 /**
  * Runs a provided callback within a transaction, retrying either the commitTransaction operation or entire transaction as needed (and when the error permits) to better ensure that the transaction can complete successfully.
@@ -59,10 +80,8 @@ export interface WithMongoTransactionOptions<
  *     );
  *   },
  * });
-
  *
  * @group Main
- *
  */
 export function withMongoTransaction<
   T,
@@ -71,8 +90,13 @@ export function withMongoTransaction<
 >({
   connection: connectionValue,
   fn,
+  timeoutMS,
   sessionOptions = {},
-}: WithMongoTransactionOptions<T, K, Args>): (...args: Args) => Promise<T> {
+}: WithMongoTransactionOptions<T, K, Args>): WithMongoTransactionWrapped<
+  T,
+  K,
+  Args
+> {
   return async function (this: K, ...args: Args) {
     const connection = isFunction(connectionValue)
       ? await connectionValue()
@@ -93,8 +117,17 @@ export function withMongoTransaction<
       return fn.call(this, session, ...args);
     });
 
+    const timeoutAt = timeoutMS ? Date.now() + timeoutMS : 0;
+    const timeoutError = new MongoTransactionError(
+      'Transaction client-side timeout',
+    );
+
     let [transactionError, transactionResult] = await catchError(() =>
       session.withTransaction(async () => {
+        if (timeoutAt && timeoutAt < Date.now()) {
+          return Promise.reject(timeoutError);
+        }
+
         await scope.run.apply(this, args);
 
         if (scope.error) {
@@ -103,10 +136,18 @@ export function withMongoTransaction<
       }),
     );
 
+    const { result } = scope;
+
     await session.endSession().catch(noop);
 
-    if (transactionResult === undefined && !transactionError) {
-      transactionError = new Error('Transaction is explicitly aborted');
+    if (
+      isTransactionAborted(session.transaction) &&
+      transactionResult === undefined &&
+      transactionError === undefined
+    ) {
+      transactionError = new MongoTransactionError(
+        'Transaction is explicitly aborted',
+      );
     }
 
     if (transactionError) {
@@ -116,6 +157,10 @@ export function withMongoTransaction<
 
     await scope.commit();
 
-    return scope.result;
-  } as any;
+    return result!;
+  };
+}
+
+function isTransactionAborted(transaction: Transaction): boolean {
+  return (transaction as any)?.state === 'TRANSACTION_ABORTED';
 }

@@ -72,4 +72,24 @@ describe('onCommitted', () => {
 
     expect(calls).toBe(0);
   });
+
+  it('should handle dependencies', async () => {
+    let hookValue = 0;
+    let executes = 0;
+
+    const t = createTransactionScope(function () {
+      const executionAttempt = ++executes;
+
+      onCommitted(() => {
+        hookValue = executionAttempt;
+      }, []);
+    });
+
+    await t.run();
+    await t.run();
+    await t.commit();
+
+    expect(executes).toBe(2);
+    expect(hookValue).toBe(1);
+  });
 });

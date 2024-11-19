@@ -14,7 +14,7 @@ describe('withTransactionControlled', () => {
 
   it('should returns undefined from async but provide .result', async () => {
     const t = withTransactionControlled(() => {
-      return new Promise(resolve => setTimeout(() => resolve(5), 10));
+      return new Promise<number>(resolve => setTimeout(() => resolve(5), 10));
     });
 
     await expect(t.run()).resolves.toBe(undefined);
