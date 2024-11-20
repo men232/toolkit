@@ -63,11 +63,37 @@ export const isString = (val: unknown): val is string =>
   typeof val === 'string';
 
 /**
- * Checks if the given value is a plain `object`
+ * Checks if the given value is a `object`
  * @group Predicates
  */
 export const isObject = (val: any): val is object =>
   toString.call(val) === '[object Object]';
+
+/**
+ * Checks if the given value is a plain `object`
+ * @group Predicates
+ */
+export const isPlainObject = (val: any): val is object => {
+  let ctor, prot;
+
+  if (!isObject(val)) return false;
+
+  // If it has modified constructor
+  ctor = val.constructor;
+  if (ctor === undefined) return true;
+
+  // If it has modified prototype
+  prot = ctor.prototype;
+  if (isObject(prot) === false) return false;
+
+  // If constructor does not have an Object-specific method
+  if (prot.hasOwnProperty('isPrototypeOf') === false) {
+    return false;
+  }
+
+  // Most likely a plain Object
+  return true;
+};
 
 /**
  * Checks if the given value is valid `Date`

@@ -1,5 +1,5 @@
 {
-  "name": "@andrew_l/mongo-transaction",
+  "name": "@andrew_l/mongo-pagination",
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",
@@ -7,15 +7,13 @@
     "mongo",
     "mongodb",
     "mongoose",
-    "transaction",
-    "hooks",
-    "rollback",
-    "revert"
+    "pagination",
+    "cursor"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",
-    "directory": "packages/mongo-transaction"
+    "directory": "packages/mongo-pagination"
   },
   "scripts": {
     "build": "unbuild",
@@ -27,6 +25,14 @@
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./mongoose-7": {
+      "import": "./dist/mongoose-7.mjs",
+      "require": "./dist/mongoose-7.cjs"
+    },
+    "./mongoose-8": {
+      "import": "./dist/mongoose-8.mjs",
+      "require": "./dist/mongoose-8.cjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -37,6 +43,7 @@
   "devDependencies": {
     "unbuild": "catalog:",
     "@types/node": "catalog:",
+    "@types/debug": "^4.1.12",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "mongoose-v7": "npm:mongoose@7.6.3",
@@ -44,9 +51,12 @@
   },
   "dependencies": {
     "@andrew_l/toolkit": "workspace:*",
-    "@andrew_l/context": "workspace:*"
+    "@andrew_l/tl-pack": "workspace:*",
+    "debug": "^4.3.7",
+    "kareem": "^2.6.3"
   },
   "peerDependencies": {
-    "mongodb": "^5 || ^6"
+    "mongodb": "^5 || ^6",
+    "mongoose": "^7 || ^8"
   }
 }

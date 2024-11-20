@@ -27,6 +27,9 @@ features:
   - title: Mongo Transaction
     details: Manages side effects in MongoDB transactions, rollback on failure and preventing duplicates on retries.
     link: /reference/@andrew_l/mongo-transaction/
+  - title: Mongo Pagination
+    details: Manages pagination without relying on traditional offsets.
+    link: /reference/@andrew_l/mongo-pagination/
   - title: TL Pack
     details: Another implementation of binary serialization.
     link: /reference/@andrew_l/tl-pack/

@@ -44,7 +44,7 @@
     },
     "patchedDependencies": {
       "mongoose@7.6.3": "patches/mongoose@7.6.3.patch",
-      "mongoose@8.8.2": "patches/mongoose@8.8.2.patch"
+      "mongoose@8.8.0": "patches/mongoose@8.8.0.patch"
     }
   }
 }
