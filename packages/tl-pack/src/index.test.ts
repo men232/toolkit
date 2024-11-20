@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BinaryReader } from './BinaryReader';
 import { BinaryWriter } from './BinaryWriter';
+import { CORE_TYPES } from './constants';
 
 describe('tl-pack', () => {
   it('integration', () => {
@@ -26,5 +27,30 @@ describe('tl-pack', () => {
     const reader = new BinaryReader(writer.getBuffer());
 
     expect(input).toStrictEqual(reader.readObject());
+  });
+
+  it('dictionary', () => {
+    const writer = new BinaryWriter();
+
+    writer.writeMap({ t: false });
+    writer.writeMap({ t: false });
+
+    const buffer = writer.getBuffer();
+    const reader = new BinaryReader(buffer);
+
+    expect(Array.from(buffer)).toStrictEqual([
+      CORE_TYPES.DictValue,
+      1, // 't' length
+      116, // 't' key
+      CORE_TYPES.BoolFalse,
+      CORE_TYPES.None,
+      CORE_TYPES.DictIndex,
+      0,
+      CORE_TYPES.BoolFalse,
+      CORE_TYPES.None,
+    ]);
+
+    expect(reader.readMap(false)).toStrictEqual({ t: false });
+    expect(reader.readMap(false)).toStrictEqual({ t: false });
   });
 });

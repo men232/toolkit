@@ -360,7 +360,7 @@ export class BinaryReader {
       value = this.dictionary.getValue(index);
     }
 
-    if (value === undefined) {
+    if (value === null) {
       value = this.dictionaryExtended.getValue(index);
     }
 

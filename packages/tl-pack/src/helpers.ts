@@ -1,4 +1,4 @@
-import { isObject } from '@andrew_l/toolkit';
+import { isPlainObject } from '@andrew_l/toolkit';
 import { CORE_TYPES } from './constants';
 
 const encoder = new TextEncoder();
@@ -55,7 +55,7 @@ export function coreType(value: any): CORE_TYPES {
         return CORE_TYPES.Vector;
       }
 
-      if (isObject(value)) {
+      if (isPlainObject(value)) {
         return CORE_TYPES.Map;
       }
     }
