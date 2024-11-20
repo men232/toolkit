@@ -23,6 +23,7 @@ To ensure smooth usage, please keep the following in mind:
 - **Error Handling:** If your effects throw an error, the transaction will roll back.
 - **Calls:** Always `await` the promises returned by `useTransactionEffect()`.
 - **Placement:** Do not use `useTransactionEffect()` inside nested blocks like conditionals or loops.
+- **Mongoose:** Ensure the connection is established before using the client: `withMongoTransaction(() => mongoose.connection.getClient())`.
 
 ## 🚀 Example: Automatic Rollback of Side Effects
 
@@ -62,7 +63,7 @@ import {
 } from '@andrew_l/mongo-transaction';
 
 const confirmOrder = withMongoTransaction({
-  connection: () => mongoose.connection,
+  connection: () => mongoose.connection.getClient(),
   async fn(session) {
     // Register an alert as a transactional effect
     await useTransactionEffect(async () => {

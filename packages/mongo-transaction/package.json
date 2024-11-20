@@ -38,13 +38,15 @@
     "unbuild": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "mongoose-v7": "npm:mongoose@7.6.3",
+    "mongoose-v8": "npm:mongoose@8.8.2"
   },
   "dependencies": {
     "@andrew_l/toolkit": "workspace:*",
     "@andrew_l/context": "workspace:*"
   },
   "peerDependencies": {
-    "mongodb": "^5"
+    "mongodb": "^5 || ^6"
   }
 }

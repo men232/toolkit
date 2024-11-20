@@ -32,7 +32,7 @@ export type OnMongoSessionCommittedResult<T> = {
  * Rejects if the function throws an error.
  *
  * @example
- * const { promise } = onTransactionCommitted(session, async () => {
+ * const { promise } = onTransactionCommitted(async () => {
  *   console.info('Transaction committed successfully!');
  *   return Math.random(); // Random value generated after commit
  * });

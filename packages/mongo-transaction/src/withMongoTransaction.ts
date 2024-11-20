@@ -1,19 +1,49 @@
 import {
   type ClientSession,
   type ClientSessionOptions,
-  type MongoClient,
   MongoTransactionError,
-  type Transaction,
 } from 'mongodb';
 
 import {
+  type AnyFunction,
   type Awaitable,
   catchError,
+  deepDefaults,
   isFunction,
   noop,
 } from '@andrew_l/toolkit';
 import { provideMongoSession } from './hooks/useMongoSession';
 import { createTransactionScope } from './scope';
+import {
+  isMongoClientLike,
+  isTransactionAborted,
+  isTransactionCommittedEmpty,
+} from './utils';
+
+const DEF_SESSION_OPTIONS = Object.freeze({
+  defaultTransactionOptions: {
+    readPreference: 'primary',
+    readConcern: { level: 'local' },
+    writeConcern: { w: 'majority' },
+  },
+} as ClientSessionOptions);
+
+export interface MongoClientLike {
+  startSession(options: Record<string, any>): ClientSessionLike;
+}
+
+export interface ClientSessionLike {
+  withTransaction(fn: AnyFunction): Promise<any>;
+  endSession(): Promise<void>;
+}
+
+type ConnectionValue = MongoClientLike | (() => Awaitable<MongoClientLike>);
+
+type Callback<T, K = any, Args extends Array<any> = any[]> = (
+  this: K,
+  session: ClientSession,
+  ...args: Args
+) => Awaitable<T>;
 
 export interface WithMongoTransactionOptions<
   T,
@@ -23,7 +53,7 @@ export interface WithMongoTransactionOptions<
   /**
    * Mongodb connection getter
    */
-  connection: MongoClient | (() => Awaitable<MongoClient>);
+  connection: ConnectionValue;
 
   /**
    * Transaction session options
@@ -52,7 +82,7 @@ export interface WithMongoTransactionOptions<
    *
    * ⚠️ Possible several times!
    */
-  fn: (this: K, session: ClientSession, ...args: Args) => Promise<T>;
+  fn: Callback<T, K, Args>;
 }
 
 type WithMongoTransactionWrapped<
@@ -68,7 +98,7 @@ type WithMongoTransactionWrapped<
  *
  * @example
  * const executeTransaction = withMongoTransaction({
- *   connection: () => mongoose.connection,
+ *   connection: () => mongoose.connection.getClient(),
  *   async fn() {
  *     const session = useMongoSession();
  *     const orders = mongoose.connection.collection('orders');
@@ -87,32 +117,59 @@ export function withMongoTransaction<
   T,
   K = any,
   Args extends Array<any> = any[],
->({
-  connection: connectionValue,
-  fn,
-  timeoutMS,
-  sessionOptions = {},
-}: WithMongoTransactionOptions<T, K, Args>): WithMongoTransactionWrapped<
+>(
+  options: WithMongoTransactionOptions<T, K, Args>,
+): WithMongoTransactionWrapped<T, K, Args>;
+
+/**
+ * Runs a provided callback within a transaction, retrying either the commitTransaction operation or entire transaction as needed (and when the error permits) to better ensure that the transaction can complete successfully.
+ *
+ * Passes the session as the function's first argument or via `useMongoSession()` hook
+ *
+ * @example
+ * const executeTransaction = withMongoTransaction(mongoose.connection.getClient(), async () => {
+ *   const session = useMongoSession();
+ *   const orders = mongoose.connection.collection('orders');
+ *
+ *   const { modifiedCount } = await orders.updateMany(
+ *     { status: 'pending' },
+ *     { $set: { status: 'confirmed' } },
+ *     { session },
+ *   );
+ * });
+ */
+export function withMongoTransaction<
   T,
-  K,
-  Args
-> {
-  return async function (this: K, ...args: Args) {
+  K = any,
+  Args extends Array<any> = any[],
+>(
+  connection: ConnectionValue,
+  fn: Callback<T, K, Args>,
+  options?: Omit<WithMongoTransactionOptions<any>, 'fn' | 'connection'>,
+): WithMongoTransactionWrapped<T, K, Args>;
+
+export function withMongoTransaction(
+  connectionOrOptions: ConnectionValue | WithMongoTransactionOptions<any>,
+  maybeFn?: Callback<any>,
+  maybeOptions?: Partial<WithMongoTransactionOptions<any>>,
+): WithMongoTransactionWrapped<any> {
+  const {
+    connection: connectionValue,
+    fn,
+    sessionOptions = {},
+    timeoutMS,
+  } = prepareOptions(connectionOrOptions, maybeFn, maybeOptions);
+
+  return async function (this: any, ...args: any[]) {
     const connection = isFunction(connectionValue)
       ? await connectionValue()
       : connectionValue;
 
-    const session = await connection.startSession({
-      ...sessionOptions,
-      defaultTransactionOptions: {
-        readPreference: 'primary',
-        readConcern: { level: 'local' },
-        writeConcern: { w: 'majority' },
-        ...(sessionOptions.defaultTransactionOptions || {}),
-      },
-    });
+    const session = (await connection.startSession(
+      sessionOptions,
+    )) as ClientSession;
 
-    const scope = createTransactionScope(function (this: K, ...args: Args) {
+    const scope = createTransactionScope(function (this: any, ...args: any[]) {
       provideMongoSession(session);
       return fn.call(this, session, ...args);
     });
@@ -141,6 +198,11 @@ export function withMongoTransaction<
     await session.endSession().catch(noop);
 
     if (
+      transactionResult === undefined &&
+      isTransactionCommittedEmpty(session.transaction)
+    ) {
+      // do nothing here
+    } else if (
       isTransactionAborted(session.transaction) &&
       transactionResult === undefined &&
       transactionError === undefined
@@ -161,6 +223,27 @@ export function withMongoTransaction<
   };
 }
 
-function isTransactionAborted(transaction: Transaction): boolean {
-  return (transaction as any)?.state === 'TRANSACTION_ABORTED';
+function prepareOptions(
+  connectionOrOptions: ConnectionValue | WithMongoTransactionOptions<any>,
+  maybeFn?: Callback<any>,
+  maybeOptions?: Partial<WithMongoTransactionOptions<any>>,
+): WithMongoTransactionOptions<any> {
+  let options: WithMongoTransactionOptions<any>;
+
+  if (
+    isFunction(connectionOrOptions) ||
+    isMongoClientLike(connectionOrOptions)
+  ) {
+    options = {
+      ...(maybeOptions || {}),
+      connection: connectionOrOptions,
+      fn: maybeFn!,
+    };
+  } else {
+    options = connectionOrOptions;
+  }
+
+  return deepDefaults(options, {
+    sessionOptions: DEF_SESSION_OPTIONS,
+  });
 }

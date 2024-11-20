@@ -22,7 +22,7 @@ export type UseTransactionEffectOptions = Partial<
  *
  * @example
  * const confirmOrder = withMongoTransaction({
- *   connection: () => mongoose.connection,
+ *   connection: () => mongoose.connection.getClient(),
  *   async fn(session) {
  *     // Register an alert as a transactional effect
  *     await useTransactionEffect(async () => {

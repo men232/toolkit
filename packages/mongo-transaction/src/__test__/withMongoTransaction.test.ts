@@ -1,28 +1,47 @@
-import { defer, env, noop } from '@andrew_l/toolkit';
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { defer, isFunction, noop } from '@andrew_l/toolkit';
+import type { MongoClient } from 'mongodb';
+import { describe, expect, it } from 'vitest';
 import { onCommitted, onRollback } from '../hooks';
+import { isClientSessionLike } from '../utils';
 import { withMongoTransaction } from '../withMongoTransaction';
-
-const MONGODB_URI = env.string(
-  'MONGODB_URI',
-  'mongodb://127.0.0.1/mongo-transaction-test',
-);
-
-let MONGODB_CLIENT: MongoClient;
-
-beforeAll(setupConnection);
-
-afterAll(disconnectConnection);
+import { setupMongodb, setupMongoose7, setupMongoose8 } from './mongodb';
 
 describe('withMongoTransaction', () => {
+  const sharedCleanup = async (client: MongoClient) => {
+    await client.db().collection('users').deleteMany({});
+    await client.db().collection('t_conflict').deleteMany({});
+  };
+
+  describe('mongodb driver', () => {
+    const client = setupMongodb(sharedCleanup);
+
+    makeTest(client);
+  });
+
+  describe('mongoose v7', () => {
+    const mongoose = setupMongoose7(async mongoose => {
+      const client = mongoose.connection.getClient();
+      await sharedCleanup(client as any);
+    });
+
+    makeTest(() => mongoose.connection.getClient() as any);
+  });
+
+  describe('mongoose v8', () => {
+    const mongoose = setupMongoose8(async mongoose => {
+      const client = mongoose.connection.getClient();
+      await sharedCleanup(client as any);
+    });
+
+    makeTest(() => mongoose.connection.getClient() as any);
+  });
+});
+
+function makeTest(clientValue: MongoClient | (() => MongoClient)) {
   it('should returns function result', () => {
     const run = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn(session) {
-        // await MONGODB_CLIENT.db()
-        //   .collection('users')
-        //   .insertOne({ name: 'Andrew' }, { session });
         return 5;
       },
     });
@@ -35,7 +54,7 @@ describe('withMongoTransaction', () => {
     let argsReceived: any;
 
     const run = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn(session, ...args: any[]) {
         argsReceived = args;
       },
@@ -46,12 +65,27 @@ describe('withMongoTransaction', () => {
     expect(argsReceived).toStrictEqual(argsPassed);
   });
 
+  it('should provide session as first argument', async () => {
+    let argsReceived: any;
+
+    const run = withMongoTransaction({
+      connection: clientValue,
+      async fn(session) {
+        argsReceived = session;
+      },
+    });
+
+    await run();
+
+    expect(isClientSessionLike(argsReceived)).toBe(true);
+  });
+
   it('should handle function this', async () => {
     const thisPassed = {};
     let thisReceived: any;
 
     const run = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn() {
         thisReceived = this;
       },
@@ -66,7 +100,7 @@ describe('withMongoTransaction', () => {
     let thisReceived: any;
 
     const run = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn() {
         thisReceived = this;
       },
@@ -78,7 +112,7 @@ describe('withMongoTransaction', () => {
 
   it('should throw error when transaction aborted', async () => {
     const run = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn(session) {
         await session.abortTransaction();
       },
@@ -90,7 +124,7 @@ describe('withMongoTransaction', () => {
   it('should rollback when transaction aborted', async () => {
     let rollback = false;
     const run = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn(session) {
         onRollback(() => void (rollback = true));
 
@@ -110,7 +144,9 @@ describe('withMongoTransaction', () => {
     let t2Committed = false;
     let t2Error: any;
 
-    const collection = MONGODB_CLIENT.db().collection<{
+    const client = isFunction(clientValue) ? clientValue() : clientValue;
+
+    const collection = client.db().collection<{
       _id: number;
       value: number;
     }>('t_conflict');
@@ -119,7 +155,7 @@ describe('withMongoTransaction', () => {
 
     const lock = defer();
     const t1 = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       async fn(session) {
         t1Attempts++;
         const doc = await collection.findOne({ _id: 1 }, { session });
@@ -135,7 +171,7 @@ describe('withMongoTransaction', () => {
     });
 
     const t2 = withMongoTransaction({
-      connection: MONGODB_CLIENT,
+      connection: clientValue,
       timeoutMS: 100,
       async fn(session) {
         t2Attempts++;
@@ -168,27 +204,4 @@ describe('withMongoTransaction', () => {
       throw t2Error;
     }).toThrowError('client-side timeout');
   });
-});
-
-async function disconnectConnection() {
-  if (!MONGODB_CLIENT) return;
-  await MONGODB_CLIENT.close();
-}
-
-async function setupConnection() {
-  const client = new MongoClient(MONGODB_URI, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
-  });
-
-  await client.connect();
-  await client.db('admin').command({ ping: 1 });
-
-  await client.db().collection('users').deleteMany({});
-  await client.db().collection('t_conflict').deleteMany({});
-
-  MONGODB_CLIENT = client;
 }

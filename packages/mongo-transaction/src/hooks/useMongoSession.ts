@@ -1,11 +1,11 @@
-import { createContext } from '@andrew_l/context';
+import { createContext, hasInjectionContext } from '@andrew_l/context';
 import type { ClientSession } from 'mongodb';
 
 export const [injectMongoSession, provideMongoSession] =
   createContext<ClientSession>('withMongoTransaction');
 
 /**
- * Returns the current transaction session if executed within `withMongoTransaction()`
+ * Returns the current transaction session if executed within `withMongoTransaction()` otherwise returns `null`
  *
  * @example
  * async function createAlert() {
@@ -20,5 +20,5 @@ export const [injectMongoSession, provideMongoSession] =
  * @group Hooks
  */
 export function useMongoSession(): ClientSession | null {
-  return injectMongoSession(null);
+  return hasInjectionContext() ? injectMongoSession(null) : null;
 }

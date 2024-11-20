@@ -25,11 +25,11 @@
     "npm-run-all2": "^6.2.3",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",
-    "typescript-eslint": "^8.8.1",
-    "typescript": "catalog:",
     "typedoc": "^0.26.10",
     "typedoc-plugin-markdown": "^4.2.9",
     "typedoc-vitepress-theme": "^1.0.2",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.8.1",
     "vitepress": "^1.4.1"
   },
   "pnpm": {
@@ -41,6 +41,10 @@
         "@typescript-eslint/type-utils>eslint": "^9.0.0",
         "@typescript-eslint/utils>eslint": "^9.0.0"
       }
+    },
+    "patchedDependencies": {
+      "mongoose@7.6.3": "patches/mongoose@7.6.3.patch",
+      "mongoose@8.8.2": "patches/mongoose@8.8.2.patch"
     }
   }
 }

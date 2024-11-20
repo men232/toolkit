@@ -1,0 +1,13 @@
+diff --git a/types/index.d.ts b/types/index.d.ts
+index 3f94524ba98401cf35a7692aee442ab5cb03415d..6b49cc9f9ea56dc135c0a52e1d2e40096287b89c 100644
+--- a/types/index.d.ts
++++ b/types/index.d.ts
+@@ -26,7 +26,7 @@
+ 
+ declare class NativeDate extends global.Date { }
+ 
+-declare module 'mongoose' {
++declare module 'mongoose-v7' {
+   import events = require('events');
+   import mongodb = require('mongodb');
+   import mongoose = require('mongoose');
