@@ -1,4 +1,4 @@
-import { isEmpty, isFunction, isObject } from '@andrew_l/toolkit';
+import { intersection, isEmpty, isFunction, isObject } from '@andrew_l/toolkit';
 
 export function isEmptyObject(obj: unknown): boolean {
   return !isObject(obj) || isEmpty(obj);
@@ -8,18 +8,7 @@ export function isEmptyObject(obj: unknown): boolean {
  * Returns keys that existed in all provided objects.
  */
 export function sameKeys(...args: object[]): string[] {
-  const map: Record<string, number> = {};
-
-  for (let obj of args) {
-    const keys = Object.keys(obj);
-
-    for (let key of keys) {
-      if (!map[key]) map[key] = 0;
-      map[key]++;
-    }
-  }
-
-  return Object.keys(map).filter(key => map[key] > 1);
+  return intersection(...args.map(v => Object.keys(v)));
 }
 
 export function defineGetter(obj: object, key: string, getterFn: () => any) {
