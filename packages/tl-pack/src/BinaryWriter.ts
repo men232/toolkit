@@ -34,11 +34,13 @@ export class BinaryWriter {
   private dictionaryExtended: Dictionary;
   private extensions: Map<number, TLExtension>;
   private _last: any = noop;
+  private _checksumOffset: number;
   private _repeat?: { offset: number; count: number };
   offset: number;
 
   constructor(options?: BinaryWriterOptions) {
     this.offset = 0;
+    this._checksumOffset = 0;
     this.extensions = new Map();
     this.withGzip = !!options && !!options.gzip;
 
@@ -235,6 +237,24 @@ export class BinaryWriter {
     return this;
   }
 
+  writeChecksum(withConstructor: boolean = true): this {
+    const bytes = this.target.slice(this._checksumOffset, this.offset);
+    let sum = 0;
+
+    for (const val of bytes) {
+      sum += val;
+    }
+
+    if (withConstructor) {
+      this.writeByte(CORE_TYPES.Checksum);
+    }
+
+    this.writeLength(sum);
+    this._checksumOffset = this.offset;
+
+    return this;
+  }
+
   writeBytes(value: Uint8Array): this {
     const length = value.length;
 
@@ -320,6 +340,7 @@ export class BinaryWriter {
 
   encode(value: any): Uint8Array {
     this.offset = 0;
+    this._checksumOffset = 0;
     this._last = noop;
     this._repeat = undefined;
     this.target = byteArrayAllocate(256);

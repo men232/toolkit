@@ -53,4 +53,53 @@ describe('tl-pack', () => {
     expect(reader.readMap(false)).toStrictEqual({ t: false });
     expect(reader.readMap(false)).toStrictEqual({ t: false });
   });
+
+  it('should handle valid checksum', () => {
+    const writer = new BinaryWriter();
+
+    writer.writeMap({ t: false });
+    writer.writeChecksum();
+
+    const buffer = writer.getBuffer();
+    const reader = new BinaryReader(buffer);
+
+    reader.readMap(false);
+
+    expect(reader.readChecksum()).toBeUndefined();
+  });
+
+  it('should handle multiple checksum', () => {
+    const writer = new BinaryWriter();
+
+    writer.writeMap({ t: false });
+    writer.writeChecksum();
+    writer.writeMap({ t: false });
+    writer.writeChecksum();
+
+    const buffer = writer.getBuffer();
+    const reader = new BinaryReader(buffer);
+
+    reader.readMap(false);
+    reader.readChecksum();
+    reader.readMap(false);
+
+    expect(reader.readChecksum()).toBeUndefined();
+  });
+
+  it('should handle invalid checksum', () => {
+    const writer = new BinaryWriter();
+
+    writer.writeMap({ t: false });
+    writer.writeChecksum();
+
+    const buffer = writer.getBuffer();
+
+    buffer[6]++;
+
+    const reader = new BinaryReader(buffer);
+
+    reader.readMap(false);
+
+    expect(() => reader.readChecksum()).toThrowError('checksum');
+  });
 });

@@ -17,6 +17,7 @@ export class BinaryReader {
   private dictionaryExtended: Dictionary;
   private extensions: Map<number, TLExtension>;
   private _repeat?: { pool: number; value: any };
+  private _checksumOffset: number;
   offset: number;
   length: number;
 
@@ -26,6 +27,7 @@ export class BinaryReader {
   constructor(data: Uint8Array, options?: BinaryReaderOptions) {
     this.target = data;
     this.offset = 0;
+    this._checksumOffset = 0;
     this.length = data.length;
     this.extensions = new Map();
 
@@ -330,6 +332,8 @@ export class BinaryReader {
         return this.readDouble();
       case CORE_TYPES.Map:
         return this.readMap(false);
+      case CORE_TYPES.Checksum:
+        return void this.readChecksum(false);
       case CORE_TYPES.DictIndex: {
         const idx = this.readLength();
         return this.getDictionaryValue(idx)!;
@@ -418,6 +422,7 @@ export class BinaryReader {
     this._lastObject = undefined;
     this._repeat = undefined;
     this.offset = 0;
+    this._checksumOffset = 0;
     this.length = value.length;
 
     return this.readObject();
@@ -485,6 +490,30 @@ export class BinaryReader {
     this._last = temp;
 
     return temp;
+  }
+
+  readChecksum(checkConstructor: boolean = true): void {
+    const offset = this.offset;
+
+    if (checkConstructor) {
+      this.assertConstructor(CORE_TYPES.Checksum);
+    }
+
+    const bytes = this.target.slice(this._checksumOffset, offset);
+    const checksum = this.readLength();
+    let sum = 0;
+
+    for (const val of bytes) {
+      sum += val;
+    }
+
+    if (checksum - sum !== 0) {
+      throw new Error(
+        `Invalid checksum = ${checksum - sum}, offset = ${offset}`,
+      );
+    }
+
+    this._checksumOffset = this.offset;
   }
 
   /**
