@@ -19,6 +19,10 @@ import { uniq } from '../uniq';
  *
  * @group Array
  */
-export function union<T>(arr1: readonly T[], arr2: readonly T[]): T[] {
-  return uniq(arr1.concat(arr2));
+export function union<T>(...arrays: readonly T[][]): T[] {
+  if (arrays.length === 0) return [];
+  if (arrays.length === 1) return [...arrays[0]];
+
+  const [first, ...rest] = arrays;
+  return uniq(first.concat(...rest));
 }
