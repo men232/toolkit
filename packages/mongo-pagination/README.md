@@ -12,12 +12,11 @@ This package provides an efficient and customizable way to handle pagination for
 
 ## ✨ Features
 
-- **Pagination for MongoDB and Mongoose**: Easily add pagination capabilities to both MongoDB and Mongoose queries.
-- **Customizable Pagination Logic**: Control pagination behavior with options such as sorting direction and pagination fields.
-- **Token-based Navigation**: Uses tokens to handle page navigation without relying on traditional offsets.
-- **TypeScript Support**: Full TypeScript support for type safety and autocompletion.
-- **Flexible Sorting**: Supports sorting by multiple fields with ascending or descending order.
-- **Easy Integration**: Simple to integrate with existing MongoDB or Mongoose-based applications.
+- **MongoDB & Mongoose Support**: Add pagination to queries with ease.
+- **Token-based Navigation**: Reliable page transitions without offsets.
+- **Customizable Sorting**: Sort by multiple fields and directions.
+- **TypeScript Ready**: Built-in type safety and autocompletion.
+- **Lightweight Integration**: Simple setup for existing applications.
 
 ## 🚀 Example: Usage with Mongoose
 
@@ -96,8 +95,7 @@ async function paginateMongoDB() {
 
 ## 🤔 Why Use This Package?
 
-1. **Handles Large Datasets Efficiently:** Pagination helps you manage large result sets without loading all data at once, improving performance.
-2. **Token-based Navigation:** Unlike traditional offset-based pagination, this package uses tokens for more reliable navigation between pages, especially for dynamic or changing datasets.
-3. **MongoDB and Mongoose Support:** Whether you're working with raw MongoDB queries or Mongoose models, this package supports both seamlessly.
-4. **Customizable and Flexible:** The pagination logic can be tailored to your specific requirements, such as custom sorting or pre/post query hooks.
-5. **Type Safety:** With TypeScript support, you'll get strong typing, better autocompletion, and fewer errors when working with pagination in your project.
+1. **Efficient for Large Datasets:** Loads only the necessary data.
+2. **Token-based Pagination:** Ideal for dynamic datasets.
+3. **Flexible & Customizable:** Adaptable to your requirements.
+4. **TypeScript Support:** Minimized errors, better productivity.
