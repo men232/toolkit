@@ -68,6 +68,20 @@ describe('tl-pack', () => {
     expect(reader.readChecksum()).toBeUndefined();
   });
 
+  it('should handle checksum without constructor', () => {
+    const writer = new BinaryWriter();
+
+    writer.writeMap({ t: false });
+    writer.writeChecksum(false);
+
+    const buffer = writer.getBuffer();
+    const reader = new BinaryReader(buffer);
+
+    reader.readMap(false);
+
+    expect(reader.readChecksum(false)).toBeUndefined();
+  });
+
   it('should handle multiple checksum', () => {
     const writer = new BinaryWriter();
 
