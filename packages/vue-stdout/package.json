@@ -1,0 +1,58 @@
+{
+  "name": "@andrew_l/vue-stdout",
+  "version": "0.0.1",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/men232/toolkit.git",
+    "directory": "packages/vue-stdout"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepack": "tsup",
+    "test": "echo todo",
+    "test:watch": "vitest watch --typecheck"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "unbuild": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vue": "3.5.13",
+    "unplugin-vue-jsx": "^0.4.0",
+    "chalk": "^5.3.0",
+    "tsup": "^8.3.5",
+    "@vitejs/plugin-vue-jsx": "^4.1.0",
+    "@vue/tsconfig": "^0.6.0",
+    "tsx": "^4.19.2"
+  },
+  "dependencies": {
+    "@andrew_l/toolkit": "workspace:*",
+    "@alcalzone/ansi-tokenize": "^0.1.3",
+    "slice-ansi": "^7.1.0",
+    "ansi-escapes": "^7.0.0",
+    "string-width": "^7.2.0",
+    "indent-string": "^5.0.0",
+    "@vue/runtime-core": "3.5.13",
+    "yoga-wasm-web": "^0.3.3",
+    "widest-line": "^5.0.0",
+    "ansi-styles": "^6.2.1",
+    "cli-boxes": "^4.0.1",
+    "cli-truncate": "^4.0.0",
+    "type-fest": "^4.27.0",
+    "wrap-ansi": "^9.0.0"
+  }
+}

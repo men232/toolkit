@@ -1,5 +1,12 @@
-import { isWeakMap, isWeakSet } from 'lodash';
-import { isDate, isMap, isNumber, isObject, isSet } from './is';
+import {
+  isDate,
+  isMap,
+  isNumber,
+  isObject,
+  isSet,
+  isWeakMap,
+  isWeakSet,
+} from './is';
 import type { AnyFunction } from './types';
 
 export type TypeOf = keyof TypeOfMap;

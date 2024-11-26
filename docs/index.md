@@ -33,6 +33,9 @@ features:
   - title: TL Pack
     details: Another implementation of binary serialization.
     link: /reference/@andrew_l/tl-pack/
+  - title: Vue Stdout
+    details: Renderer for terminal output with flexible layouts and CLI components.
+    link: /reference/@andrew_l/vue-stdout/
 ---
 
 ## Getting Started
