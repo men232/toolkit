@@ -34,7 +34,7 @@ import {
  * // Instance with basic types (Map, Set, Date, BigInt, Uint8Array)
  * import { EJSON } from '@andrew_l/toolkit';
  *
- * ejson.stringify({ value: new Date(0) });
+ * EJSON.stringify({ value: new Date(0) });
  * // {"value":{"$date": 0}}
  *
  * @example
