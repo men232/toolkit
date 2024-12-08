@@ -56,6 +56,19 @@ export const isNumber = (val: any): val is number =>
   typeof val === 'number' && !isNaN(val);
 
 /**
+ * Checks if the given value is a `Infinity` number.
+ *
+ * @example
+ * console.log(isInfinity(123)); // false
+ * console.log(isNumber(Infinity)); // true
+ * console.log(isNumber(-Infinity)); // true
+ *
+ * @group Predicates
+ */
+export const isInfinity = (val: any): val is number =>
+  val === Infinity || val === -Infinity;
+
+/**
  * Checks if the given value is a `string`
  * @group Predicates
  */

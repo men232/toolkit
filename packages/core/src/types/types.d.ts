@@ -53,9 +53,39 @@ export type PromisifyFn<T extends AnyFunction> = (
   ...args: ArgumentsType<T>
 ) => Promise<ReturnType<T>>;
 
+/**
+ * Represent time object in 24h format
+ */
 export type TimeObject = {
+  /**
+   * Hour (0 - 23).
+   */
   h: number;
+
+  /**
+   * Minutes (0 - 59).
+   */
   m: number;
+};
+
+/**
+ * Represent date object
+ */
+export type DateObject = {
+  /**
+   * The year of the date (e.g., 2024).
+   */
+  year: number;
+
+  /**
+   * The month of the date (1 = January, 12 = December).
+   */
+  month: number;
+
+  /**
+   * The day of the month (1-31).
+   */
+  date: number;
 };
 
 export interface ThemeConfig {

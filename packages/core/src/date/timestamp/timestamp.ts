@@ -23,7 +23,7 @@ import { isDate } from '@/is';
  * // Using the current time
  * console.log(timestamp()); // Returns current seconds since Unix epoch
  *
- * @group Numbers
+ * @group Date
  */
 export function timestamp(fromValue: Date | number = Date.now()) {
   if (isDate(fromValue)) {

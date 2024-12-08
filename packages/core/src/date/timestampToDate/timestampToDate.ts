@@ -20,7 +20,7 @@ import { isNumber } from '@/is';
  * console.log(timestampToDate(NaN)); // Outputs: null
  * console.log(timestampToDate(null)); // Outputs: null
  *
- * @group Numbers
+ * @group Date
  */
 export function timestampToDate(value: number): Date | null {
   if (!isNumber(value)) return null;

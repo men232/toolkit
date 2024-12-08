@@ -1,4 +1,4 @@
-import { timestamp } from '@/num';
+import { timestamp } from '@/date/timestamp';
 import { hex } from '../hex';
 
 let index = Math.floor(Math.random() * 0xffffff);
