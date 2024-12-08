@@ -1,5 +1,4 @@
-import { createEJSON } from './createEJSON';
-
 export * from './createEJSON';
+export * from './createEJSONStream';
 
-export const EJSON = createEJSON(true);
+export { instance as EJSON } from './instance';

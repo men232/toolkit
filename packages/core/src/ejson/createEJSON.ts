@@ -78,7 +78,7 @@ import {
  *
  * console.log(ejson.mimetype); // application/vnd.andrew+json
  *
- * @group Object
+ * @group EJSON
  */
 export function createEJSON(withBasicTypes: boolean = false): EJSON {
   const ejson = new EJSON();

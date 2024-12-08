@@ -60,6 +60,9 @@ export class EJSON {
   /** @internal */
   protected reviewerReady: (_: string, value: any) => any;
 
+  /** @internal */
+  protected pure: boolean = true;
+
   /**
    * The vendor name used for the custom MIME type definition.
    * If null, defaults to 'application/json'.
@@ -110,6 +113,7 @@ export class EJSON {
       'type placeholder must starts with $ symbol.',
     );
 
+    this.pure = false;
     this.typeHandlers.set(type.placeholder, type);
     return this;
   }
@@ -121,6 +125,10 @@ export class EJSON {
    * @returns {string} - The JSON stringified value.
    */
   stringify(value: any, space?: string | number): string {
+    if (this.pure) {
+      return JSON.stringify(value, undefined, space);
+    }
+
     return JSON.stringify(this.encode(value), undefined, space);
   }
 
@@ -130,6 +138,10 @@ export class EJSON {
    * @returns {any} - The decoded JavaScript object.
    */
   parse(value: string): any {
+    if (this.pure) {
+      return JSON.parse(value);
+    }
+
     return JSON.parse(value, this.reviewerReady);
   }
 
