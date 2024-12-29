@@ -16,7 +16,8 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "pnpm docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "prepare-publish": "node ./scripts/update-version.mjs && pnpm run build && pnpm run test"
+    "prepare-publish": "node ./scripts/update-version.mjs && pnpm run build && pnpm run test",
+    "publish-all": "pnpm publish --filter \"@andrew_l/*\" --access public"
   },
   "engines": {
     "node": ">=18.12.0"
