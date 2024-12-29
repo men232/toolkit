@@ -7,6 +7,8 @@ type ItemType<T> =
       ? string
       : Exclude<T, null | undefined>;
 
+type ArrayableValue<T> = T extends object ? Readonly<T> : T;
+
 /**
  * Converts a value into an array. This function handles different types of input,
  * converting them to arrays as follows:
@@ -27,7 +29,7 @@ type ItemType<T> =
  *
  * @group Array
  */
-export function arrayable<T>(value: Readonly<T>): ItemType<T>[] {
+export function arrayable<T>(value: ArrayableValue<T>): ItemType<T>[] {
   const result: any = Array.isArray(value)
     ? value
     : value === null

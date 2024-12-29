@@ -32,6 +32,12 @@ describe('EJSON', () => {
     expect(ejson.mimetype).toBe('application/vnd.andrew.l+json');
   });
 
+  it('should normalize vendor name with version (mimetype)', () => {
+    const ejson = createEJSON();
+    ejson.vendorName = 'myapi.v1';
+    expect(ejson.mimetype).toBe('application/vnd.myapi.v1+json');
+  });
+
   it('should default mimetype when vendor name not set', () => {
     const ejson = createEJSON();
     expect(ejson.mimetype).toBe('application/json');

@@ -7,7 +7,6 @@ import {
   isPrimitive,
 } from '@/is';
 import { deepCloneWith } from '@/object/deepCloneWith';
-import { getWords } from '@/str/getWords';
 import {
   BigIntType,
   BinaryType,
@@ -23,6 +22,11 @@ export type EJSONType = {
    * The string placeholder (must start with `$`) that represents the custom type.
    */
   placeholder: string;
+
+  /**
+   * Should encoded value inlined to original key
+   */
+  encodeInline?: boolean;
 
   /**
    * Function to encode a value into a custom representation using a custom type handler.
@@ -63,11 +67,12 @@ export class EJSON {
   /** @internal */
   protected pure: boolean = true;
 
+  protected _vendorName: string | null = null;
+
   /**
-   * The vendor name used for the custom MIME type definition.
-   * If null, defaults to 'application/json'.
+   * MIME type based on the provided vendor name or defaults to 'application/json'.
    */
-  public vendorName: string | null = null;
+  public mimetype: string = 'application/json';
 
   public readonly Type = {
     Date: DateType,
@@ -88,14 +93,28 @@ export class EJSON {
   }
 
   /**
-   * MIME type based on the provided vendor name or defaults to 'application/json'.
+   * The vendor name used for the custom MIME type definition.
+   * If null, defaults to 'application/json'.
    */
-  get mimetype() {
-    if (!this.vendorName) {
-      return 'application/json';
-    }
+  get vendorName(): string | null {
+    return this._vendorName;
+  }
 
-    return `application/vnd.${getWords(this.vendorName).join('.').toLowerCase()}+json`;
+  set vendorName(value: string | null) {
+    this._vendorName = value;
+
+    if (!value) {
+      this.mimetype = 'application/json';
+    } else {
+      const vendorName = value
+        .split(' ')
+        .map(v => v.toLowerCase())
+        .join('.')
+        .replace(/\.\.+/g, '.')
+        .replace(/\.$/, '');
+
+      this.mimetype = `application/vnd.${vendorName}+json`;
+    }
   }
 
   /**
@@ -147,7 +166,11 @@ export class EJSON {
 
   /** @internal */
   protected _replacer(value: any, key: string) {
+    // deep object check
     if (isPlainObject(value)) return;
+    // deep array check
+    if (Array.isArray(value)) return;
+    // exclude primitive
     if (!isInfinity(value) && !isBigInt(value)) {
       if (isPrimitive(value)) return;
     }
@@ -156,9 +179,11 @@ export class EJSON {
       const res = type.encode(value, this.encode);
 
       if (res !== undefined) {
-        return { [type.placeholder]: res };
+        return type.encodeInline ? res : { [type.placeholder]: res };
       }
     }
+
+    return value;
   }
 
   /** @internal */

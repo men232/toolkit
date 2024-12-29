@@ -15,7 +15,7 @@
  * console.log(avg.value); // Output: 15 (average of 10, 20)
  * console.log(avg.count); // Output: 2 (two values added)
  */
-class FindMean {
+export class FindMean {
   #count: number = 0;
   #value: number = 0;
 

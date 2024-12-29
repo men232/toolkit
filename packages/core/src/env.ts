@@ -173,7 +173,7 @@ export function createEnvParser(
     },
 
     string(key: string, defaultValue: string = ''): string {
-      return targetObject[key] || defaultValue;
+      return targetObject[key] ?? defaultValue;
     },
 
     list<T extends ListTypeName>(

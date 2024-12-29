@@ -1,5 +1,4 @@
-import { isNumber } from '@/is';
-import { has } from '@/object';
+import { isNumber, isPlainObject } from '@/is';
 import type { TimeObject } from '@/types';
 
 /**
@@ -41,12 +40,16 @@ import type { TimeObject } from '@/types';
  */
 export function isTimeObject(value: unknown): value is TimeObject {
   return (
-    has(value, ['h', 'm']) &&
+    isPlainObject(value) &&
+    'h' in value &&
+    'm' in value &&
     isNumber(value.h) &&
+    Number.isInteger(value.h) &&
     isNumber(value.m) &&
+    Number.isInteger(value.m) &&
     value.h >= 0 &&
-    value.h <= 23 &&
+    value.h < 24 &&
     value.m >= 0 &&
-    value.m <= 59
+    value.m < 60
   );
 }

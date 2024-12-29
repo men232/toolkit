@@ -15,7 +15,7 @@ describe('createTimeObject', () => {
   });
 
   it('should create a TimeObject from a valid time string', () => {
-    const timeString = '2024-12-08T15:30:00';
+    const timeString = '15:30';
     const result = createTimeObject(timeString);
     expect(result).toEqual({ h: 15, m: 30 });
   });

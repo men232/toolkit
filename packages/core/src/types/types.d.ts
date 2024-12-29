@@ -54,7 +54,19 @@ export type PromisifyFn<T extends AnyFunction> = (
 ) => Promise<ReturnType<T>>;
 
 /**
- * Represent time object in 24h format
+ * A time value, which can be a string (e.g., "HH:MM"),
+ * an object with `h` (hours) and `m` (minutes) properties, or a similar format
+ * that `createTimeObject` can parse.
+ */
+export type TimeValue = TimeString | TimeObject;
+
+/**
+ * Represent time string in 24h format
+ */
+export type TimeString = string;
+
+/**
+ * Represent time object in 24h format ("HH:MM")
  */
 export type TimeObject = {
   /**

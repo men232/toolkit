@@ -3,7 +3,7 @@ import { isDate, isNumber, isString } from '@/is';
 import type { DateObject } from '@/types';
 import { isDateObject } from '../isDateObject';
 
-export type DateObjectInput = Date | number | DateObject;
+export type DateObjectInput = Date | string | number | DateObject;
 
 export function createDateObject(value: DateObjectInput): DateObject;
 export function createDateObject(

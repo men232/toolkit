@@ -185,14 +185,6 @@ export function isEqual(a: unknown, b: unknown): boolean {
     return true;
   }
 
-  if (a instanceof Date && b instanceof Date) {
-    return a.getTime() === b.getTime();
-  }
-
-  if (a instanceof RegExp && b instanceof RegExp) {
-    return a.source === b.source && a.flags === b.flags;
-  }
-
   if (
     typeof a !== 'object' ||
     typeof b !== 'object' ||
@@ -202,6 +194,100 @@ export function isEqual(a: unknown, b: unknown): boolean {
     return false;
   }
 
+  if (a.constructor !== b.constructor) {
+    return false;
+  }
+
+  if (Array.isArray(a)) {
+    const { length } = a;
+    if (length !== (b as any[]).length) {
+      return false;
+    }
+
+    for (let i = length; i-- !== 0; ) {
+      if (!isEqual(a[i], (b as any[])[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (a instanceof Date) {
+    return a.getTime() === (b as Date).getTime();
+  }
+
+  if (a instanceof RegExp) {
+    return a.source === (b as RegExp).source && a.flags === (b as RegExp).flags;
+  }
+
+  if (a instanceof Set) {
+    if (a.size !== (b as Set<any>).size) {
+      return false;
+    }
+
+    for (const value of a) {
+      if (!(b as Set<any>).has(value)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (a instanceof Map) {
+    if (a.size !== (b as Map<any, any>).size) {
+      return false;
+    }
+
+    for (const entry of a) {
+      if (
+        !(b as Map<any, any>).has(entry[0]) ||
+        !isEqual(entry[1], (b as Map<any, any>).get(entry[0]))
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (a instanceof DataView) {
+    const { byteLength } = a;
+
+    if (byteLength !== (b as DataView).byteLength) {
+      return false;
+    }
+
+    for (let i = byteLength; i-- !== 0; ) {
+      if (a.getUint8(i) !== (b as DataView).getUint8(i)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (a instanceof ArrayBuffer && b instanceof ArrayBuffer) {
+    a = new Uint8Array(a);
+    b = new Uint8Array(b);
+  }
+
+  if (ArrayBuffer.isView(a) && ArrayBuffer.isView(b)) {
+    const { length } = a as Uint8Array;
+    if (length !== (b as Uint8Array).length) {
+      return false;
+    }
+
+    for (let i = length; i-- !== 0; ) {
+      if ((a as Uint8Array)[i] !== (b as Uint8Array)[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   const aKeys = Object.keys(a as object);
   const bKeys = Object.keys(b as object);
 
@@ -209,17 +295,14 @@ export function isEqual(a: unknown, b: unknown): boolean {
     return false;
   }
 
-  // check if all keys in both arrays match
-  if (Array.from(new Set(aKeys.concat(bKeys))).length !== aKeys.length) {
-    return false;
-  }
+  let key: any;
 
-  for (let i = 0; i < aKeys.length; i++) {
-    const propKey = aKeys[i];
-    const aProp = (a as any)[propKey];
-    const bProp = (b as any)[propKey];
-
-    if (!isEqual(aProp, bProp)) {
+  for (let i = aKeys.length; i-- !== 0; ) {
+    key = aKeys[i];
+    if (
+      !Object.hasOwn(b as any, key) ||
+      !isEqual((a as any)[key], (b as any)[key])
+    ) {
       return false;
     }
   }

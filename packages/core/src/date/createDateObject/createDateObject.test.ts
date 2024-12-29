@@ -37,6 +37,11 @@ describe('createDateObject', () => {
     expect(result).toEqual({ year: 1970, month: 1, date: 1 });
   });
 
+  it('should handle YYYY-MM-DD', () => {
+    const result = createDateObject('2024-01-02');
+    expect(result).toEqual({ year: 2024, month: 1, date: 2 });
+  });
+
   it('should handle leap years correctly', () => {
     const leapYearDate = new Date('2024-02-29T12:00:00Z');
     const result = createDateObject(leapYearDate);

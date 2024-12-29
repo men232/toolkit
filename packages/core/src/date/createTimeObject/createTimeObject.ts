@@ -60,8 +60,16 @@ export function createTimeObject(
   let result: TimeObject | null = null;
   let inputValue = value;
 
-  if (isNumber(inputValue) || isString(inputValue)) {
+  if (isNumber(inputValue)) {
     inputValue = new Date(inputValue);
+  } else if (isString(inputValue)) {
+    // lest do inline parsing to accept HH:mm:ss
+    const [h, m] = inputValue
+      .split(':')
+      .map(v => v.trim().padStart(2, '0'))
+      .map(v => parseInt(v));
+
+    inputValue = { h, m };
   }
 
   if (isDate(inputValue)) {

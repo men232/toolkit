@@ -54,4 +54,12 @@ describe('isTimeObject', () => {
     const invalidTimeObject2 = { h: 15, m: NaN };
     expect(isTimeObject(invalidTimeObject2)).toBe(false);
   });
+
+  it('should return false decimal numbers', () => {
+    const invalidTimeObject = { h: 1.1, m: 0 };
+    expect(isTimeObject(invalidTimeObject)).toBe(false);
+
+    const invalidTimeObject2 = { h: 1, m: 1.1 };
+    expect(isTimeObject(invalidTimeObject2)).toBe(false);
+  });
 });
