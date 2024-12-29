@@ -1,5 +1,5 @@
 import { BinaryReader, BinaryWriter, createExtension } from '@andrew_l/tl-pack';
-import { crc32 } from '@andrew_l/toolkit';
+import { assert, crc32 } from '@andrew_l/toolkit';
 import { ObjectId } from 'mongodb';
 
 const SCHEMA_VERSION = 1;
@@ -123,9 +123,10 @@ export class Token {
 
     const schemaVersion = reader.readInt8(false);
 
-    if (schemaVersion !== SCHEMA_VERSION) {
-      throw new TypeError(`Unexpected schema version: ${schemaVersion}`);
-    }
+    assert.ok(
+      schemaVersion === SCHEMA_VERSION,
+      'Unexpected schema version: ' + schemaVersion,
+    );
 
     const token = new Token();
 
@@ -136,6 +137,14 @@ export class Token {
 
     return token;
   }
+}
+
+/**
+ * Parses a token from provided value.
+ * @group Utils
+ */
+export function parseToken(value: string | Buffer): Token {
+  return Token.from(value);
 }
 
 /**
