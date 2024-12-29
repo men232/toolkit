@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/tl-pack",
-  "version": "0.2.0",
+  "version": "0.2.4",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -39,8 +39,8 @@
     "dist"
   ],
   "dependencies": {
-    "pako": "^2.1.0",
-    "@andrew_l/toolkit": "workspace:*"
+    "@andrew_l/toolkit": "workspace:*",
+    "pako": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",

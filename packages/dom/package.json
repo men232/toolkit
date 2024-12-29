@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/dom",
-  "version": "0.0.2",
+  "version": "0.2.4",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -31,9 +31,9 @@
     "dist"
   ],
   "devDependencies": {
-    "unbuild": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
+    "unbuild": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {

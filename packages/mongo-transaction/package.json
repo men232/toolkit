@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-transaction",
-  "version": "0.0.2",
+  "version": "0.2.4",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -35,16 +35,16 @@
     "dist"
   ],
   "devDependencies": {
-    "unbuild": "catalog:",
     "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
     "mongoose-v7": "npm:mongoose@7.6.3",
-    "mongoose-v8": "npm:mongoose@8.8.0"
+    "mongoose-v8": "npm:mongoose@8.8.0",
+    "typescript": "catalog:",
+    "unbuild": "catalog:",
+    "vitest": "catalog:"
   },
   "dependencies": {
-    "@andrew_l/toolkit": "workspace:*",
-    "@andrew_l/context": "workspace:*"
+    "@andrew_l/context": "workspace:*",
+    "@andrew_l/toolkit": "workspace:*"
   },
   "peerDependencies": {
     "mongodb": "^5 || ^6"

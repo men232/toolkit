@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-pagination",
-  "version": "0.0.24",
+  "version": "0.2.4",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -41,17 +41,17 @@
     "dist"
   ],
   "devDependencies": {
-    "unbuild": "catalog:",
-    "@types/node": "catalog:",
     "@types/debug": "^4.1.12",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
+    "@types/node": "catalog:",
     "mongoose-v7": "npm:mongoose@7.6.3",
-    "mongoose-v8": "npm:mongoose@8.8.0"
+    "mongoose-v8": "npm:mongoose@8.8.0",
+    "typescript": "catalog:",
+    "unbuild": "catalog:",
+    "vitest": "catalog:"
   },
   "dependencies": {
-    "@andrew_l/toolkit": "workspace:*",
     "@andrew_l/tl-pack": "workspace:*",
+    "@andrew_l/toolkit": "workspace:*",
     "debug": "^4.3.7",
     "kareem": "^2.6.3"
   },
