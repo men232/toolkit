@@ -35,4 +35,8 @@ describe('unflatten', () => {
       },
     });
   });
+
+  test('should handle invalid value', () => {
+    expect(unflatten(null as any, '.')).toStrictEqual({});
+  });
 });

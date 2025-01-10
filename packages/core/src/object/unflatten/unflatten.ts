@@ -1,4 +1,8 @@
-import { set } from '../set';
+import { isObject } from '@/is';
+
+const badKeys = Object.freeze(
+  new Set(['constructor', '__proto__', 'prototype']),
+);
 
 /**
  * Converts a flattened object back into a nested structure.
@@ -47,13 +51,47 @@ import { set } from '../set';
  * // }
  *
  * @group Object
+ * @author lukeed
  */
-export function unflatten(obj: object, separator = '_') {
-  const result = {};
+export function unflatten(input: object, separator = '_') {
+  if (!isObject(input)) {
+    return {};
+  }
 
-  Object.keys(obj).forEach(path => {
-    set(result, path.split(separator), (obj as any)[path]);
-  });
+  let arr, tmp: any, output;
+  let i = 0,
+    k,
+    key;
 
-  return result;
+  for (k in input) {
+    tmp = output;
+    arr = k.split(separator);
+
+    for (i = 0; i < arr.length; ) {
+      key = arr[i++];
+
+      if (tmp == null) {
+        tmp = empty(+key);
+        output = output || tmp;
+      }
+
+      if (badKeys.has(key)) break;
+
+      if (i < arr.length) {
+        if (key in tmp) {
+          tmp = tmp[key];
+        } else {
+          tmp = tmp[key] = empty(+arr[i]);
+        }
+      } else {
+        tmp[key] = (input as any)[k];
+      }
+    }
+  }
+
+  return output;
+}
+
+function empty(key: unknown): any {
+  return key === key ? [] : {};
 }
