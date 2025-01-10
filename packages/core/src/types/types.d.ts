@@ -8,9 +8,17 @@ export type FunctionArgs<Args extends any[] = any[], Return = void> = (
   ...args: Args
 ) => Return;
 
-export type DeepPartial<T> = T extends object
-  ? { [P in keyof T]?: DeepPartial<T[P]> }
-  : T;
+export type DeepPartial<T> = T extends Date
+  ? T
+  : T extends object
+    ? { [P in keyof T]?: DeepPartial<T[P]> }
+    : T;
+
+export type DeepReadonly<T> = T extends unknown[]
+  ? Readonly<T>
+  : T extends object
+    ? Readonly<{ [P in keyof T]: DeepReadonly<T[P]> }>
+    : Readonly<T>;
 
 export type AnyFunction = (...args: any[]) => any;
 
