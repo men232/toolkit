@@ -1,4 +1,4 @@
-import _unset from 'lodash/unset';
+import _unset from 'lodash/unset.js';
 
 /**
  * Same as `set` but unset by dot notation

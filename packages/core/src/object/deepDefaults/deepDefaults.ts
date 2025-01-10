@@ -1,4 +1,4 @@
-import _defaultsDeep from 'lodash/defaultsDeep';
+import _defaultsDeep from 'lodash/defaultsDeep.js';
 
 /**
  * Recursively assigns default properties.

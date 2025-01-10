@@ -1,7 +1,7 @@
 import { arrayable } from '@/array/arrayable';
 import { isError, isPrimitive, isString } from '@/is';
 import type { Arrayable } from '@/types';
-import _cloneDeepWith from 'lodash/cloneDeepWith';
+import _cloneDeepWith from 'lodash/cloneDeepWith.js';
 import { def } from '../def';
 
 const WITH_CUSTOMIZER_FACTORY_SYM = Symbol();

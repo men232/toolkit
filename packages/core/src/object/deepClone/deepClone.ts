@@ -1,4 +1,4 @@
-import _cloneDeep from 'lodash/cloneDeep';
+import _cloneDeep from 'lodash/cloneDeep.js';
 
 /**
  * Recursively clones the provided value, creating a deep copy.
