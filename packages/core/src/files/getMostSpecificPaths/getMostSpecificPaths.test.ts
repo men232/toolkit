@@ -20,8 +20,8 @@ describe('getMostSpecificPaths', () => {
   });
 
   it('should handle an empty array', () => {
-    const input = [];
-    const expected = [];
+    const input: any[] = [];
+    const expected: any[] = [];
     expect(getMostSpecificPaths(input)).toEqual(expected);
   });
 
