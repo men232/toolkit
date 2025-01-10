@@ -1,5 +1,13 @@
 /* eslint-env node */
-import { isBoolean, isError, isNumber, isObject, isString } from '../is';
+import {
+  isBoolean,
+  isDate,
+  isEmpty,
+  isError,
+  isNumber,
+  isObject,
+  isString,
+} from '../is';
 
 let AssertionError: any;
 
@@ -37,6 +45,12 @@ export function equal<T>(
       operator: 'equal',
       stackStartFn: equal,
     });
+  }
+}
+
+export function empty(value: unknown, message?: string | Error): asserts value {
+  if (isEmpty(value)) {
+    throw toError(empty, value, message, 'Expected not empty value.');
   }
 }
 
@@ -87,6 +101,54 @@ export function number(
 ): asserts value is number {
   if (!isNumber(value)) {
     throw toError(number, value, message, 'Expected number value.');
+  }
+}
+
+export function date(
+  value: unknown,
+  message?: string | Error,
+): asserts value is Date {
+  if (!isDate(value)) {
+    throw toError(date, value, message, 'Expected date value.');
+  }
+}
+
+export function fn(
+  value: unknown,
+  message?: string | Error,
+): asserts value is Function {
+  if (!isNumber(value)) {
+    throw toError(fn, value, message, 'Expected function value.');
+  }
+}
+
+export function greaterThan(
+  value: unknown,
+  target: number,
+  message?: string | Error,
+): asserts value is number {
+  if (!isNumber(value) || value < target) {
+    throw toError(
+      greaterThan,
+      value,
+      message,
+      'Expected number value greater then ' + target + '.',
+    );
+  }
+}
+
+export function lessThan(
+  value: unknown,
+  target: number,
+  message?: string | Error,
+): asserts value is number {
+  if (!isNumber(value) || value > target) {
+    throw toError(
+      lessThan,
+      value,
+      message,
+      'Expected number value less then ' + target + '.',
+    );
   }
 }
 
