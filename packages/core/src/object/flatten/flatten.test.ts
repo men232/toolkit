@@ -51,4 +51,21 @@ describe('flatten', () => {
       details_roles: ['ADMIN', 'USER'],
     });
   });
+
+  test('should handle invalid value', () => {
+    expect(flatten(null as any)).toStrictEqual({});
+  });
+
+  test('should handle custom prefix', () => {
+    expect(
+      flatten(
+        { id: 1, name: 'Andrew', details: { role: 'admin' } },
+        { initialPrefix: 'test-' },
+      ),
+    ).toStrictEqual({
+      'test-id': 1,
+      'test-name': 'Andrew',
+      'test-details_role': 'admin',
+    });
+  });
 });

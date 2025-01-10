@@ -68,6 +68,7 @@ interface FlattenOptions {
  * // { 'root-user-name': 'Jane', 'root-user-profile-age': 30 }
  *
  * @group Object
+ * @author lukeed
  */
 export function flatten(
   obj: Record<string, unknown>,
@@ -79,37 +80,73 @@ export function flatten(
   }: FlattenOptions = {},
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const processed = new WeakSet();
+  const seen = new WeakSet();
 
-  const handle = (node: any, prefix: string, initial?: boolean) => {
-    if (processed.has(node)) return;
-
-    if (isObjectCompare(node)) {
-      processed.add(node);
-
-      prefix = prefix && !initial ? `${prefix}${separator}` : prefix;
-
-      for (const [key, value] of Object.entries(node)) {
-        handle(value, `${prefix}${key}`);
-      }
-
-      return;
-    }
-
-    if (Array.isArray(node) && withArrays) {
-      processed.add(node);
-
-      prefix = prefix && !initial ? `${prefix}${separator}` : prefix;
-
-      node.forEach((value, idx) => handle(value, `${prefix}${idx}`));
-
-      return;
-    }
-
-    result[prefix] = node;
-  };
-
-  handle(obj, initialPrefix, true);
+  if (isObjectCompare(obj)) {
+    iter(
+      result,
+      seen,
+      isObjectCompare,
+      separator,
+      withArrays,
+      obj,
+      initialPrefix,
+      true,
+    );
+  }
 
   return result;
+}
+
+function iter(
+  output: Record<string, unknown>,
+  seen: WeakSet<any>,
+  isObjectCompare: Exclude<FlattenOptions['isObjectCompare'], undefined>,
+  separator: string,
+  withArrays: boolean,
+  val: any,
+  key: string,
+  initial?: boolean,
+) {
+  if (seen.has(val)) return;
+
+  let k,
+    pfx = key && !initial ? key + separator : key;
+
+  if (Array.isArray(val)) {
+    seen.add(val);
+
+    if (!withArrays) {
+      output[key] = val;
+      return;
+    }
+
+    for (k = 0; k < val.length; k++) {
+      iter(
+        output,
+        seen,
+        isObjectCompare,
+        separator,
+        withArrays,
+        val[k],
+        pfx + k,
+      );
+    }
+  } else if (isObjectCompare(val)) {
+    seen.add(val);
+
+    for (k in val) {
+      iter(
+        output,
+        seen,
+        isObjectCompare,
+        separator,
+        withArrays,
+        val[k],
+        pfx + k,
+      );
+    }
+  } else {
+    output[key] = val;
+  }
 }
