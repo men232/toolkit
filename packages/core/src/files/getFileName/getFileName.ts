@@ -23,5 +23,5 @@ export function getFileName(value: string): string | null {
     return value;
   }
 
-  return value.slice(0, -ext.length - 1);
+  return value.slice(0, -ext.length);
 }
