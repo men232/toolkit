@@ -9,15 +9,7 @@ import {
   isString,
 } from '../is';
 
-let AssertionError: any;
-
-(async () => {
-  AssertionError = (globalThis as any).window
-    ? await import('../errors/BrowserAssertionError').then(
-        r => r.BrowserAssertionError,
-      )
-    : await import('node:assert').then(r => r.AssertionError);
-})();
+import { AssertionError } from './AssertionError.js';
 
 export function ok(value: unknown, message?: string | Error): asserts value {
   if (!value) {
