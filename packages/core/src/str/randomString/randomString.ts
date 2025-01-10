@@ -1,3 +1,5 @@
+import { isNumber } from '@/is';
+
 const rndCharacters = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const charactersLength = rndCharacters.length;
 
@@ -17,11 +19,10 @@ const charactersLength = rndCharacters.length;
  * @group Strings
  */
 export function randomString(length: number): string {
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += rndCharacters.charAt(
-      Math.floor(Math.random() * charactersLength),
-    );
+  let str = '';
+  let num = isNumber(length) ? Math.max(0, length) : 0;
+  while (num--) {
+    str += rndCharacters[(charactersLength * Math.random()) | 0];
   }
-  return result;
+  return str;
 }
