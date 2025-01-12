@@ -1,6 +1,5 @@
-import glob from 'glob';
-
 import crypto from 'node:crypto';
+import { globSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -134,7 +133,7 @@ export default {
 
   async importServices(autoImportPatterns: string[]) {
     for (const pattern of autoImportPatterns) {
-      for (const filePath of glob.sync(pattern)) {
+      for (const filePath of globSync(pattern)) {
         await import(filePath);
       }
     }

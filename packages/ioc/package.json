@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/ioc",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -33,14 +33,12 @@
     "dist"
   ],
   "devDependencies": {
-    "@types/glob": "^8.1.0",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "unbuild": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@andrew_l/toolkit": "workspace:*",
-    "glob": "^11.0.0"
+    "@andrew_l/toolkit": "workspace:*"
   }
 }
