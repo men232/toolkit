@@ -1,9 +1,28 @@
-import { env } from './env';
-import { isString, noop } from './is';
+import { assert } from './assert';
+import { isString } from './is';
 import { sprintf } from './str/sprintf';
 import type { Logger } from './types';
 
-const IS_DEV = env.isDevelopment || env.bool('DEV', false);
+type LogLevel = Exclude<keyof Logger, 'extend'>;
+
+const LEVEL_NUM: Record<LogLevel, number> = {
+  debug: 0,
+  log: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+};
+
+let currentLogLevel: number = LEVEL_NUM.log;
+
+/**
+ * Set global log level.
+ * @group Utility Functions
+ */
+export const loggerSetLevel = (level: LogLevel) => {
+  assert.number(LEVEL_NUM[level], `Invalid log level: ${level}`);
+  currentLogLevel = LEVEL_NUM[level];
+};
 
 /**
  * Create pretty simple `console.log` wrapper interface.
@@ -16,14 +35,24 @@ const IS_DEV = env.isDevelopment || env.bool('DEV', false);
  * @group Utility Functions
  */
 export const logger = (...baseArgs: any[]): Logger => {
+  // handle meta.url
+  if (isString(baseArgs[0]?.url)) {
+    baseArgs[0] = baseArgs[0]?.url;
+  }
+
   // normalize meta.url
   if (typeof baseArgs[0] === 'string' && baseArgs[0][0] !== '[') {
     baseArgs[0] = `[${baseArgs[0].split('/')!.at(-1)!.split('?', 1)[0]!}]`;
   }
 
-  const writeLog = (level: keyof Logger, ...[pattern, ...args]: any[]) => {
+  const writeLog = (level: LogLevel, ...[pattern, ...args]: any[]) => {
+    const levelNum = LEVEL_NUM[level];
+
+    if (levelNum < currentLogLevel) {
+      return;
+    }
+
     if (!isString(pattern)) {
-      // @ts-expect-error
       // eslint-disable-next-line no-console
       console[level](...baseArgs, pattern, ...args);
       return;
@@ -32,9 +61,8 @@ export const logger = (...baseArgs: any[]): Logger => {
     const unusedArgs: any[] = [];
     const formatted = sprintf(pattern, args, unusedArgs);
 
-    // @ts-expect-error
     // eslint-disable-next-line no-console
-    console[level](...baseArgs, ...formatted, ...unusedArgs);
+    console[level](...baseArgs, formatted, ...unusedArgs);
   };
 
   const log = writeLog.bind(null, 'log');
@@ -59,10 +87,6 @@ export const logger = (...baseArgs: any[]): Logger => {
     debug,
     extend,
   };
-
-  Object.defineProperty(instance, 'debug', {
-    get: () => (IS_DEV ? debug : noop),
-  });
 
   return instance;
 };

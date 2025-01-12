@@ -78,7 +78,7 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
   /**
    * @internal
    */
-  log = logger(import.meta, 'TransactionScope');
+  log = logger('TransactionScope');
 
   /**
    * @internal

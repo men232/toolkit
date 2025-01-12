@@ -35,7 +35,7 @@ export interface SetupOptions {
 
 const storage = new Map<string, Service>();
 
-const log = logger(import.meta, 'IOC');
+const log = logger('IOC');
 
 export default {
   get<T>(id: string): T {
@@ -65,9 +65,7 @@ export default {
     let constructorPath: string | undefined;
 
     try {
-      constructorPath = new URL(
-        captureStackTrace(this.set).split('\n')[0].slice(7),
-      ).pathname.split(':')[0];
+      constructorPath = extractFilePathFromStack(captureStackTrace(this.set));
     } catch (_) {}
 
     this.override(id, factoryOrClassReference, buildInstantly, constructorPath);
@@ -147,8 +145,7 @@ export default {
       key,
       { constructorName, constructorPath },
     ] of storage.entries()) {
-      if (!constructorName) continue;
-      if (!constructorPath) continue;
+      if (!constructorName || !constructorPath) continue;
 
       typesDefinitions.push(
         `"${key}": import('./${path.relative(
@@ -190,6 +187,29 @@ declare module '@andrew_l/ioc' {
     }
   },
 };
+
+function extractFilePathFromStack(stack: string): string {
+  let result = stack.split('\n')[0].slice(7).replace('<anonymous>', '').trim();
+
+  if (result.startsWith('(')) {
+    result = result.slice(1);
+  }
+
+  if (result.endsWith(')')) {
+    result = result.slice(0, -1);
+  }
+
+  if (!result.startsWith('file://')) {
+    result = 'file://' + result;
+  }
+
+  result = new URL(result).pathname.split(':')[0];
+
+  if (result.endsWith('.ts')) {
+    result = result.slice(0, -3) + '.js';
+  }
+  return result;
+}
 
 function isConstructable(obj: any): obj is Function {
   // https://stackoverflow.com/a/46320004
