@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { withCacheBucketBatch } from './withCacheBucketBatch';
 
 describe('withCacheBucketBatch', () => {
+  it('should keep this context', async () => {
+    let tracked: any;
+    const fn = withCacheBucketBatch(
+      {
+        key: 'id',
+        sizeMs: 1000,
+        capacity: 10,
+        batchSize: 2,
+      },
+      async function (this: any, values: string[]) {
+        tracked = this;
+        return [];
+      },
+    );
+
+    const context = Symbol();
+    // @ts-expect-error
+    await fn.call(context, [{ _id: 'test' }]);
+    expect(tracked).toBe(context);
+  });
+
   it('should cache objects', async () => {
     const records: Record<string, { id: string; name: string; gen: number }> = {
       '1': { id: '1', name: 'John', gen: 0 },

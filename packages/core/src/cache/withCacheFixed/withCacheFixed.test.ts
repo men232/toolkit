@@ -8,6 +8,16 @@ describe('withCacheFixed', () => {
     expect(rnd()).toBe(rnd());
   });
 
+  test('should keep this context', () => {
+    const fn = withCacheFixed({ capacity: 1 }, function (this: any) {
+      return this;
+    });
+
+    const context = Symbol();
+
+    expect(fn.call(context)).toBe(context);
+  });
+
   test('check capacity', () => {
     let called = 0;
 

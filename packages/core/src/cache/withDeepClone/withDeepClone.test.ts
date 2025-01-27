@@ -12,4 +12,15 @@ describe('withDeepClone', () => {
 
     expect(user.id).lt(user2.id);
   });
+
+  test('should keep this context', () => {
+    let tracked: any;
+    const fn = withDeepClone(function (this: any) {
+      tracked = this;
+    });
+
+    const context = Symbol();
+    fn.call(context);
+    expect(tracked).toBe(context);
+  });
 });

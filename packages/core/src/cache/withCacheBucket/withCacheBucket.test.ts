@@ -10,6 +10,19 @@ describe('withCacheBucket', () => {
     expect(rnd()).toBe(rnd());
   });
 
+  test('should keep this context', () => {
+    const fn = withCacheBucket(
+      { sizeMs: 100, capacity: 1 },
+      function (this: any) {
+        return this;
+      },
+    );
+
+    const context = Symbol();
+
+    expect(fn.call(context)).toBe(context);
+  });
+
   test('check size ms', async () => {
     let called = 0;
 

@@ -8,6 +8,16 @@ describe('withCache', () => {
     expect(rnd()).toBe(rnd());
   });
 
+  test('should keep this context', () => {
+    const fn = withCache(function (this: any) {
+      return this;
+    });
+
+    const context = Symbol();
+
+    expect(fn.call(context)).toBe(context);
+  });
+
   test('object arguments must be handled (strategy: ref)', () => {
     const user = { id: 1, name: 'Andrew L.' };
 

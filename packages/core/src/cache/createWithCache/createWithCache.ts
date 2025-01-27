@@ -45,7 +45,7 @@ export function createWithCache<T extends AnyFunction>({
     argToKeyOptions,
   };
 
-  const wrapFn = ((...args: Parameters<T>) => {
+  const wrapFn = function (this: any, ...args: Parameters<T>) {
     const storage = getBucket(getPointer());
     const cacheKey = args.map(v => argToKey(v, argToKeyOptions)).join('_');
 
@@ -54,7 +54,7 @@ export function createWithCache<T extends AnyFunction>({
       return isAsync ? Promise.resolve(value) : value;
     }
 
-    const newValue = fn(...args);
+    const newValue = fn.apply(this, args);
 
     if (isPromise(newValue)) {
       // cache only success result
@@ -67,7 +67,7 @@ export function createWithCache<T extends AnyFunction>({
     storage.set(cacheKey, newValue);
 
     return newValue;
-  }) as T;
+  } as T;
 
   (wrapFn as any).$cache = $cache;
 

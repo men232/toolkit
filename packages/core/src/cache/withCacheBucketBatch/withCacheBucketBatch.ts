@@ -93,7 +93,7 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
     return fnCache;
   };
 
-  const wrapFn = async (values: any) => {
+  const wrapFn = async function (this: any, values: any) {
     const result = new Map();
 
     let fnCache = getBucket();
@@ -103,7 +103,7 @@ export function withCacheBucketBatch<T extends object, K extends keyof T>(
     const drainMaybe = async () => {
       if (!batchSet.size) return;
 
-      const items = await resolver(Array.from(batchSet));
+      const items = await resolver.call(this, Array.from(batchSet));
 
       for (let idx = 0; idx < items.length; idx++) {
         const item = items[idx];
