@@ -1,3 +1,4 @@
+import { AppError } from '@/errors/AppError';
 import { isFunction, isPromise } from '@/is';
 import type { Awaitable } from '@/types';
 
@@ -28,7 +29,7 @@ import type { Awaitable } from '@/types';
  *   - A `Promise` that will be awaited until completion, or
  *   - A function that takes an `AbortSignal` and returns a `Promise` or a value.
  * @param timeoutError - The error that will be thrown if the timeout is reached before the promise or callback resolves.
- *   (Defaults to `Error('Timeout')` if not provided).
+ *   (Defaults to `AppError(408)` if not provided).
  * @returns A `Promise` that resolves with the result of the provided `promiseOrCallback`, or rejects with the `timeoutError` if the timeout occurs.
  *
  * @throws {Error} - Throws the `timeoutError` if the operation exceeds the specified timeout.
@@ -38,7 +39,7 @@ import type { Awaitable } from '@/types';
 export function timeout<T = any>(
   ms: number,
   promiseOrCallback: Promise<T> | ((abortSignal: AbortSignal) => Awaitable<T>),
-  timeoutError: any = new Error('Timeout'),
+  timeoutError: any = new AppError(408),
 ): Promise<T> {
   const abortController = new AbortController();
 
@@ -59,7 +60,7 @@ export function timeout<T = any>(
     return Promise.resolve(taskResult);
   }
 
-  let timer: any;
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
   return Promise.race([
     taskResult,

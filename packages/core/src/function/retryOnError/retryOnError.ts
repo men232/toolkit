@@ -1,5 +1,5 @@
-import { delay } from './promise/delay';
-import type { AnyFunction } from './types';
+import { delay } from '@/promise/delay';
+import type { AnyFunction } from '@/types';
 
 const noopShouldRetryBasedOnError = () => true;
 
@@ -37,8 +37,10 @@ export type RetryOnErrorConfig = {
 };
 
 /**
+ * Wraps a function with retry logic.
+ *
  * @example
- * await retryOnError({
+ * const fn = await retryOnError({
  *   maxRetriesNumber: 10,
  *   delayFactor: 2,
  *   delayMinMs: 1000,
@@ -50,7 +52,9 @@ export type RetryOnErrorConfig = {
  *   await db.transactions.insert(doc);
  * });
  *
- * @group Errors
+ * await fn();
+ *
+ * @group Utility Functions
  */
 export function retryOnError<T extends AnyFunction>(
   {

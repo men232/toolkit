@@ -6,8 +6,8 @@ import {
   isSet,
   isWeakMap,
   isWeakSet,
-} from './is';
-import type { AnyFunction } from './types';
+} from '@/is';
+import type { AnyFunction } from '../../types';
 
 export type TypeOf = keyof TypeOfMap;
 

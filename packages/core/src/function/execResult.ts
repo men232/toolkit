@@ -2,7 +2,7 @@ import type {
   ExecResult,
   ExecResultToSkip,
   ExecResultToSuccess,
-} from './types';
+} from '../types';
 
 /**
  * @group Utility Functions

@@ -6,9 +6,9 @@ import {
   isNumber,
   isObject,
   isString,
-} from './is.js';
-import { deepAssign } from './object/index.js';
-import { type TypeOf, type TypeOfMap, typeOf } from './typeOf.js';
+} from '@/is.js';
+import { deepAssign } from '@/object/index.js';
+import { type TypeOf, type TypeOfMap, typeOf } from '../typeOf';
 
 type StringifyOptions = {
   /**
