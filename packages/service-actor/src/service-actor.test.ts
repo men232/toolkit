@@ -95,4 +95,50 @@ describe('serviceActor', () => {
       name: 'Andrew',
     });
   });
+
+  it('should keep this context in with hook', () => {
+    const actor = serviceActor(() => ({
+      actorId: 1,
+    }));
+
+    const fn = actor.with(function (this: any) {
+      return this;
+    });
+
+    const sym = Symbol();
+
+    expect(fn.call(sym)).toBe(sym);
+  });
+
+  it('should pass arguments to with hook', () => {
+    const actor = serviceActor(() => ({
+      actorId: 1,
+    }));
+
+    const fn = actor.with((...args: any[]) => {
+      return args;
+    });
+
+    expect(fn(1, 2)).toStrictEqual([1, 2]);
+  });
+
+  it('should extends with hook', () => {
+    const actor = serviceActor(() => ({
+      actorId: 1,
+    }));
+
+    const sym = Symbol();
+    let injectedActor: any;
+
+    const fn = actor.with(
+      (...args: any[]) => {
+        injectedActor = actor.inject();
+      },
+      { traceId: sym as any },
+    );
+
+    fn();
+
+    expect(injectedActor.traceId).toEqual(injectedActor.traceId);
+  });
 });

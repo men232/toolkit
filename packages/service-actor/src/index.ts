@@ -4,7 +4,11 @@ import {
   provide,
   withContext,
 } from '@andrew_l/context';
-import { type OverwriteWith, isFunction } from '@andrew_l/toolkit';
+import {
+  type AnyFunction,
+  type OverwriteWith,
+  isFunction,
+} from '@andrew_l/toolkit';
 
 type ServiceActorInternal = {
   traceId: unknown;
@@ -77,7 +81,10 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
   /**
    * Wrap a function to execute it with service actor providers
    */
-  with: <R extends Partial<ServiceActor<T>>>(fn: () => R) => () => R;
+  with: <Fn extends AnyFunction>(
+    fn: Fn,
+    params?: Partial<ServiceActor<T>>,
+  ) => Fn;
 
   /**
    * Returns the service actor instance from the current context.
@@ -105,11 +112,11 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
     return actor;
   };
 
-  const withHook = <T extends Record<PropertyKey, any> = {}>(
-    fn: () => T,
+  const withHook = <Fn extends AnyFunction>(
+    fn: Fn,
     params?: Partial<ServiceActor<T>>,
-  ): (() => T) => {
-    return withContext(() => {
+  ): Fn => {
+    return withContext(function (this: any, ...args: any[]) {
       const parentActor = inject<ServiceActor>(injectKey);
       const actor = createActor();
 
@@ -123,8 +130,8 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
 
       provide(injectKey, actor);
 
-      return fn();
-    });
+      return fn.apply(this, args);
+    }) as Fn;
   };
 
   const injectHook = (): AnyServiceActor | undefined => {
