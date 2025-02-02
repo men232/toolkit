@@ -143,6 +143,12 @@ export const isSymbol = (val: any): val is Symbol => typeof val == 'symbol';
 export const isSet = <T = any>(val: any): val is Set<T> => val instanceof Set;
 
 /**
+ * Checks if the given value is a `RegExp`.
+ * @group Predicates
+ */
+export const isRegExp = (val: any): val is RegExp => val instanceof RegExp;
+
+/**
  * Checks if the given value is a `WeekSet`.
  * @group Predicates
  */
@@ -371,14 +377,15 @@ export const isEmpty = (obj: any): boolean => {
  * Checks if the given value is a `Promise`
  * @group Predicates
  */
-export function isPromise<T = void>(value: any): value is Promise<T> {
+export function isPromise<T = void>(value: unknown): value is Promise<T> {
   return (
-    value &&
-    typeof value === 'object' &&
-    'then' in value &&
-    'catch' in value &&
-    typeof value.then === 'function' &&
-    typeof value.catch === 'function'
+    value instanceof Promise ||
+    (!!value &&
+      typeof value === 'object' &&
+      'then' in value &&
+      'catch' in value &&
+      typeof value.then === 'function' &&
+      typeof value.catch === 'function')
   );
 }
 
