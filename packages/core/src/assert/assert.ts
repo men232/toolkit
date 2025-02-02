@@ -4,6 +4,7 @@ import {
   isDate,
   isEmpty,
   isError,
+  isFunction,
   isNumber,
   isObject,
   isString,
@@ -40,9 +41,12 @@ export function equal<T>(
   }
 }
 
-export function empty(value: unknown, message?: string | Error): asserts value {
-  if (isEmpty(value)) {
-    throw toError(empty, value, message, 'Expected not empty value.');
+export function notEmpty(
+  value: unknown,
+  message?: string | Error,
+): asserts value {
+  if (!isEmpty(value)) {
+    throw toError(notEmpty, value, message, 'Expected not empty value.');
   }
 }
 
@@ -109,7 +113,7 @@ export function fn(
   value: unknown,
   message?: string | Error,
 ): asserts value is Function {
-  if (!isNumber(value)) {
+  if (!isFunction(value)) {
     throw toError(fn, value, message, 'Expected function value.');
   }
 }
@@ -144,11 +148,6 @@ export function lessThan(
   }
 }
 
-/**
- * @param {unknown} value
- * @param {string | Error} [message]
- * @return {asserts value is Array}
- */
 export function array(
   value: unknown,
   message?: string | Error,
