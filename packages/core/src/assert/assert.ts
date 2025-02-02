@@ -45,7 +45,7 @@ export function notEmpty(
   value: unknown,
   message?: string | Error,
 ): asserts value {
-  if (!isEmpty(value)) {
+  if (isEmpty(value)) {
     throw toError(notEmpty, value, message, 'Expected not empty value.');
   }
 }
