@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-pagination",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "license": "MIT",
   "type": "module",
   "keywords": [
