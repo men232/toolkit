@@ -1,5 +1,6 @@
 export * from './arrayable';
 export * from './avg';
+export * from './avgCircular';
 export * from './chunk';
 export * from './chunkSeries';
 export * from './difference';
