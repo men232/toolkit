@@ -2,6 +2,7 @@ import { assert, isNumber, isString, withCache } from '@andrew_l/toolkit';
 import mongoose, { isObjectIdOrHexString } from 'mongoose';
 import { Expression } from './Expression';
 import {
+  OpsResource,
   type ParseToMongoOptions,
   type ParseToMongoTransformFn,
   mergeOptions,
@@ -20,7 +21,7 @@ export const MONGO_TRANSFORM = Object.freeze({
    * @throws {Error} If the value is null.
    */
   NOT_NULLABLE: ((value, key) => {
-    assert.ok(value !== null, `The search key "${key}" cannot be nullable.`);
+    assert.ok(value !== null, `The search key "${key}" cannot be null.`);
     return value;
   }) as ParseToMongoTransformFn,
 
@@ -154,34 +155,33 @@ export function parseToMongoose(
   options: ParseToMongoOptions = {},
 ): Record<string, any> {
   const opts = mergeOptions(
-    {
-      transform: transformFromSchema(
-        'schema' in reference ? reference.schema : reference,
-      ),
-    },
+    extractFromSchema('schema' in reference ? reference.schema : reference),
     options,
   );
 
   const result: Record<string, any> = {};
+  const ops = new OpsResource(opts.maxOps);
   const exp = new Expression(input).parse();
 
   for (const node of exp.body) {
-    Object.assign(result, reduceNode(node, opts));
+    Object.assign(result, reduceNode(node, opts, ops));
   }
 
   return result;
 }
 
-const transformFromSchema = withCache(
+const extractFromSchema = withCache(
   { objectStrategy: 'ref' },
-  (schema: mongoose.Schema): Record<string, ParseToMongoTransformFn[]> => {
-    const result: Record<string, ParseToMongoTransformFn[]> = {};
+  (schema: mongoose.Schema): ParseToMongoOptions => {
+    const allowedKeys: string[] = [];
+    const transform: Record<string, ParseToMongoTransformFn[]> = {};
 
     eachPath(schema, (path, type) => {
-      result[path] = INSTANCE_TO_TRANSFORM[type.instance];
+      transform[path] = INSTANCE_TO_TRANSFORM[type.instance];
+      allowedKeys.push(path);
     });
 
-    return result;
+    return { allowedKeys, transform };
   },
 );
 

@@ -3,6 +3,7 @@ import {
   arrayable,
   assert,
   isFunction,
+  isNumber,
 } from '@andrew_l/toolkit';
 import { NODE } from './constants';
 import { Expression } from './Expression';
@@ -36,6 +37,12 @@ export interface ParseToMongoOptions {
   allowedKeys?: string[];
 
   /**
+   * Max of query ops combination.
+   * @default Infinity
+   */
+  maxOps?: number;
+
+  /**
    * A transformation function or a mapping of transformation functions
    * to modify query values before they are converted into a MongoDB query.
    *
@@ -56,6 +63,7 @@ export interface ParseToMongoOptions {
 
 interface ParseToMongoOptionsInternal {
   allowEmpty: boolean;
+  maxOps: number;
   allowedKeys?: Set<string>;
   transform: Record<string, ParseToMongoTransformFn[]>;
 }
@@ -101,10 +109,11 @@ export function parseToMongo(
   }
 
   const result: Record<string, any> = {};
+  const ops = new OpsResource(opts.maxOps);
   const exp = new Expression(input).parse();
 
   for (const node of exp.body) {
-    Object.assign(result, reduceNode(node, opts));
+    Object.assign(result, reduceNode(node, opts, ops));
   }
 
   return result;
@@ -113,9 +122,11 @@ export function parseToMongo(
 export function reduceNode(
   node: NodeExpression,
   options: ParseToMongoOptionsInternal,
+  opsResource: OpsResource,
 ): Record<string, any> {
   switch (node.type) {
     case NODE.BINARY_EXPRESSION: {
+      opsResource.assert();
       assert.ok(
         !options.allowedKeys || options.allowedKeys.has(node.left.name),
         `The search key "${node.left.name}" is not allowed.`,
@@ -142,7 +153,7 @@ export function reduceNode(
 
     case NODE.LOGICAL_EXPRESSION: {
       const op = node.operator === 'AND' ? '$and' : '$or';
-      const right = reduceNode(node.right, options);
+      const right = reduceNode(node.right, options, opsResource);
 
       // combine same operator
       if (
@@ -150,14 +161,13 @@ export function reduceNode(
         node.right.operator === node.operator
       ) {
         return {
-          [op]: [reduceNode(node.left, options), ...right[op]],
+          [op]: [reduceNode(node.left, options, opsResource), ...right[op]],
         };
       }
 
       return {
-        [op]: [reduceNode(node.left, options), right],
+        [op]: [reduceNode(node.left, options, opsResource), right],
       };
-      break;
     }
 
     default: {
@@ -174,17 +184,14 @@ export function mergeOptions(
   const result: ParseToMongoOptionsInternal = {
     transform: optsTransform,
     allowEmpty: false,
+    maxOps: Infinity,
   };
 
   for (const { transform, allowedKeys, ...rest } of options) {
     Object.assign(result, rest);
 
     if (allowedKeys?.length) {
-      result.allowedKeys = result.allowedKeys || new Set();
-
-      for (const key of result.allowedKeys) {
-        result.allowedKeys.add(key);
-      }
+      result.allowedKeys = new Set(allowedKeys);
     }
 
     if (Array.isArray(transform) || isFunction(transform)) {
@@ -199,6 +206,26 @@ export function mergeOptions(
   }
 
   return result;
+}
+
+export class OpsResource {
+  uses: number;
+
+  constructor(private max: number) {
+    assert.ok(
+      max === Infinity || (isNumber(max) && max > 0),
+      'maxOps must be a number greater than zero.',
+    );
+
+    this.uses = 0;
+  }
+
+  assert() {
+    assert.ok(
+      ++this.uses <= this.max,
+      `Maximum search operations reached: ${this.max}`,
+    );
+  }
 }
 
 function callTransform(
