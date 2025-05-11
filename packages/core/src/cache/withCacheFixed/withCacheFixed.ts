@@ -20,7 +20,6 @@ export interface WithCacheFixedOptions extends Partial<ArgToKeyOptions> {
 }
 
 export const cacheFixed = /*#__PURE__*/ new WeakMap<
-  // @ts-expect-error
   WithCachePointer,
   FixedMap<string, any>
 >();

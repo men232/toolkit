@@ -25,7 +25,6 @@ export interface WithCacheBucketOptions extends Partial<ArgToKeyOptions> {
 }
 
 export const cacheBucket = /*#__PURE__*/ new WeakMap<
-  // @ts-expect-error
   WithCachePointer,
   TimeBucket<string, any>
 >();

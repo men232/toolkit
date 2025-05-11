@@ -15,7 +15,6 @@ export interface WithCacheOptions extends Partial<ArgToKeyOptions> {
 }
 
 export const cache = /*#__PURE__*/ new WeakMap<
-  // @ts-expect-error
   WithCachePointer,
   Map<string, any>
 >();

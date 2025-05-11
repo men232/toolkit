@@ -13,7 +13,6 @@ export interface WithCacheLruOptions extends Partial<ArgToKeyOptions> {
 }
 
 export const cacheLRU = /*#__PURE__*/ new WeakMap<
-  // @ts-expect-error
   WithCachePointer,
   LruCache<string, any>
 >();
