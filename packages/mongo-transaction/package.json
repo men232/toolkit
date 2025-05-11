@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-transaction",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "license": "MIT",
   "type": "module",
   "keywords": [
