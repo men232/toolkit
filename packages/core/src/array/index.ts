@@ -9,6 +9,7 @@ export * from './intersection';
 export * from './keyBy';
 export * from './orderBy';
 export * from './shuffle';
+export * from './SortedArray';
 export * from './sum';
 export * from './union';
 export * from './uniq';
