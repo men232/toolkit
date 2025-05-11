@@ -16,3 +16,4 @@ I am deeply grateful to the open-source community and the authors of these funct
 - [Service Actor](https://men232.github.io/toolkit/reference/@andrew_l/service-actor/)
 - [Mongo Transaction](https://men232.github.io/toolkit/reference/@andrew_l/mongo-transaction/)
 - [TL Pack](https://men232.github.io/toolkit/reference/@andrew_l/tl-pack/)
+- [Binlog](https://men232.github.io/toolkit/reference/@andrew_l/binlog/)
