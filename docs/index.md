@@ -50,6 +50,10 @@ features:
     icon: 🪄
     details: Renderer for terminal output with flexible layouts and CLI components.
     link: /reference/@andrew_l/vue-stdout/
+  - title: Binlog
+    icon: 📝
+    details: A high-performance binary logging system for Node.js applications.
+    link: /reference/@andrew_l/binlog/
 ---
 
 ## Getting Started
