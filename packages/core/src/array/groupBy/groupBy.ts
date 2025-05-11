@@ -25,6 +25,19 @@ export function groupBy<T, K extends PropertyKey>(
   objectMode: true,
 ): Record<K, T[]>;
 
+/**
+ * @group Array
+ * @example
+ * const arr = [
+ *   { id: 1, name: 'a' },
+ *   { id: 2, name: 'a' },
+ *   { id: 3, name: 'b' },
+ * ];
+ * const grouped = groupBy(arr, 'name', true);
+ *
+ * console.log(grouped.a);
+ * // [{ id: 1, name: 'a' }, { id: 2, name: 'a' }]
+ */
 export function groupBy(
   array: readonly any[],
   keyBy: unknown | ((item: any) => unknown),

@@ -12,6 +12,8 @@
  * const array2 = [3, 4, 5, 6, 7];
  * const result = intersection(array1, array2);
  * // result will be [3, 4, 5] since these elements are in both arrays.
+ *
+ * @group Array
  */
 export function intersection<T>(...arrays: readonly T[][]): T[] {
   if (arrays.length === 0) return [];

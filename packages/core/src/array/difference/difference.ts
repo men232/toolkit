@@ -14,6 +14,8 @@
  * const array3 = [1, 5];
  * const result = difference(array1, array2, array3);
  * // result will be [3] since 1, 2, 4 and 5 are in other arrays and are excluded from the result.
+ *
+ * @group Array
  */
 export function difference<T>(...arrays: readonly T[][]): T[] {
   if (arrays.length === 0) return [];
