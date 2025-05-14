@@ -76,7 +76,7 @@ export class SimpleEventEmitter<
 
     set.forEach(fn => {
       try {
-        const result = fn();
+        const result = fn(...args);
 
         if (isPromise(result)) {
           result.catch(err => {
