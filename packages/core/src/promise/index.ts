@@ -10,5 +10,6 @@ export * from './fastIdle';
 export * from './fastRaf';
 export * from './nextTickIteration';
 export * from './Queue';
+export * from './ResourcePool';
 export * from './SimpleEventEmitter';
 export * from './timeout';
