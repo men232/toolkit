@@ -1,3 +1,5 @@
+import { def } from '@/object';
+
 /**
  * Function that compares two elements and returns a number indicating their relative order.
  * - Negative number if a < b
@@ -7,6 +9,8 @@
  * @template T The type of elements in the array
  */
 export type SortedArrayCompareFn<T> = (a: T, b: T) => number;
+
+const SYM_COMPARE_FN = Symbol('SYM_COMPARE_FN');
 
 /**
  * A self-sorting array that maintains elements in a sorted order based on a comparison function.
@@ -35,7 +39,8 @@ export type SortedArrayCompareFn<T> = (a: T, b: T) => number;
  * @group Array
  */
 export class SortedArray<T> extends Array<T> {
-  #compareFn: SortedArrayCompareFn<T>;
+  // @ts-expect-error
+  private [SYM_COMPARE_FN]: SortedArrayCompareFn<T>;
 
   /**
    * Creates a new SortedArray instance.
@@ -45,11 +50,12 @@ export class SortedArray<T> extends Array<T> {
    */
   constructor(compareFn: SortedArrayCompareFn<T>, items: T[] = []) {
     super();
-    this.#compareFn = compareFn;
+
+    def(this, SYM_COMPARE_FN, compareFn);
 
     // Add initial items in sorted order if provided
     if (items.length > 0) {
-      super.push.apply(this, items.toSorted(this.#compareFn));
+      super.push.apply(this, items.toSorted(compareFn));
     }
   }
 
@@ -60,7 +66,7 @@ export class SortedArray<T> extends Array<T> {
    */
   push(...items: T[]): number {
     // For large batches, first sort the new items
-    var newItems = items.toSorted(this.#compareFn);
+    var newItems = items.toSorted(this[SYM_COMPARE_FN]);
     var newItemsLen = newItems.length;
     var originalLen = this.length;
 
@@ -74,7 +80,7 @@ export class SortedArray<T> extends Array<T> {
 
     // Main merge loop - stops when either array is exhausted
     while (i < originalLen && j < newItemsLen) {
-      if (this.#compareFn(this[i], newItems[j]) <= 0) {
+      if (this[SYM_COMPARE_FN](this[i], newItems[j]) <= 0) {
         result[k++] = this[i++];
       } else {
         result[k++] = newItems[j++];
@@ -109,7 +115,7 @@ export class SortedArray<T> extends Array<T> {
    * @returns A new SortedArray instance
    */
   slice(start?: number, end?: number): SortedArray<T> {
-    var result = new SortedArray<T>(this.#compareFn);
+    var result = new SortedArray<T>(this[SYM_COMPARE_FN]);
     var sliced = super.slice(start, end);
     super.push.apply(result, sliced);
     return result;
@@ -121,7 +127,7 @@ export class SortedArray<T> extends Array<T> {
    * @returns A new SortedArray with the concatenated elements
    */
   concat(...items: (T | ConcatArray<T>)[]): SortedArray<T> {
-    var result = new SortedArray<T>(this.#compareFn, this);
+    var result = new SortedArray<T>(this[SYM_COMPARE_FN], this);
 
     for (const item of items) {
       if (Array.isArray(item)) {
