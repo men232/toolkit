@@ -132,7 +132,7 @@ export class SimpleEventEmitter<
     return this;
   }
 
-  removeAllListeners(eventName?: Key<unknown, T>): this {
+  removeAllListeners<K>(eventName?: Key<K, T>): this {
     if (eventName === undefined) {
       this.#listeners.clear();
       return this;
