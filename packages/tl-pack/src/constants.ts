@@ -22,6 +22,7 @@ export enum CORE_TYPES {
   Repeat = 20,
   Checksum = 21,
   GZIP = 25,
+  Structure = 26,
 }
 
 export const MAX_BUFFER_SIZE = 0x7fd00000;

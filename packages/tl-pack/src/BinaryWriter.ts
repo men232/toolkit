@@ -1,4 +1,5 @@
 import pako from 'pako';
+import type { Structure } from './Structure.js';
 import { CORE_TYPES, MAX_BUFFER_SIZE } from './constants';
 import { Dictionary } from './dictionary';
 import type { TLExtension } from './extension';
@@ -17,6 +18,7 @@ export interface BinaryWriterOptions {
   gzip?: boolean;
   dictionary?: string[] | Dictionary;
   extensions?: TLExtension[];
+  structures?: Structure.Constructor[];
 }
 
 const NO_CONSTRUCTOR = new Set([
@@ -27,42 +29,66 @@ const NO_CONSTRUCTOR = new Set([
 
 const SUPPORT_COMPRESSION = new Set([CORE_TYPES.String]);
 
+const NOOP_DICTIONARY = new Dictionary();
+
 export class BinaryWriter {
   private withGzip: boolean;
   private target: Uint8Array;
-  private dictionary?: Dictionary;
+  private dictionary: Dictionary;
   private dictionaryExtended: Dictionary;
   private extensions: Map<number, TLExtension>;
-  private _last: any = noop;
-  private _checksumOffset: number;
+  private structures: Map<number, Structure.Constructor>;
+  private _last: any;
+  private offsetChecksum: number;
   private _repeat?: { offset: number; count: number };
   offset: number;
 
-  constructor(options?: BinaryWriterOptions) {
+  constructor({
+    gzip = false,
+    dictionary = NOOP_DICTIONARY,
+    extensions,
+    structures,
+  }: BinaryWriterOptions = {}) {
     this.offset = 0;
-    this._checksumOffset = 0;
+    this.offsetChecksum = 0;
     this.extensions = new Map();
-    this.withGzip = !!options && !!options.gzip;
+    this.structures = new Map();
+    this.withGzip = gzip;
 
     this.target = byteArrayAllocate(8192);
+    this._last = noop;
 
-    if (options && options.extensions) {
-      options.extensions.forEach(ext => {
+    if (extensions) {
+      for (const ext of extensions) {
         this.extensions.set(ext.token, ext);
-      });
+      }
     }
 
-    if (!options) {
-      this.dictionary = new Dictionary();
-    } else if (options.dictionary instanceof Dictionary) {
-      this.dictionary = options.dictionary;
-    } else if (Array.isArray(options.dictionary)) {
-      this.dictionary = new Dictionary(options.dictionary);
+    if (structures) {
+      for (const struct of structures) {
+        this.structures.set(struct.extension.token, struct);
+      }
+    }
+
+    if (Array.isArray(dictionary)) {
+      this.dictionary = new Dictionary(dictionary);
     } else {
-      this.dictionary = new Dictionary();
+      this.dictionary = dictionary;
     }
 
     this.dictionaryExtended = new Dictionary(undefined, this.dictionary.size);
+  }
+
+  /**
+   * Reset internal state
+   */
+  reset(): this {
+    this.offset = 0;
+    this.offsetChecksum = 0;
+    this._last = noop;
+    this._repeat = undefined;
+    this.dictionaryExtended = new Dictionary(undefined, this.dictionary.size);
+    return this;
   }
 
   allocate(size: number): this {
@@ -238,7 +264,7 @@ export class BinaryWriter {
   }
 
   writeChecksum(withConstructor: boolean = true): this {
-    const bytes = this.target.slice(this._checksumOffset, this.offset);
+    const bytes = this.target.slice(this.offsetChecksum, this.offset);
     let sum = 0;
 
     for (const val of bytes) {
@@ -249,8 +275,8 @@ export class BinaryWriter {
       this.writeByte(CORE_TYPES.Checksum);
     }
 
-    this.writeLength(sum);
-    this._checksumOffset = this.offset;
+    this.writeInt32(sum);
+    this.offsetChecksum = this.offset;
 
     return this;
   }
@@ -314,9 +340,7 @@ export class BinaryWriter {
   wireDictionary(value: string): this {
     let idx: number | null = null;
 
-    if (this.dictionary) {
-      idx = this.dictionary.getIndex(value);
-    }
+    idx = this.dictionary.getIndex(value);
 
     if (idx === null) {
       idx = this.dictionaryExtended.getIndex(value);
@@ -332,6 +356,15 @@ export class BinaryWriter {
     return this;
   }
 
+  writeStructure(value: Structure): this {
+    const ctor = value.constructor as typeof Structure;
+
+    this.writeInt32(ctor.extension.token, false);
+    ctor.extension.encode.call(this, value.value);
+
+    return this;
+  }
+
   writeGzip(value: Uint8Array | ArrayBuffer): this {
     const compressed = pako.deflateRaw(value, { level: 9 });
     this.writeBytes(compressed);
@@ -340,7 +373,7 @@ export class BinaryWriter {
 
   encode(value: any): Uint8Array {
     this.offset = 0;
-    this._checksumOffset = 0;
+    this.offsetChecksum = 0;
     this._last = noop;
     this._repeat = undefined;
     this.target = byteArrayAllocate(256);
@@ -434,6 +467,7 @@ export class BinaryWriter {
 
     writer.extensions = this.extensions;
     writer.dictionary = this.dictionary;
+    writer.structures = this.structures;
     writer.dictionaryExtended = this.dictionaryExtended;
 
     writer.writeObject(value);
@@ -451,6 +485,14 @@ export class BinaryWriter {
     }
 
     switch (constructorId) {
+      case CORE_TYPES.Structure: {
+        return this.writeStructure(value);
+      }
+
+      case CORE_TYPES.Binary: {
+        return this.writeBytes(value);
+      }
+
       case CORE_TYPES.GZIP: {
         return this.writeGzip(value);
       }

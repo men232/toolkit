@@ -1,12 +1,17 @@
+import type { Data } from '@andrew_l/toolkit';
 import pako from 'pako';
+import type { Structure } from './Structure';
 import { CORE_TYPES } from './constants';
 import { Dictionary } from './dictionary';
 import type { TLExtension } from './extension';
 import { float32, float64, int32, utf8Read } from './helpers';
 
+const NOOP_DICTIONARY = new Dictionary();
+
 export interface BinaryReaderOptions {
   dictionary?: string[] | Dictionary;
   extensions?: TLExtension[];
+  structures?: Structure.Constructor[];
 }
 
 export class BinaryReader {
@@ -16,6 +21,7 @@ export class BinaryReader {
   private dictionary?: Dictionary;
   private dictionaryExtended: Dictionary;
   private extensions: Map<number, TLExtension>;
+  private structures: Map<number, Structure.Constructor>;
   private _repeat?: { pool: number; value: any };
   private _checksumOffset: number;
   offset: number;
@@ -24,27 +30,37 @@ export class BinaryReader {
   /**
    * Small utility class to read binary data.
    */
-  constructor(data: Uint8Array, options?: BinaryReaderOptions) {
+  constructor(
+    data: Uint8Array,
+    {
+      dictionary = NOOP_DICTIONARY,
+      extensions,
+      structures,
+    }: BinaryReaderOptions = {},
+  ) {
     this.target = data;
     this.offset = 0;
     this._checksumOffset = 0;
     this.length = data.length;
     this.extensions = new Map();
+    this.structures = new Map();
 
-    if (options && options.extensions) {
-      options.extensions.forEach(ext => {
+    if (extensions) {
+      for (const ext of extensions) {
         this.extensions.set(ext.token, ext);
-      });
+      }
     }
 
-    if (!options) {
-      this.dictionary = new Dictionary();
-    } else if (options.dictionary instanceof Dictionary) {
-      this.dictionary = options.dictionary;
-    } else if (Array.isArray(options.dictionary)) {
-      this.dictionary = new Dictionary(options.dictionary);
+    if (structures) {
+      for (const struct of structures) {
+        this.structures.set(struct.extension.token, struct);
+      }
+    }
+
+    if (Array.isArray(dictionary)) {
+      this.dictionary = new Dictionary(dictionary);
     } else {
-      this.dictionary = new Dictionary();
+      this.dictionary = dictionary;
     }
 
     this.dictionaryExtended = new Dictionary(undefined, this.dictionary.size);
@@ -125,10 +141,10 @@ export class BinaryReader {
   }
 
   /**
-   * Read the given amount of bytes, or -1 to read all remaining.
+   * Throws error if provided length cannot be read from buffer
    * @param length {number}
    */
-  assertRead(length: number) {
+  assertRead(length: number): void {
     if (this.length < this.offset + +length) {
       const left = this.target.length - this.offset;
       const result = this.target.subarray(this.offset, this.offset + left);
@@ -145,7 +161,7 @@ export class BinaryReader {
     }
   }
 
-  assertConstructor(constructorId: CORE_TYPES) {
+  assertConstructor(constructorId: CORE_TYPES): void {
     const byte = this.readByte();
 
     if (byte !== constructorId) {
@@ -164,7 +180,7 @@ export class BinaryReader {
     return this.target;
   }
 
-  readNull() {
+  readNull(): null {
     const value = this.readByte();
 
     if (value === CORE_TYPES.Null) {
@@ -174,7 +190,7 @@ export class BinaryReader {
     throw new Error(`Invalid boolean code ${value.toString(16)}`);
   }
 
-  readLength() {
+  readLength(): number {
     const firstByte = this.readByte();
 
     if (firstByte === 254) {
@@ -184,7 +200,7 @@ export class BinaryReader {
     return firstByte;
   }
 
-  readAll() {
+  readAll(): any[] {
     const result: any[] = [];
 
     while (this.length > this.offset) {
@@ -248,6 +264,23 @@ export class BinaryReader {
     const value = this.readDouble();
 
     return new Date(value);
+  }
+
+  readStructure<T extends Data = Data>(checkConstructor: boolean = true): T {
+    if (checkConstructor) {
+      this.assertConstructor(CORE_TYPES.Structure);
+    }
+
+    const structureId = this.readInt32(false);
+    const struct = this.structures.get(structureId);
+
+    if (!struct) {
+      throw new Error(
+        `Unknown structure id = ${structureId}, offset = ${this.offset - 1}`,
+      );
+    }
+
+    return struct.extension.decode.call(this);
   }
 
   /**
@@ -334,6 +367,8 @@ export class BinaryReader {
         return this.readMap(false);
       case CORE_TYPES.Checksum:
         return void this.readChecksum(false);
+      case CORE_TYPES.Structure:
+        return this.readStructure(false);
       case CORE_TYPES.DictIndex: {
         const idx = this.readLength();
         return this.getDictionaryValue(idx)!;
@@ -500,7 +535,7 @@ export class BinaryReader {
     }
 
     const bytes = this.target.slice(this._checksumOffset, offset);
-    const checksum = this.readLength();
+    const checksum = this.readInt32();
     let sum = 0;
 
     for (const val of bytes) {

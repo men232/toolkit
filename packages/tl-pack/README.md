@@ -15,8 +15,10 @@ Binary serialization library, inspired by the TL (Type Language) format, created
 
 - **No Schema Required**: Unlike traditional serialization formats, this version does not require a predefined schema for object serialization.
 - **Compact & Fast**: Designed to be lightweight and fast, with smaller binary output.
+- **Type-Safe Structures**: Define strongly typed binary structures with validation and versioning.
 - **Custom Extension Support**: Easily extend serialization to custom types.
 - **Stream Support**: Supports streaming serialization/deserialization in Node.js.
+- **Version Compatibility**: Built-in version checking for structure evolution.
 
 ## 🚀 Example Usage
 
@@ -64,6 +66,147 @@ console.log(reader.readObject());
  */
 ```
 
+### Type-Safe Structures with `defineStructure`
+
+Define reusable, type-safe binary structures with validation and versioning:
+
+```ts
+import { defineStructure, type Structure } from '@andrew_l/tl-pack';
+
+// Define a User structure
+const User = defineStructure({
+  name: 'User',
+  version: 1,
+  checksum: true,
+  properties: {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: false },
+    isActive: { type: Boolean, required: true },
+    createdAt: { type: Date, required: true },
+    tags: { type: Array as Structure.PropType<string[]>, required: false },
+    metadata: { type: Object, required: false },
+  },
+});
+
+// Create and serialize a user
+const user = new User({
+  id: 123,
+  name: 'John Doe',
+  email: 'john@example.com',
+  isActive: true,
+  createdAt: new Date(),
+  tags: ['admin', 'verified'],
+  metadata: {
+    theme: 'dark',
+    lang: 'en',
+  },
+});
+
+// Serialize to binary
+const buffer = user.toBuffer();
+console.log(`Serialized size: ${buffer.length} bytes`);
+
+// Deserialize from binary
+const restored = User.fromBuffer(buffer);
+console.log(restored);
+/**
+{
+  id: 123,
+  name: 'John Doe',
+  email: 'john@example.com',
+  isActive: true,
+  createdAt: 2023-07-03T12:22:26.000Z,
+  tags: ['admin', 'verified'],
+  metadata: { theme: 'dark', lang: 'en' }
+}
+ */
+```
+
+### Nested Structures
+
+Create complex hierarchical data structures:
+
+```javascript
+// Define an Address structure
+const Address = defineStructure({
+  name: 'Address',
+  version: 1,
+  properties: {
+    street: { type: String, required: true },
+    city: { type: String, required: true },
+    zipCode: { type: String, required: true },
+    country: { type: String, required: false },
+  },
+});
+
+// Define a Person with nested Address
+const Person = defineStructure({
+  name: 'Person',
+  version: 2,
+  checksum: true,
+  properties: {
+    name: { type: String, required: true },
+    age: { type: Number, required: true },
+    address: { type: Address, required: false },
+    contacts: { type: Array, required: false }, // Array of other persons
+  },
+});
+
+const person = new Person({
+  name: 'Alice Smith',
+  age: 30,
+  address: {
+    street: '123 Main St',
+    city: 'New York',
+    zipCode: '10001',
+    country: 'USA',
+  },
+  contacts: [
+    { name: 'Bob', age: 25 },
+    { name: 'Carol', age: 35 },
+  ],
+});
+
+const buffer = person.toBuffer();
+const restored = Person.fromBuffer(buffer);
+```
+
+### API Response Caching
+
+Optimize API responses with binary serialization:
+
+```javascript
+const APIResponse = defineStructure({
+  name: 'APIResponse',
+  version: 1,
+  properties: {
+    status: { type: Number, required: true },
+    data: { type: Object, required: false },
+    headers: { type: Object, required: false },
+    timestamp: { type: Date, required: true },
+    cacheKey: { type: String, required: true },
+  },
+});
+
+// Cache API response
+const response = new APIResponse({
+  status: 200,
+  data: {
+    users: [
+      /*...*/
+    ],
+    total: 1250,
+  },
+  headers: { 'content-type': 'application/json' },
+  timestamp: new Date(),
+  cacheKey: 'users_page_1',
+});
+
+// 60% smaller than JSON in many cases
+const compressed = response.toBuffer();
+```
+
 ### Stream Example (Node.js Only)
 
 ```javascript
@@ -89,6 +232,58 @@ decode.on('data', data => console.log('stream', data));
 decode.on('error', console.error);
 ```
 
+## Structure Features
+
+### Version Management
+
+Structures support versioning for backward compatibility:
+
+```javascript
+// Version 1
+const UserV1 = defineStructure({
+  name: 'User',
+  version: 1,
+  properties: {
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+  },
+});
+
+// Version 2 - Added optional fields
+const UserV2 = defineStructure({
+  name: 'User',
+  version: 2,
+  properties: {
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    createdAt: { type: Date, required: false },
+    isVerified: { type: Boolean, required: false },
+  },
+});
+
+// Reading V1 data with V2 structure will fail with version mismatch
+// This ensures data integrity across application updates
+```
+
+### Checksum Validation
+
+Enable checksum validation for data integrity:
+
+```javascript
+const SecureData = defineStructure({
+  name: 'SecureData',
+  version: 1,
+  checksum: true, // Enables automatic checksum validation
+  properties: {
+    sensitiveInfo: { type: String, required: true },
+    timestamp: { type: Date, required: true },
+  },
+});
+
+// Checksum is automatically calculated during serialization
+// and validated during deserialization
+```
+
 ## Supported Types
 
 | Constructor ID | Byte Size          |
@@ -112,6 +307,7 @@ decode.on('error', console.error);
 | String         | 5 + sizeof(object) |
 | Repeat         | 5                  |
 | GZIP           | 5 + sizeof(object) |
+| Structure      | 4 + sizeof(object) |
 
 ## Custom Types
 

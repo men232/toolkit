@@ -1,4 +1,5 @@
 import { isPlainObject } from '@andrew_l/toolkit';
+import { Structure } from './Structure';
 import { CORE_TYPES } from './constants';
 
 const encoder = new TextEncoder();
@@ -15,6 +16,12 @@ export function byteArrayAllocate(length: number): Uint8Array {
 }
 
 export function coreType(value: any): CORE_TYPES {
+  if (value instanceof Structure) {
+    return CORE_TYPES.Structure;
+  } else if (value instanceof Uint8Array) {
+    return CORE_TYPES.Binary;
+  }
+
   switch (typeof value) {
     case 'string': {
       return CORE_TYPES.String;

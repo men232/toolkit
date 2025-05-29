@@ -2,14 +2,14 @@ import { assert } from '@andrew_l/toolkit';
 import type { BinaryReader } from './BinaryReader';
 import type { BinaryWriter } from './BinaryWriter';
 
-export type EncodeHandler = (this: BinaryWriter, value: any) => void;
+export type EncodeHandler<T = any> = (this: BinaryWriter, value: T) => void;
 
-export type DecodeHandler = (this: BinaryReader) => any;
+export type DecodeHandler<T = any> = (this: BinaryReader) => T;
 
-export interface TLExtension {
+export interface TLExtension<T = any> {
   token: number;
-  encode: EncodeHandler;
-  decode: DecodeHandler;
+  encode: EncodeHandler<T>;
+  decode: DecodeHandler<T>;
 }
 
 export function createExtension(

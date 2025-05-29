@@ -46,3 +46,5 @@ export function tlDecode<T = any>(
 ): T {
   return new BinaryReader(buffer, opts).readObject();
 }
+
+export * from './Structure.js';
