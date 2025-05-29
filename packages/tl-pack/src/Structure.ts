@@ -733,42 +733,44 @@ export namespace Structure {
       : null
     : [T] extends [{ type: null }]
       ? any // As TS issue https://github.com/Microsoft/TypeScript/issues/14829 // somehow `ObjectConstructor` when inferred from { (): T } becomes `any` // `BooleanConstructor` when inferred from PropConstructor(with PropMethod) becomes `Boolean`
-      : [T] extends [{ type: ObjectConstructor | CORE_TYPES.Map }]
-        ? Record<string, any>
-        : [T] extends [{ type: CoreInt }]
-          ? number
-          : [T] extends [{ type: CORE_TYPES.String }]
-            ? string
-            : [T] extends [{ type: CORE_TYPES.Vector }]
-              ? unknown[]
-              : [T] extends [{ type: CORE_TYPES.Binary }]
-                ? Uint8Array
-                : [T] extends [{ type: BooleanConstructor }]
-                  ? boolean
-                  : [T] extends [{ type: DateConstructor | CORE_TYPES.Date }]
-                    ? Date
-                    : [T] extends [{ type: Constructor<infer U> }]
-                      ? U
-                      : [T] extends [{ type: [infer U] }]
-                        ? U extends DateConstructor
-                          ? Date[]
-                          : U extends Constructor<infer V>
-                            ? V[]
-                            : InferPropType<U, false>[]
-                        : [T] extends [{ type: (infer U)[] }]
+      : [T] extends [{ type: [null] }]
+        ? any[]
+        : [T] extends [{ type: ObjectConstructor | CORE_TYPES.Map }]
+          ? Record<string, any>
+          : [T] extends [{ type: CoreInt }]
+            ? number
+            : [T] extends [{ type: CORE_TYPES.String }]
+              ? string
+              : [T] extends [{ type: CORE_TYPES.Vector }]
+                ? unknown[]
+                : [T] extends [{ type: CORE_TYPES.Binary }]
+                  ? Uint8Array
+                  : [T] extends [{ type: BooleanConstructor }]
+                    ? boolean
+                    : [T] extends [{ type: DateConstructor | CORE_TYPES.Date }]
+                      ? Date
+                      : [T] extends [{ type: Constructor<infer U> }]
+                        ? U
+                        : [T] extends [{ type: [infer U] }]
                           ? U extends DateConstructor
-                            ? Date | InferPropType<U, false>
-                            : InferPropType<U, false>
-                          : [T] extends [Prop<infer V>]
-                            ? V
-                            : T;
+                            ? Date[]
+                            : U extends Constructor<infer V>
+                              ? V[]
+                              : InferPropType<U, false>[]
+                          : [T] extends [{ type: (infer U)[] }]
+                            ? U extends DateConstructor
+                              ? Date | InferPropType<U, false>
+                              : InferPropType<U, false>
+                            : [T] extends [Prop<infer V>]
+                              ? V
+                              : T;
 
   export type ObjectPropsOptions<P = Data> = {
     readonly [K in keyof P]: PropOptions<P[K]>;
   };
 
   export interface PropOptions<T = any> {
-    type: PropType<T> | null;
+    type: PropType<T> | null | [null];
     required?: boolean;
   }
 
@@ -777,6 +779,9 @@ export namespace Structure {
     | [PropConstructor<T>]
     | CORE_TYPES
     | [CORE_TYPES];
+
+  export type ExtractType<T extends Constructor> =
+    T extends Constructor<infer U> ? U : never;
 
   export type ExtractPropTypes<O> = {
     // use `keyof Pick<O, RequiredKeys<O>>` instead of `RequiredKeys<O>` to

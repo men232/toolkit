@@ -1,5 +1,9 @@
-import { BinaryReader, BinaryWriter, createExtension } from '@andrew_l/tl-pack';
-import { assert, crc32 } from '@andrew_l/toolkit';
+import {
+  CORE_TYPES,
+  createExtension,
+  defineStructure,
+} from '@andrew_l/tl-pack';
+import { crc32 } from '@andrew_l/toolkit';
 import { ObjectId } from 'mongodb';
 
 const SCHEMA_VERSION = 1;
@@ -47,16 +51,23 @@ export interface TokenOptions {
   payload: Record<string, any> | null;
 }
 
+const TokenStructure = defineStructure({
+  name: 'PaginationToken',
+  version: 1,
+  properties: {
+    modelNameCrc: { type: CORE_TYPES.Int32, required: true },
+    keys: { type: [String], required: true },
+    sortDirection: { type: [null], required: true },
+    sortValues: { type: [null], required: true },
+    payload: { type: Object },
+  },
+});
+
 /**
  * Represents a token with pagination and metadata information.
  * This class holds the token data, including sorting details, and any payload.
  */
 export class Token {
-  /**
-   * The schema version of the token.
-   */
-  public schemaVersion: number = SCHEMA_VERSION;
-
   /**
    * The CRC of the model name, used for verify the model.
    */
@@ -98,17 +109,15 @@ export class Token {
    * Retrieves binary buffer representation of token.
    */
   public buffer(): Buffer {
-    const writer = new BinaryWriter({
-      extensions,
+    const struct = new TokenStructure({
+      modelNameCrc: this.modelNameCRC,
+      sortDirection: Object.values(this.sortDirection),
+      sortValues: Object.values(this.sortValues),
+      keys: Object.keys(this.sortValues),
+      payload: this.payload,
     });
 
-    writer.writeInt8(this.schemaVersion, false);
-    writer.writeObject(this.modelNameCRC);
-    writer.writeMap(this.sortDirection || {});
-    writer.writeMap(this.sortValues || {});
-    writer.writeObject(this.payload || null);
-
-    return Buffer.from(writer.getBuffer());
+    return Buffer.from(struct.toBuffer({ extensions }));
   }
 
   /**
@@ -119,21 +128,18 @@ export class Token {
       ? value
       : Buffer.from(value, 'base64url');
 
-    const reader = new BinaryReader(buffer, { extensions });
-
-    const schemaVersion = reader.readInt8(false);
-
-    assert.ok(
-      schemaVersion === SCHEMA_VERSION,
-      'Unexpected schema version: ' + schemaVersion,
-    );
+    const struct = TokenStructure.fromBuffer(buffer);
 
     const token = new Token();
 
-    token.modelNameCRC = reader.readObject();
-    token.sortDirection = reader.readMap(false);
-    token.sortValues = reader.readMap(false);
-    token.payload = reader.readObject();
+    token.modelNameCRC = struct.modelNameCrc;
+    token.sortDirection = Object.fromEntries(
+      struct.keys.map((key, idx) => [key, struct.sortDirection[idx]]),
+    );
+    token.sortValues = Object.fromEntries(
+      struct.keys.map((key, idx) => [key, struct.sortValues[idx]]),
+    );
+    token.payload = struct.payload ?? {};
 
     return token;
   }

@@ -1,10 +1,9 @@
-import { tlDecode, tlEncode } from '@andrew_l/tl-pack';
+import { Structure, tlDecode, tlEncode } from '@andrew_l/tl-pack';
 import {
   type Logger,
   assert,
   checkBitmask,
   crc32,
-  deepClone,
   logger,
   timestamp,
 } from '@andrew_l/toolkit';
@@ -38,6 +37,8 @@ export interface BinlogOptions {
    * @default true
    */
   syncWrites: boolean;
+
+  structures?: Structure.Constructor[];
 }
 
 /**
@@ -92,7 +93,10 @@ export class Binlog {
 
   constructor(options: BinlogOptions) {
     this._log = logger('Binlog');
-    this._options = deepClone(options);
+    this._options = {
+      ...options,
+      structures: options.structures ? [...options.structures] : [],
+    };
     this._filePattern = path.basename(options.path);
     this._directory = path.dirname(options.path);
     this._currentFile = null;
@@ -189,8 +193,13 @@ export class Binlog {
     let flags = this.BINLOG_FLAG.NONE;
 
     if (!Buffer.isBuffer(data)) {
-      data = tlEncode(data) as Buffer;
-      flags |= this.BINLOG_FLAG.TL;
+      if (data instanceof Structure) {
+        data = tlEncode(data);
+        flags |= this.BINLOG_FLAG.TL;
+      } else {
+        data = tlEncode(data) as Buffer;
+        flags |= this.BINLOG_FLAG.TL;
+      }
     }
 
     // Create entry header
@@ -310,7 +319,9 @@ export class Binlog {
 
       if (calculatedCrc === crc) {
         if (checkBitmask(flags, this.BINLOG_FLAG.TL)) {
-          data = tlDecode(data);
+          data = tlDecode(data, {
+            structures: this._options.structures,
+          });
         }
 
         entries.push({

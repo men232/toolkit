@@ -1,3 +1,4 @@
+import { defineStructure } from '@andrew_l/tl-pack';
 import fs from 'node:fs';
 import * as path from 'node:path';
 import {
@@ -324,112 +325,140 @@ describe('Binlog', () => {
     // Clean up
     await fs.promises.rmdir(EMPTY_DIR);
   });
+});
 
-  // Optional integration tests that actually create and read files
-  // These tests are more thorough but slower
-  describe('Binlog Integration', () => {
-    beforeAll(async () => {
-      // Create clean test environment
-      await cleanTestDir();
+// Optional integration tests that actually create and read files
+// These tests are more thorough but slower
+describe('Binlog Integration', () => {
+  beforeAll(async () => {
+    // Create clean test environment
+    await cleanTestDir();
+  });
+
+  afterAll(async () => {
+    // Clean up after all tests
+    await cleanTestDir();
+  });
+
+  it('should write/read with tl-pack', async () => {
+    const binlog = createBinlog({
+      path: `${TEST_DIR}/tl-pack-test.{index}`,
     });
 
-    afterAll(async () => {
-      // Clean up after all tests
-      await cleanTestDir();
+    const ts = new Date();
+
+    await binlog.init();
+    await binlog.write(3, { ts });
+
+    const entries = await binlog.readEntries(binlog.currentFileName);
+
+    expect(entries[0].data).toStrictEqual({ ts });
+  });
+
+  it('should write/read with tl-pack structure', async () => {
+    const User = defineStructure({
+      name: 'User',
+      version: 1,
+      properties: {
+        name: { type: String, required: true },
+        age: { type: Number, required: true },
+      },
     });
 
-    it('should write/read with tl-pack', async () => {
-      const binlog = createBinlog({
-        path: `${TEST_DIR}/tl-pack-test.{index}`,
-      });
-
-      const ts = new Date();
-
-      await binlog.init();
-      await binlog.write(3, { ts });
-
-      const entries = await binlog.readEntries(binlog.currentFileName);
-
-      expect(entries[0].data).toStrictEqual({ ts });
+    const binlog = createBinlog({
+      path: `${TEST_DIR}/tl-pack-structure-test.{index}`,
+      structures: [User],
     });
 
-    it('should write and read a large number of entries', async () => {
-      const binlog = createBinlog({
-        path: `${TEST_DIR}/integration-test.{index}`,
-      });
-
-      await binlog.init();
-
-      // Write a significant number of entries
-      const numEntries = 100;
-      for (let i = 0; i < numEntries; i++) {
-        const data = Buffer.from(
-          JSON.stringify({
-            index: i,
-            value: `test value ${i}`,
-            timestamp: Date.now(),
-          }),
-        );
-
-        await binlog.write(i % 5, data); // Use different opcodes
-      }
-
-      await binlog.close();
-
-      // Read all entries back
-      const filename = `integration-test.${binlog.currentFileIndex}`;
-      const entries = await binlog.readEntries(filename);
-
-      expect(entries.length).toBe(numEntries);
-
-      // Verify each entry
-      for (let i = 0; i < numEntries; i++) {
-        const entry = entries[i];
-        expect(entry.opcode).toBe(i % 5);
-
-        const data = JSON.parse(entry.data.toString());
-        expect(data.index).toBe(i);
-        expect(data.value).toBe(`test value ${i}`);
-      }
+    const user = new User({
+      name: 'Andrew',
+      age: 18, // forever young
     });
 
-    it('should restore state from existing binlog files', async () => {
-      // First create some binlog files
-      const binlog1 = createBinlog({
-        path: `${TEST_DIR}/restore-test.{index}`,
-      });
+    await binlog.init();
+    await binlog.write(3, user);
 
-      await binlog1.init();
+    const entries = await binlog.readEntries(binlog.currentFileName);
 
-      // Create 3 files through rotation
-      for (let i = 0; i < 3; i++) {
-        await binlog1.write(1, Buffer.from(`file ${i + 1}`));
-        await binlog1.rotate();
-      }
+    expect(entries[0].data).toStrictEqual(user.value);
+  });
 
-      // Now create a new instance that should detect the existing files
-      const binlog2 = createBinlog({
-        path: `${TEST_DIR}/restore-test.{index}`,
-      });
-
-      await binlog2.init();
-
-      // The new instance should know the latest file index
-      expect(binlog2.currentFileIndex).toBe(3);
-
-      // Writing should create file 4
-      await binlog2.write(1, Buffer.from('file 4'));
-      await binlog2.close();
-
-      // Check the files in the directory
-      const files = await fs.promises.readdir(TEST_DIR);
-      const testFiles = files.filter(f => f.startsWith('restore-test.'));
-
-      expect(testFiles.length).toBe(4);
-      expect(testFiles).toContain('restore-test.0');
-      expect(testFiles).toContain('restore-test.1');
-      expect(testFiles).toContain('restore-test.2');
-      expect(testFiles).toContain('restore-test.3');
+  it('should write and read a large number of entries', async () => {
+    const binlog = createBinlog({
+      path: `${TEST_DIR}/integration-test.{index}`,
     });
+
+    await binlog.init();
+
+    // Write a significant number of entries
+    const numEntries = 100;
+    for (let i = 0; i < numEntries; i++) {
+      const data = Buffer.from(
+        JSON.stringify({
+          index: i,
+          value: `test value ${i}`,
+          timestamp: Date.now(),
+        }),
+      );
+
+      await binlog.write(i % 5, data); // Use different opcodes
+    }
+
+    await binlog.close();
+
+    // Read all entries back
+    const filename = `integration-test.${binlog.currentFileIndex}`;
+    const entries = await binlog.readEntries(filename);
+
+    expect(entries.length).toBe(numEntries);
+
+    // Verify each entry
+    for (let i = 0; i < numEntries; i++) {
+      const entry = entries[i];
+      expect(entry.opcode).toBe(i % 5);
+
+      const data = JSON.parse(entry.data.toString());
+      expect(data.index).toBe(i);
+      expect(data.value).toBe(`test value ${i}`);
+    }
+  });
+
+  it('should restore state from existing binlog files', async () => {
+    // First create some binlog files
+    const binlog1 = createBinlog({
+      path: `${TEST_DIR}/restore-test.{index}`,
+    });
+
+    await binlog1.init();
+
+    // Create 3 files through rotation
+    for (let i = 0; i < 3; i++) {
+      await binlog1.write(1, Buffer.from(`file ${i + 1}`));
+      await binlog1.rotate();
+    }
+
+    // Now create a new instance that should detect the existing files
+    const binlog2 = createBinlog({
+      path: `${TEST_DIR}/restore-test.{index}`,
+    });
+
+    await binlog2.init();
+
+    // The new instance should know the latest file index
+    expect(binlog2.currentFileIndex).toBe(3);
+
+    // Writing should create file 4
+    await binlog2.write(1, Buffer.from('file 4'));
+    await binlog2.close();
+
+    // Check the files in the directory
+    const files = await fs.promises.readdir(TEST_DIR);
+    const testFiles = files.filter(f => f.startsWith('restore-test.'));
+
+    expect(testFiles.length).toBe(4);
+    expect(testFiles).toContain('restore-test.0');
+    expect(testFiles).toContain('restore-test.1');
+    expect(testFiles).toContain('restore-test.2');
+    expect(testFiles).toContain('restore-test.3');
   });
 });
