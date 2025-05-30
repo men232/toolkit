@@ -23,6 +23,18 @@ export class Base64Encoding {
     }
   }
 
+  /**
+   * Encodes binary data into a base64 string representation
+   *
+   * @param input - The binary data to encode
+   * @returns The encoded string
+   *
+   * @example
+   * ```typescript
+   * const data = new Uint8Array([255, 255]);
+   * console.log(base64.encode(data));
+   * ```
+   */
   public encode(
     data: Uint8Array,
     options?: {
@@ -53,6 +65,19 @@ export class Base64Encoding {
     return result;
   }
 
+  /**
+   * Decodes a base64 string back into binary data
+   *
+   * @param input - The encoded string to decode
+   * @returns The decoded binary data
+   * @throws {Error} When the input contains invalid characters or format
+   *
+   * @example
+   * ```typescript
+   * const encoded = "AA==";
+   * console.log(base64.decode(encoded)); // Uint8Array [255, 255]
+   * ```
+   */
   public decode(
     data: string,
     options?: {

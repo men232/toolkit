@@ -1,3 +1,5 @@
+export * from './base62';
+export * from './base64';
 export * from './base64ToBytes';
 export * from './bigIntBytes';
 export * from './bigIntFromBytes';
