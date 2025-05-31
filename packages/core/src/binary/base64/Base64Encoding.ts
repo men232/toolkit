@@ -1,4 +1,6 @@
-export class Base64Encoding {
+import type { BaseX } from '../basex';
+
+export class Base64Encoding implements BaseX {
   public alphabet: string;
   public padding: string;
 

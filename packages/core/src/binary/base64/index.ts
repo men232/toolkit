@@ -30,7 +30,7 @@ export const base64 = new Base64Encoding(
 );
 
 /**
- * Base64-Url encoder/decoder for binary data
+ * Base64 encoder/decoder for binary data
  *
  * @example Basic usage
  * ```typescript
