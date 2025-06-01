@@ -3,10 +3,9 @@ import {
   createExtension,
   defineStructure,
 } from '@andrew_l/tl-pack';
-import { crc32 } from '@andrew_l/toolkit';
+import { base62Fast, crc32 } from '@andrew_l/toolkit';
 import { ObjectId } from 'mongodb';
 
-const SCHEMA_VERSION = 1;
 const OBJECT_ID_TOKEN = 100;
 
 const extensions = [
@@ -54,6 +53,7 @@ export interface TokenOptions {
 const TokenStructure = defineStructure({
   name: 'PaginationToken',
   version: 1,
+  checksum: true,
   properties: {
     modelNameCrc: { type: CORE_TYPES.Int32, required: true },
     keys: { type: [String], required: true },
@@ -102,13 +102,13 @@ export class Token {
    * Retrieves the string representation of token.
    */
   public stringify(): string {
-    return this.buffer().toString('base64url');
+    return base62Fast.encode(this.buffer());
   }
 
   /**
    * Retrieves binary buffer representation of token.
    */
-  public buffer(): Buffer {
+  public buffer(): Uint8Array {
     const struct = new TokenStructure({
       modelNameCrc: this.modelNameCRC,
       sortDirection: Object.values(this.sortDirection),
@@ -117,29 +117,31 @@ export class Token {
       payload: this.payload,
     });
 
-    return Buffer.from(struct.toBuffer({ extensions }));
+    return struct.toBuffer({ extensions });
   }
 
   /**
    * Encode token from provided value
    */
-  static from(value: string | Buffer): Token {
-    const buffer = Buffer.isBuffer(value)
-      ? value
-      : Buffer.from(value, 'base64url');
+  static from(value: string | Buffer | Uint8Array): Token {
+    const buffer =
+      Buffer.isBuffer(value) || value instanceof Uint8Array
+        ? value
+        : base62Fast.decode(value);
 
     const struct = TokenStructure.fromBuffer(buffer);
 
     const token = new Token();
 
     token.modelNameCRC = struct.modelNameCrc;
-    token.sortDirection = Object.fromEntries(
-      struct.keys.map((key, idx) => [key, struct.sortDirection[idx]]),
-    );
-    token.sortValues = Object.fromEntries(
-      struct.keys.map((key, idx) => [key, struct.sortValues[idx]]),
-    );
+    token.sortDirection = {};
+    token.sortValues = {};
     token.payload = struct.payload ?? {};
+
+    for (let idx = 0; idx < struct.keys.length; idx++) {
+      token.sortValues[struct.keys[idx]] = struct.sortValues[idx];
+      token.sortDirection[struct.keys[idx]] = struct.sortDirection[idx];
+    }
 
     return token;
   }
