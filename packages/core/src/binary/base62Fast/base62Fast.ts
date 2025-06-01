@@ -16,7 +16,9 @@ for (let i = 1; i < 62; ++i) {
 const allocEncode = createAllocator();
 
 /**
- * Base62-like encoder/decoder for binary data but **super fast**
+ * Base62-like encoder/decoder for binary data but **super fast**. Useful for human readable tokens generation
+ *
+ * **Warning!** Not RFC standard
  *
  * @example Basic usage
  * ```typescript
@@ -95,7 +97,9 @@ export const base62Fast: BaseX = {
       }
 
       // Store the character for the current value
-      output[outputIndex++] = ENCODE_TABLE[value];
+      output[outputIndex] =
+        ENCODE_TABLE[additiveCipher(value, outputIndex % 0x3f)];
+      outputIndex++;
       position -= chunkSize;
     }
 
@@ -122,11 +126,16 @@ export const base62Fast: BaseX = {
     for (var readIndex = 0; readIndex < inputLength; readIndex++) {
       charCode = input.charCodeAt(readIndex);
       value = DECODE_TABLE[charCode];
+      value =
+        DECODE_TABLE[
+          ENCODE_TABLE[additiveCipherReverse(value, readIndex % 0x3f)]
+        ];
 
       // Validate character: must be in the alphabet
       if (isNaN(charCode) || value === undefined) {
         throw new Error(
-          'Invalid Base62 input: contains non-alphabet characters.',
+          'Invalid Base62 input: contains non-alphabet characters. Index: ' +
+            readIndex,
         );
       }
 
@@ -177,4 +186,12 @@ function createAllocator(): (size: number) => Uint8Array {
     }
     return currentBuffer;
   };
+}
+
+function additiveCipher(value: number, shift: number): number {
+  return (value + shift) % 62;
+}
+
+function additiveCipherReverse(obscured: number, shift: number): number {
+  return (obscured - shift + 62) % 62;
 }

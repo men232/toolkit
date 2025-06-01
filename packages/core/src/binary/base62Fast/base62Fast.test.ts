@@ -26,6 +26,7 @@ function doPerformanceTest(api: any) {
 describe('base62Fast', () => {
   it('should handle all byte values', () => {
     const { decoded, encoded, original } = doTest(base62Fast);
+    // console.log({ encoded });
     expect(decoded).toEqual(original);
   });
 
