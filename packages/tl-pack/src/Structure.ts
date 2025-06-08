@@ -671,13 +671,6 @@ export namespace Structure {
      * const buffer = user.toBuffer();
      * const restored = User.fromBuffer(buffer);
      * console.log(restored.id); // Original user ID
-     *
-     * @example
-     * // With validation options
-     * const restored = User.fromBuffer(buffer, {
-     *   strict: true,
-     *   validateChecksum: true
-     * });
      */
     fromBuffer(buffer: Uint8Array, options?: BinaryReaderOptions): T;
 
