@@ -534,7 +534,7 @@ export class BinaryReader {
       this.assertConstructor(CORE_TYPES.Checksum);
     }
 
-    const bytes = this.target.slice(this._checksumOffset, offset);
+    const bytes = this.target.subarray(this._checksumOffset, offset);
     const checksum = this.readInt32();
     let sum = 0;
 

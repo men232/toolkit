@@ -264,7 +264,7 @@ export class BinaryWriter {
   }
 
   writeChecksum(withConstructor: boolean = true): this {
-    const bytes = this.target.slice(this.offsetChecksum, this.offset);
+    const bytes = this.target.subarray(this.offsetChecksum, this.offset);
     let sum = 0;
 
     for (const val of bytes) {
