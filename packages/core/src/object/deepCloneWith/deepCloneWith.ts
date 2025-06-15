@@ -104,8 +104,16 @@ export function createCustomizerFactory(
   return fn;
 }
 
+export interface SecureCustomizerOptions {
+  /**
+   * @default true
+   */
+  normalizeError?: boolean;
+}
+
 export function createSecureCustomizer(
   properties: string[],
+  opts?: SecureCustomizerOptions,
 ): WithCustomizerFactory {
   const secureLabel = `<** secure **>`;
   const circularLabel = `<** circular **>`;
@@ -131,11 +139,15 @@ export function createSecureCustomizer(
 
     seenSet.add(value);
 
-    if (isError(value)) {
+    if (isError(value) && opts?.normalizeError !== false) {
       return {
         message: value.message,
         stack: value.stack,
         name: value.name,
+        cause:
+          value.cause !== undefined
+            ? withCustomizer(seenSet, value.cause)
+            : undefined,
       };
     }
   };
