@@ -54,6 +54,10 @@ features:
     icon: 📝
     details: A high-performance binary logging system for Node.js applications.
     link: /reference/@andrew_l/binlog/
+  - title: Pino Pretty
+    icon: 🦄
+    details: Pino transport for beautiful log output.
+    link: /reference/@andrew_l/pino-pretty/
 ---
 
 ## Getting Started
