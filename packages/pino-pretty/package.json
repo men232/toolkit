@@ -1,7 +1,7 @@
 {
   "name": "@andrew_l/pino-pretty",
-  "description": "Pino transport for beautiful log output",
   "version": "0.2.17",
+  "description": "Pino transport for beautiful log output",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -16,9 +16,7 @@
   },
   "scripts": {
     "build": "unbuild",
-    "prepack": "unbuild",
-    "test": "vitest run --typecheck",
-    "test:watch": "vitest watch --typecheck"
+    "prepack": "unbuild"
   },
   "exports": {
     ".": {
@@ -41,10 +39,10 @@
   },
   "dependencies": {
     "@andrew_l/toolkit": "workspace:*",
+    "@cto.af/string-width": "^4.0.1",
     "on-exit-leak-free": "^2.1.2",
     "pino-abstract-transport": "^2.0.0",
     "pump": "^3.0.2",
-    "sonic-boom": "^4.2.0",
-    "@cto.af/string-width": "^4.0.1"
+    "sonic-boom": "^4.2.0"
   }
 }

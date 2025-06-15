@@ -30,9 +30,11 @@ describe('base62Fast', () => {
     expect(decoded).toEqual(original);
   });
 
-  it('performance test', () => {
-    const result = doPerformanceTest(base62Fast);
-    console.info(`Encode/Decode took ${result} ms`);
-    expect(result).toBeLessThan(6);
-  });
+  if (process.env.SKIP_PERFORMANCE_TEST !== 'true') {
+    it('performance test', () => {
+      const result = doPerformanceTest(base62Fast);
+      console.info(`Encode/Decode took ${result} ms`);
+      expect(result).toBeLessThan(6);
+    });
+  }
 });

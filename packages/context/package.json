@@ -1,7 +1,7 @@
 {
   "name": "@andrew_l/context",
-  "description": "Like composition api but for Node.",
   "version": "0.2.17",
+  "description": "Like composition api but for Node.",
   "license": "MIT",
   "type": "module",
   "keywords": [
