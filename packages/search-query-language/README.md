@@ -1,8 +1,8 @@
-# Search Query Language <!-- omit in toc -->
+# Search Query Language
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fsearch-query-language) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fsearch-query-language) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fsearch-query-language) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fsearch-query-language)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fsearch-query-language)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fsearch-query-language)
 
 Search Query Language is a lightweight utility that converts human-readable query strings into structured representations. It supports parsing expressions into an abstract syntax tree (AST) and transforming them into queries.
 

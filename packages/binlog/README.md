@@ -1,8 +1,8 @@
 # Binlog
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fbinlog) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fbinlog) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fbinlog) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fbinlog)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fbinlog)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fbinlog)
 
 A high-performance binary logging system for Node.js applications, inspired by VK's KPHP KDB binlog implementation. This library provides a robust, efficient way to record and replay binary log entries with integrity checking and rotation support.
 

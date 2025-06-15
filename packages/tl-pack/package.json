@@ -1,5 +1,6 @@
 {
   "name": "@andrew_l/tl-pack",
+  "description": "Another implementation of binary serialization.",
   "version": "0.2.17",
   "license": "MIT",
   "type": "module",

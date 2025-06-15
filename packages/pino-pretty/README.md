@@ -1,7 +1,7 @@
 # Pino Pretty
 
-![license](https://img.shields.io/npm/l/@andrew_l/pino-pretty)
-![npm version](https://img.shields.io/npm/v/@andrew_l/pino-pretty)
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fpino-pretty)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fpino-pretty)
 
 A highly customizable [pino](https://www.npmjs.com/package/pino) transport that transforms JSON logs into beautiful, readable output with colors, icons, and intelligent formatting for development.
 

@@ -1,8 +1,8 @@
-# Service Actor Toolkit <!-- omit in toc -->
+# Service Actor Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fservice-actor) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fservice-actor)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fservice-actor)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fservice-actor)
 
 The package is designed to help manage contextual data, such as trace IDs, across functions without explicitly passing them around. This allows you to easily track and manage contexts (like user actions or requests) while keeping your code clean and decoupled from context-passing logic.
 

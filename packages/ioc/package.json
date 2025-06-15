@@ -1,5 +1,6 @@
 {
   "name": "@andrew_l/ioc",
+  "description": "Pretty simple IOC Container.",
   "version": "0.2.17",
   "license": "MIT",
   "type": "module",

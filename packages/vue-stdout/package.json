@@ -1,5 +1,6 @@
 {
   "name": "@andrew_l/vue-stdout",
+  "description": "Renderer for terminal output with flexible layouts and CLI components.",
   "version": "0.2.17",
   "license": "MIT",
   "type": "module",

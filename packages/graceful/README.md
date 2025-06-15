@@ -1,8 +1,8 @@
-# Graceful Shutdown Toolkit <!-- omit in toc -->
+# Graceful Shutdown Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fgraceful) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fgraceful) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fgraceful) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fgraceful)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fgraceful)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fgraceful)
 
 This package helps gracefully shut down applications by managing dependencies during the shutdown process. It ensures that important cleanup tasks, such as closing database connections or stopping services, are completed before the application exits.
 

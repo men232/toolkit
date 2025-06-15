@@ -1,8 +1,8 @@
-# Vue Stdout Toolkit <!-- omit in toc -->
+# Vue Stdout Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fvue-stdout) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fvue-stdout) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fvue-stdout) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fvue-stdout)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fvue-stdout)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fvue-stdout)
 
 A custom Vue.js renderer for outputting content directly to the terminal (stdout), combining the flexibility of Vue with the power of console-based rendering.
 

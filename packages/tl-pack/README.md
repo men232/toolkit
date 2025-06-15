@@ -1,8 +1,8 @@
-# TL Pack - Binary Serialization Library <!-- omit in toc -->
+# TL Pack - Binary Serialization Library
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Ftl-pack) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Ftl-pack)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Ftl-pack)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Ftl-pack)
 
 Binary serialization library, inspired by the TL (Type Language) format, created by the VK team. Unlike official TL, this version does not require a schema for serialization/deserialization. It provides a compact and fast alternative to other binary serialization formats like MessagePack.
 

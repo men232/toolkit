@@ -1,8 +1,8 @@
-# Inversion of Control (IoC) Toolkit <!-- omit in toc -->
+# Inversion of Control (IoC) Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fioc) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fioc) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fioc) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fioc)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fioc)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fioc)
 
 A simple and flexible Inversion of Control (IoC) container to help set up and manage services in your application. This toolkit automates the process of importing and registering services, ensuring that dependencies are injected properly before running your application code.
 

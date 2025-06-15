@@ -1,8 +1,8 @@
-# DOM Toolkit <!-- omit in toc -->
+# DOM Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fdom) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fdom) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fdom) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fdom)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fdom)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fdom)
 
 This package provides a set of utility functions for common DOM tasks, including handling animations, clipboard operations, and smooth scrolling. These utilities simplify JavaScript development, making it easier to implement dynamic, interactive features while improving performance and user experience.
 

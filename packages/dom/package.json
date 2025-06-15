@@ -1,5 +1,6 @@
 {
   "name": "@andrew_l/dom",
+  "description": "Utility functions to simplify animations, clipboard operations, and smooth scrolling.",
   "version": "0.2.17",
   "license": "MIT",
   "type": "module",

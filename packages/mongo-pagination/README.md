@@ -1,8 +1,8 @@
-# Mongo Pagination Toolkit <!-- omit in toc -->
+# Mongo Pagination Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-pagination) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-pagination) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-pagination) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-pagination)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-pagination)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-pagination)
 
 This package provides an efficient and customizable way to handle pagination for MongoDB and Mongoose queries. It simplifies working with large datasets by enabling cursor pagination, handling sorting, and managing tokens for navigating between pages.
 

@@ -1,8 +1,8 @@
-# Mongo Transaction Toolkit <!-- omit in toc -->
+# Mongo Transaction Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-transaction) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-transaction)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-transaction)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-transaction)
 
 This package solves a common issue with MongoDB's `session.withTransaction`, where the provided function might be executed multiple times due to retries. This can create challenges for managing side effects that need to be rolled back consistently during transaction retries or failures.
 

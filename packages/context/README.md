@@ -1,8 +1,8 @@
-# Context Toolkit <!-- omit in toc -->
+# Context Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fcontext) <!-- omit in toc -->
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fcontext) <!-- omit in toc -->
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fcontext) <!-- omit in toc -->
+![license](https://img.shields.io/npm/l/%40andrew_l%2Fcontext)
+![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fcontext)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fcontext)
 
 A lightweight toolkit to bind asynchronous contexts, inspired by Vue's Composition API. Easily provide and inject values across asynchronous scopes with support for scoped disposal.
 

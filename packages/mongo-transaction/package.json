@@ -1,5 +1,6 @@
 {
   "name": "@andrew_l/mongo-transaction",
+  "description": "Manages side effects in MongoDB transactions, rollback on failure and preventing duplicates on retries.",
   "version": "0.2.17",
   "license": "MIT",
   "type": "module",

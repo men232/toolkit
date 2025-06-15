@@ -1,5 +1,6 @@
 {
   "name": "@andrew_l/toolkit",
+  "description": "General utility functions",
   "version": "0.2.17",
   "license": "MIT",
   "type": "module",
