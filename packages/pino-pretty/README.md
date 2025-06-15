@@ -7,6 +7,8 @@ A highly customizable [pino](https://www.npmjs.com/package/pino) transport that 
 
 Inspired by [consola](https://www.npmjs.com/package/consola)
 
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/pino-pretty/)
+
 <img src="https://github.com/user-attachments/assets/26d13b82-6d07-456f-b204-a6455df2dd3e" />
 
 <!-- install placeholder -->
