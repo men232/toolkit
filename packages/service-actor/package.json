@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/service-actor",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "description": "Forget about passing data like trace IDs between functions.",
   "license": "MIT",
   "type": "module",
