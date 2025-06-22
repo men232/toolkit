@@ -1,8 +1,7 @@
 # Graceful Shutdown Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fgraceful)
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fgraceful)
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fgraceful)
+[![npm version][npm-version-src]][npm-version-href]
+![license][license-src]
 
 This package helps gracefully shut down applications by managing dependencies during the shutdown process. It ensures that important cleanup tasks, such as closing database connections or stopping services, are completed before the application exits.
 
@@ -35,3 +34,9 @@ onShutdown('http-server', async () => {
 1. **Clean Shutdown:** Ensures your application cleans up resources like database connections, open files, or server instances before exiting.
 2. **Orderly Cleanup:** Allows you to manage dependencies during shutdown, ensuring each resource is shut down in the proper order.
 3. **Customizable:** Offers flexibility to define custom shutdown behavior for any part of your application.
+
+<!-- Badges -->
+
+[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/graceful?style=flat
+[npm-version-href]: https://npmjs.com/package/@andrew_l/graceful
+[license-src]: https://img.shields.io/npm/l/@andrew_l/graceful?style=flat

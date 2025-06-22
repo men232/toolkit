@@ -1,8 +1,7 @@
 # Mongo Transaction Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fmongo-transaction)
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fmongo-transaction)
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fmongo-transaction)
+[![npm version][npm-version-src]][npm-version-href]
+![license][license-src]
 
 This package solves a common issue with MongoDB's `session.withTransaction`, where the provided function might be executed multiple times due to retries. This can create challenges for managing side effects that need to be rolled back consistently during transaction retries or failures.
 
@@ -93,3 +92,9 @@ confirmOrder('673b907dddd8ae43262aec0d').catch(console.error);
 1. **Safe Retries:** MongoDB retries can cause duplicate actions if not handled properly. This package ensures all side effects are idempotent and reversible.
 2. **Streamlined Rollbacks:** Simplifies managing complex operations by integrating rollback mechanisms into your transaction workflow.
 3. **Ease of Use:** API design mimics React's hooks, making it intuitive for developers familiar with React patterns.
+
+<!-- Badges -->
+
+[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/mongo-transaction?style=flat
+[npm-version-href]: https://npmjs.com/package/@andrew_l/mongo-transaction
+[license-src]: https://img.shields.io/npm/l/@andrew_l/mongo-transaction?style=flat

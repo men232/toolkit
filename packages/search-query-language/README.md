@@ -1,8 +1,7 @@
 # Search Query Language
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fsearch-query-language)
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fsearch-query-language)
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fsearch-query-language)
+[![npm version][npm-version-src]][npm-version-href]
+![license][license-src]
 
 Search Query Language is a lightweight utility that converts human-readable query strings into structured representations. It supports parsing expressions into an abstract syntax tree (AST) and transforming them into queries.
 
@@ -92,3 +91,9 @@ app.get('/clients', async (req, res) => {
   res.json(items);
 });
 ```
+
+<!-- Badges -->
+
+[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/search-query-language?style=flat
+[npm-version-href]: https://npmjs.com/package/@andrew_l/search-query-language
+[license-src]: https://img.shields.io/npm/l/@andrew_l/search-query-language?style=flat

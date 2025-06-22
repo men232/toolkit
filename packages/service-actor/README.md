@@ -1,8 +1,7 @@
 # Service Actor Toolkit
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fservice-actor)
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fservice-actor)
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40andrew_l%2Fservice-actor)
+[![npm version][npm-version-src]][npm-version-href]
+![license][license-src]
 
 The package is designed to help manage contextual data, such as trace IDs, across functions without explicitly passing them around. This allows you to easily track and manage contexts (like user actions or requests) while keeping your code clean and decoupled from context-passing logic.
 
@@ -79,3 +78,9 @@ In this example, the `UserService.updateById` method retrieves the `actor` objec
 2. **Cleaner Code:** Avoids cluttering your function signatures with unnecessary context arguments.
 3. **Flexible and Extendable:** Actor objects can be extended with custom methods to suit your application's needs without interfering with the data.
 4. **Database Safe:** Since the actor is just a plain object, it can be safely stored and used in database queries.
+
+<!-- Badges -->
+
+[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/service-actor?style=flat
+[npm-version-href]: https://npmjs.com/package/@andrew_l/service-actor
+[license-src]: https://img.shields.io/npm/l/@andrew_l/service-actor?style=flat

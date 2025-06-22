@@ -1,7 +1,7 @@
 # Pino Pretty
 
-![license](https://img.shields.io/npm/l/%40andrew_l%2Fpino-pretty)
-![npm version](https://img.shields.io/npm/v/%40andrew_l%2Fpino-pretty)
+[![npm version][npm-version-src]][npm-version-href]
+![license][license-src]
 
 A highly customizable [pino](https://www.npmjs.com/package/pino) transport that transforms JSON logs into beautiful, readable output with colors, icons, and intelligent formatting for development.
 
@@ -104,3 +104,9 @@ logger.info('Custom pino-pretty setup successful');
 1. **Enhanced Readability:** Transform cryptic JSON logs into human-readable, visually appealing output
 2. **Development Productivity:** Quickly identify issues with color-coded levels and intelligent formatting
 3. **Highly Customizable:** Every aspect of formatting can be tailored to your preferences
+
+<!-- Badges -->
+
+[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/pino-pretty?style=flat
+[npm-version-href]: https://npmjs.com/package/@andrew_l/pino-pretty
+[license-src]: https://img.shields.io/npm/l/@andrew_l/pino-pretty?style=flat
