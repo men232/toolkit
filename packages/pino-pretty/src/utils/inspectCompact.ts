@@ -41,7 +41,7 @@ function inspectValue(
   var inspectFn: InspectTypeFunction = INSPECT_MAP[type] || String;
 
   // Check for custom inspect method
-  if (isFunction((obj as any)[nodeInspect.custom])) {
+  if (obj && isFunction((obj as any)[nodeInspect.custom])) {
     var lineJoiner = `\n${spaces}`;
     return (
       spaces +
