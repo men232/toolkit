@@ -5,27 +5,9 @@
 import { isFunction, isObject } from '@andrew_l/toolkit';
 
 import { inspect as nodeInspect } from 'node:util';
+import type { InspectOptions } from '../types';
 
-export interface InspectOptions {
-  /** Maximum depth of the inspection @default 5 */
-  depth: number;
-  /** Quote style for strings @default 'single' */
-  quoteStyle: 'single' | 'double';
-  /** Maximum string length before truncation @default Infinity */
-  maxStringLength: number;
-  /** Indentation spaces @default 2 */
-  indent: number;
-  /** Add numeric separators (1_234.567_8) @default false */
-  numericSeparator: boolean;
-  /** Custom stringify functions for different types */
-  customStringify: {
-    [x: string]: InspectCustomStringify;
-  };
-}
-
-type InspectCustomStringify = (value: any) => string;
-
-var QUOTES = { double: '"', single: "'" } as const;
+export var QUOTES = { double: '"', single: "'" } as const;
 var QUOTE_REGEX = { double: /(["\\])/g, single: /(['\\])/g } as const;
 var ESCAPE_CHARS = { 8: 'b', 9: 't', 10: 'n', 12: 'f', 13: 'r' } as const;
 var SEP_REGEX = /\d(?=(?:\d{3})+(?!\d))/g;
@@ -57,33 +39,49 @@ function addNumericSeparator(num: number | bigint, str: string): string {
   return str.replace(SEP_REGEX, '$&_');
 }
 
-function inspectString(str: string, opts: InspectOptions): string {
-  var processedStr = str;
+export function escapeString(str: string, opts: InspectOptions): string {
+  var quoteRegex = QUOTE_REGEX[opts.quoteStyle];
 
+  return str.replace(quoteRegex, '\\$1').replace(/[\x00-\x1f]/g, char => {
+    var code = char.charCodeAt(0);
+    var escapeChar = ESCAPE_CHARS[code as keyof typeof ESCAPE_CHARS];
+    return escapeChar
+      ? `\\${escapeChar}`
+      : `\\x${code.toString(16).padStart(2, '0').toUpperCase()}`;
+  });
+}
+
+function inspectString(str: string, opts: InspectOptions): string {
   // Truncate if too long
   if (str.length > opts.maxStringLength) {
     var remaining = str.length - opts.maxStringLength;
     var trailer = `... ${remaining} more character${remaining > 1 ? 's' : ''}`;
-    processedStr = str.slice(0, opts.maxStringLength);
-    return inspectString(processedStr, opts) + trailer;
+    str = str.slice(0, opts.maxStringLength);
+    return inspectString(str, opts) + trailer;
   }
 
   // Escape quotes and control characters
-  var quoteRegex = QUOTE_REGEX[opts.quoteStyle];
-  var escaped = processedStr
-    .replace(quoteRegex, '\\$1')
-    .replace(/[\x00-\x1f]/g, char => {
-      var code = char.charCodeAt(0);
-      var escapeChar = ESCAPE_CHARS[code as keyof typeof ESCAPE_CHARS];
-      return escapeChar
-        ? `\\${escapeChar}`
-        : `\\x${code.toString(16).padStart(2, '0').toUpperCase()}`;
-    });
+  var escaped = escapeString(str, opts);
 
   var quote = QUOTES[opts.quoteStyle];
   var result = `${quote}${escaped}${quote}`;
 
   return opts.customStringify.string?.(result) ?? result;
+}
+
+export function inspectNumber(
+  num: number | bigint,
+  opts: InspectOptions,
+): string {
+  if (typeof num === 'bigint') {
+    var str = `${num}n`;
+    var result = opts.numericSeparator ? addNumericSeparator(num, str) : str;
+    return opts.customStringify.number?.(result) ?? result;
+  }
+
+  var str = Object.is(num, -0) ? '-0' : String(num);
+  var result = opts.numericSeparator ? addNumericSeparator(num, str) : str;
+  return opts.customStringify.number?.(result) ?? result;
 }
 
 function getIndentStrings(opts: InspectOptions, depth: number) {
@@ -154,17 +152,9 @@ function inspectValue(
 
   // Handle numbers
   if (typeof obj === 'number') {
-    if (obj === 0) return Object.is(obj, -0) ? '-0' : '0';
-
-    var str = String(obj);
-    var result = opts.numericSeparator ? addNumericSeparator(obj, str) : str;
-    return opts.customStringify.number?.(result) ?? result;
-  }
-
-  if (typeof obj === 'bigint') {
-    var str = `${obj}n`;
-    var result = opts.numericSeparator ? addNumericSeparator(obj, str) : str;
-    return opts.customStringify.number?.(result) ?? result;
+    return inspectNumber(obj, opts);
+  } else if (typeof obj === 'bigint') {
+    return inspectNumber(obj, opts);
   }
 
   // Check depth limit
@@ -215,6 +205,6 @@ function inspectValue(
   return String(obj);
 }
 
-export function inspect(obj: any, options: InspectOptions): string {
+export function inspectRegular(obj: any, options: InspectOptions): string {
   return inspectValue(obj, options, 0, new WeakSet());
 }

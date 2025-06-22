@@ -4,12 +4,15 @@ import {
   capitalize,
   crc32,
   deepDefaults,
+  isFunction,
   withCache,
 } from '@andrew_l/toolkit';
 import { StringWidth } from '@cto.af/string-width';
 import type { PinoPretty } from '..';
 import type { ColorizeFn, PrettyOptions, PrettyOptionsParsed } from '../types';
 import { type ColorName, RAND_COLOR_LIST, getColor } from './getColor';
+import { inspectCompact } from './inspectCompact';
+import { inspectRegular } from './inspectRegular';
 
 export function parseOptions(value: PinoPretty.Options): PrettyOptionsParsed {
   const defOptions: PrettyOptions = {
@@ -23,6 +26,7 @@ export function parseOptions(value: PinoPretty.Options): PrettyOptionsParsed {
     numericSeparator: false,
     ignore: 'hostname,pid',
     colorize: true,
+    inspect: 'compact',
     types: {
       number: { color: 'green' },
       boolean: { color: 'redBright' },
@@ -55,13 +59,22 @@ export function parseOptions(value: PinoPretty.Options): PrettyOptionsParsed {
     ...opts,
     sw,
     colorFallback: createColorizeFn(opts.colorize, 'gray'),
-    inspect: {
+    inspectFn:
+      opts.inspect === 'regular'
+        ? inspectRegular
+        : opts.inspect === 'compact'
+          ? inspectCompact
+          : isFunction(opts.inspect)
+            ? opts.inspect
+            : inspectRegular,
+    inspectOptions: {
       depth: opts.depth,
       quoteStyle: opts.quoteStyle,
       indent: opts.indent,
       maxStringLength: opts.maxStringLength,
       numericSeparator: opts.numericSeparator,
       customStringify: {},
+      columns: opts.columns,
     },
     levels: Object.fromEntries(
       Object.entries(opts.levels).map(([key, value]) => [
@@ -99,10 +112,11 @@ export function parseOptions(value: PinoPretty.Options): PrettyOptionsParsed {
     ),
   };
 
-  result.inspect.customStringify = {
+  result.inspectOptions.customStringify = {
     number: result.types.number.color,
     boolean: result.types.boolean.color,
     string: result.types.string.color,
+    stringRemaining: result.colorFallback,
   };
 
   return result;

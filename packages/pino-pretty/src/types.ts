@@ -1,7 +1,6 @@
 import type { Arrayable } from '@andrew_l/toolkit';
 import type { StringWidth } from '@cto.af/string-width';
 import type { ColorName } from './utils/getColor.js';
-import type { InspectOptions } from './utils/inspect.js';
 
 export type LevelConfig = {
   /**
@@ -28,6 +27,12 @@ export type TypeConfig = {
 };
 
 export interface PrettyOptions {
+  /**
+   * Pino message key.
+   * @default 'regular'
+   */
+  inspect: 'regular' | 'compact' | InspectFunction;
+
   /**
    * Pino message key.
    */
@@ -131,7 +136,8 @@ export type PrettyOptionsParsed = Omit<
   ignoreAdditional: Set<string>;
   levels: Record<number, LevelConfigParsed>;
   types: Record<string, TypeConfigParsed>;
-  inspect: InspectOptions;
+  inspectFn: InspectFunction;
+  inspectOptions: InspectOptions;
   colorFallback: ColorizeFn;
 };
 
@@ -160,3 +166,26 @@ export interface LogObject {
   hostname?: string;
   [key: string]: any;
 }
+
+export type InspectFunction = (obj: any, opts: InspectOptions) => string;
+
+export interface InspectOptions {
+  /** Maximum depth of the inspection @default 5 */
+  depth: number;
+  /** Quote style for strings @default 'single' */
+  quoteStyle: 'single' | 'double';
+  /** Maximum string length before truncation @default Infinity */
+  maxStringLength: number;
+  /** Indentation spaces @default 2 */
+  indent: number;
+  /** Add numeric separators (1_234.567_8) @default false */
+  numericSeparator: boolean;
+  /** Custom stringify functions for different types */
+  customStringify: {
+    [x: string]: InspectCustomStringify;
+  };
+  /** Available width columns */
+  columns: number;
+}
+
+type InspectCustomStringify = (value: any) => string;

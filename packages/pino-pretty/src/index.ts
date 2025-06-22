@@ -33,12 +33,25 @@ export function build(opts: PinoPretty.Options = {}) {
         ...opts,
       });
 
+      var extraLine = false;
+      var line: string;
+
       const stream = new Transform({
         objectMode: true,
         autoDestroy: true,
         transform(chunk, enc, cb) {
-          const line = pretty(chunk);
-          cb(null, line + '\n');
+          line = pretty(chunk);
+
+          if (line.endsWith('\n')) {
+            extraLine = true;
+          } else if (extraLine) {
+            line = '\n' + line + '\n';
+            extraLine = false;
+          } else {
+            line = line + '\n';
+          }
+
+          cb(null, line);
         },
       });
 

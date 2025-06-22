@@ -2,14 +2,14 @@
  * Based on https://github.com/unjs/consola/blob/main/src/reporters/fancy.ts
  */
 
-import { has, isString, omit } from '@andrew_l/toolkit';
+import { def, has, isString, omit } from '@andrew_l/toolkit';
 import type { SerializedError } from 'pino';
 
 import path from 'node:path';
 import { formatWithOptions, inspect as nodeInspect } from 'node:util';
 
 import type { LogObject, PrettyOptionsParsed } from './types.js';
-import { getColor, inspect } from './utils/index.js';
+import { getColor } from './utils/index.js';
 
 function isSerializedError(value: any): value is SerializedError {
   return has(value, ['type', 'message', 'stack']);
@@ -123,13 +123,10 @@ function formatAdditional(
       empty = false;
 
       if (isSerializedError(obj[key])) {
-        additional[key] = {
-          ...obj[key],
-          [nodeInspect.custom]: () => formatError(obj[key], 0, opts),
-        };
-      } else {
-        additional[key] = obj[key];
+        def(obj[key], nodeInspect.custom, () => formatError(obj[key], 0, opts));
       }
+
+      additional[key] = obj[key];
     }
   }
 
@@ -139,7 +136,7 @@ function formatAdditional(
 
   const colorizeObject = opts.types.object?.color || opts.colorFallback;
 
-  return colorizeObject(inspect(additional, opts.inspect).slice(2, -2));
+  return colorizeObject(opts.inspectFn(additional, opts.inspectOptions));
 }
 
 export function pretty(this: PrettyOptionsParsed, logObj: LogObject) {
