@@ -9,7 +9,7 @@ Inspired by [consola](https://www.npmjs.com/package/consola)
 
 [Documentation](https://men232.github.io/toolkit/reference/@andrew_l/pino-pretty/)
 
-![screenshot](https://raw.githubusercontent.com/men232/toolkit/refs/heads/main/packages/pino-pretty/assets/pino-pretty.png)
+![screenshot](https://raw.githubusercontent.com/men232/toolkit/refs/heads/main/packages/pino-pretty/assets/sample.png?raw=true)
 
 <!-- install placeholder -->
 
