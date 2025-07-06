@@ -35,9 +35,11 @@ writer.writeObject({
   uint8: 255,
   uint16: 256,
   uint32: 65536,
+  uint64: 2n ** 64n - 1n,
   int8: -128,
   int16: -32768,
   int32: -2147483648,
+  int64: -100n,
   double: 3.14,
   string: 'Hello world',
   vector: [1, 2, 3, 4, 5, { text: 'hi' }],
@@ -298,9 +300,11 @@ const SecureData = defineStructure({
 | Int8           | 1                  |
 | Int16          | 2                  |
 | Int32          | 4                  |
+| Int64          | 8                  |
 | UInt8          | 1                  |
 | UInt16         | 2                  |
 | UInt32         | 4                  |
+| UInt64         | 8                  |
 | Float          | 4                  |
 | Double         | 8                  |
 | Map            | 2 + sizeof(object) |
