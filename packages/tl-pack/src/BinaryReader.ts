@@ -73,6 +73,15 @@ export class BinaryReader {
     return this._last as number;
   }
 
+  readInt64(signed = true): bigint {
+    const low32 = this.readInt32(signed);
+    const high32 = this.readInt32(signed);
+
+    this._last = (BigInt(high32) << 32n) | BigInt(low32);
+
+    return this._last as bigint;
+  }
+
   readInt32(signed = true) {
     this.assertRead(4);
 
@@ -347,12 +356,16 @@ export class BinaryReader {
         return this.readString();
       case CORE_TYPES.Date:
         return this.readDate();
+      case CORE_TYPES.Int64:
+        return this.readInt64();
       case CORE_TYPES.Int32:
         return this.readInt32();
       case CORE_TYPES.Int16:
         return this.readInt16();
       case CORE_TYPES.Int8:
         return this.readInt8();
+      case CORE_TYPES.UInt64:
+        return this.readInt64(false);
       case CORE_TYPES.UInt32:
         return this.readInt32(false);
       case CORE_TYPES.UInt16:

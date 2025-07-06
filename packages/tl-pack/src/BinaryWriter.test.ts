@@ -33,6 +33,12 @@ describe('BinaryWriter', () => {
     );
   });
 
+  it('.writeInt64()', () => {
+    expect(
+      new BinaryWriter().writeInt64(2n ** 64n - 1n).getBuffer(),
+    ).toStrictEqual(new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255]));
+  });
+
   it('.writeInt16()', () => {
     expect(new BinaryWriter().writeInt16(32767).getBuffer()).toStrictEqual(
       new Uint8Array([255, 127]),
@@ -124,6 +130,24 @@ describe('BinaryWriter', () => {
       ).toStrictEqual(new Uint8Array([CORE_TYPES.UInt32, 255, 255, 255, 255]));
     });
 
+    it('UInt64', () => {
+      expect(
+        new BinaryWriter().writeObject(0xffffffffffffffffn).getBuffer(),
+      ).toStrictEqual(
+        new Uint8Array([
+          CORE_TYPES.UInt64,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+          255,
+        ]),
+      );
+    });
+
     it('Int8', () => {
       expect(new BinaryWriter().writeObject(-0x80).getBuffer()).toStrictEqual(
         new Uint8Array([CORE_TYPES.Int8, 128]),
@@ -140,6 +164,14 @@ describe('BinaryWriter', () => {
       expect(
         new BinaryWriter().writeObject(-0x80000000).getBuffer(),
       ).toStrictEqual(new Uint8Array([CORE_TYPES.Int32, 0, 0, 0, 128]));
+    });
+
+    it('Int64', () => {
+      expect(
+        new BinaryWriter().writeObject(-0x80000000n).getBuffer(),
+      ).toStrictEqual(
+        new Uint8Array([CORE_TYPES.Int64, 0, 0, 0, 128, 255, 255, 255, 255]),
+      );
     });
 
     it('Bool(true)', () => {

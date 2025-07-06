@@ -26,6 +26,12 @@ describe('BinaryReader', () => {
     expect(decode([255, 255, 255, 127]).readInt32()).toBe(2147483647);
   });
 
+  it('.readInt64()', () => {
+    expect(decode([255, 255, 255, 127, 0, 0, 0, 0]).readInt64()).toBe(
+      2147483647n,
+    );
+  });
+
   it('.readInt16()', () => {
     expect(decode([255, 127]).readInt16()).toBe(32767);
   });
@@ -81,6 +87,12 @@ describe('BinaryReader', () => {
       );
     });
 
+    it('UInt64', () => {
+      expect(
+        decode([CORE_TYPES.UInt64, 0, 0, 0, 128, 0, 0, 0, 0]).readObject(),
+      ).toBe(0x80000000n);
+    });
+
     it('Int8', () => {
       expect(decode([CORE_TYPES.Int8, 128]).readObject()).toBe(-0x80);
     });
@@ -93,6 +105,22 @@ describe('BinaryReader', () => {
       expect(decode([CORE_TYPES.Int32, 0, 0, 0, 128]).readObject()).toBe(
         -0x80000000,
       );
+    });
+
+    it('Int64', () => {
+      expect(
+        decode([
+          CORE_TYPES.Int64,
+          0,
+          0,
+          0,
+          128,
+          255,
+          255,
+          255,
+          255,
+        ]).readObject(),
+      ).toBe(-0x80000000n);
     });
 
     it('Bool(true)', () => {

@@ -163,6 +163,20 @@ export class BinaryWriter {
     return this;
   }
 
+  writeInt64(value: number | bigint, signed = true): this {
+    this.allocate(8);
+
+    if (typeof value === 'number') value = BigInt(value);
+
+    const low32 = Number(value & 0xffffffffn);
+    const high32 = Number(value >> 32n);
+
+    this.writeInt32(low32, signed);
+    this.writeInt32(high32, signed);
+
+    return this;
+  }
+
   writeInt32(value: number, signed = true): this {
     this.allocate(4);
 
@@ -517,6 +531,10 @@ export class BinaryWriter {
         return this.writeDate(value);
       }
 
+      case CORE_TYPES.Int64: {
+        return this.writeInt64(value);
+      }
+
       case CORE_TYPES.Int32: {
         return this.writeInt32(value);
       }
@@ -527,6 +545,10 @@ export class BinaryWriter {
 
       case CORE_TYPES.Int8: {
         return this.writeInt8(value);
+      }
+
+      case CORE_TYPES.UInt64: {
+        return this.writeInt64(value, false);
       }
 
       case CORE_TYPES.UInt32: {

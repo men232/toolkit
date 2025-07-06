@@ -31,6 +31,19 @@ export function coreType(value: any): CORE_TYPES {
       return value ? CORE_TYPES.BoolTrue : CORE_TYPES.BoolFalse;
     }
 
+    case 'bigint': {
+      if (value >= 0n && value <= 0xffffffffffffffffn) {
+        return CORE_TYPES.UInt64;
+      } else if (
+        value >= -0x8000000000000000n &&
+        value <= 0x7fffffffffffffffn
+      ) {
+        return CORE_TYPES.Int64;
+      }
+
+      return CORE_TYPES.None;
+    }
+
     case 'number': {
       if (Math.trunc(value) === value) {
         if (value >= 0 && value <= 0xff) {
