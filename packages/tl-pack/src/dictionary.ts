@@ -3,12 +3,13 @@ export function createDictionary(values?: string[]): Dictionary {
 }
 
 export class Dictionary {
-  private _count = 0;
+  private _count;
   private _wordToIndex: Map<string, number>;
   private _words: string[];
   private _offset: number;
 
   constructor(values?: string[], offset = 0) {
+    this._count = 0;
     this._words = [];
     this._wordToIndex = new Map();
     this._offset = offset;
@@ -21,6 +22,12 @@ export class Dictionary {
         this._words.push(word);
       });
     }
+  }
+
+  clear(): void {
+    this._count = 0;
+    this._words.length = 0;
+    this._wordToIndex.clear();
   }
 
   get size(): number {

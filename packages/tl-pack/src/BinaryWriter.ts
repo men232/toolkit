@@ -87,7 +87,7 @@ export class BinaryWriter {
     this.offsetChecksum = 0;
     this._last = noop;
     this._repeat = undefined;
-    this.dictionaryExtended = new Dictionary(undefined, this.dictionary.size);
+    this.dictionaryExtended.clear();
     return this;
   }
 

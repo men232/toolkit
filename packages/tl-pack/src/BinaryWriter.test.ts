@@ -111,6 +111,35 @@ describe('BinaryWriter', () => {
     );
   });
 
+  describe('reset', () => {
+    it('complete test', () => {
+      const w = new BinaryWriter();
+      const obj = {
+        null: null,
+        uint8: 255,
+        uint16: 256,
+        uint32: 65536,
+        uint64: 2n ** 64n - 1n,
+        int8: -128,
+        int16: -32768,
+        int32: -2147483648,
+        int64: -100n,
+        double: 3.14,
+        string: 'Hello world',
+        vector: [1, 2, 3, 4, 5, 'a', 'b', 'ccc', 'ccc', { text: 'hi' }],
+        map: { foo: 'bar', bar: { foo: 'bar' } },
+        date: new Date(),
+      };
+
+      const buf1 = w.writeObject(obj).getBuffer();
+      w.reset();
+
+      const buf2 = w.writeObject(obj).getBuffer();
+
+      return expect(buf1).toStrictEqual(buf2);
+    });
+  });
+
   describe('writeObject', () => {
     it('UInt8', () => {
       expect(new BinaryWriter().writeObject(0xff).getBuffer()).toStrictEqual(
