@@ -1,3 +1,13 @@
+/**
+ * Stripe provides excellent documentation, and their use of human-readable IDs
+ * makes it easier to identify resources at a glance.
+ *
+ * We can achieve similar readability by encoding our snowflake int64 IDs into Base62.
+ *
+ * For further reading, here's a great article by a Stripe developer:
+ * https://dev.to/stripe/designing-apis-for-humans-object-ids-3o5a/comments
+ */
+
 import { Snowflake } from '@andrew_l/snowflake';
 import { base62, bigIntFromBytes } from '@andrew_l/toolkit';
 
