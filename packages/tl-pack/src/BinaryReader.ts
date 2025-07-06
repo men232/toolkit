@@ -66,7 +66,7 @@ export class BinaryReader {
     this.dictionaryExtended = new Dictionary(undefined, this.dictionary.size);
   }
 
-  readByte() {
+  readByte(): number {
     this.assertRead(1);
     this._last = this.target[this.offset++];
 
@@ -82,7 +82,7 @@ export class BinaryReader {
     return this._last as bigint;
   }
 
-  readInt32(signed = true) {
+  readInt32(signed = true): number {
     this.assertRead(4);
 
     this._last =
@@ -98,7 +98,7 @@ export class BinaryReader {
     return this._last as number;
   }
 
-  readInt16(signed = true) {
+  readInt16(signed = true): number {
     this.assertRead(2);
 
     this._last = this.target[this.offset++] | (this.target[this.offset++] << 8);
@@ -110,7 +110,7 @@ export class BinaryReader {
     return this._last as number;
   }
 
-  readInt8(signed = true) {
+  readInt8(signed = true): number {
     this.assertRead(1);
 
     this._last = this.target[this.offset++];
@@ -126,7 +126,7 @@ export class BinaryReader {
    * Reads a real floating point (4 bytes) value.
    * @returns {number}
    */
-  readFloat() {
+  readFloat(): number {
     this.assertRead(4);
 
     int32[0] = this.readInt32();
@@ -137,9 +137,8 @@ export class BinaryReader {
 
   /**
    * Reads a real floating point (8 bytes) value.
-   * @returns {BigInteger}
    */
-  readDouble() {
+  readDouble(): number {
     this.assertRead(8);
 
     int32[0] = this.readInt32();
@@ -584,5 +583,22 @@ export class BinaryReader {
    */
   seek(offset: number): void {
     this.offset += offset;
+  }
+
+  /**
+   * Sets the current buffer and reset initial state.
+   */
+  reset(data?: Uint8Array): void {
+    this.offset = 0;
+    this._checksumOffset = 0;
+    this._lastObject = undefined;
+    this._last = undefined;
+    this._repeat = undefined;
+    this.dictionaryExtended.clear();
+
+    if (data) {
+      this.length = data.length;
+      this.target = data;
+    }
   }
 }
