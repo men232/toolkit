@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-transaction",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "description": "Manages side effects in MongoDB transactions, rollback on failure and preventing duplicates on retries.",
   "license": "MIT",
   "type": "module",
