@@ -19,4 +19,5 @@ I am deeply grateful to the open-source community and the authors of these funct
 - [Search Query Language](https://men232.github.io/toolkit/reference/@andrew_l/search-query-language/)
 - [TL Pack](https://men232.github.io/toolkit/reference/@andrew_l/tl-pack/)
 - [Binlog](https://men232.github.io/toolkit/reference/@andrew_l/binlog/)
+- [Snowflake](https://men232.github.io/toolkit/reference/@andrew_l/snowflake/)
 - [Pino Pretty](https://men232.github.io/toolkit/reference/@andrew_l/pino-pretty/)

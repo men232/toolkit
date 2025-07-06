@@ -54,6 +54,10 @@ features:
     icon: 📝
     details: A high-performance binary logging system for Node.js applications.
     link: /reference/@andrew_l/binlog/
+  - title: Snowflake
+    icon: 🪪
+    details: Generate unique IDs in a distributed environment at scale.
+    link: /reference/@andrew_l/snowflake/
   - title: Pino Pretty
     icon: 🦄
     details: Pino transport for beautiful log output.
