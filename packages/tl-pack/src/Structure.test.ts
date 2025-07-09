@@ -10,6 +10,8 @@ describe('Structure', () => {
         version: 1,
         properties: {
           id: { type: Number, required: true },
+          id_ubigint: { type: CORE_TYPES.UInt64, required: true },
+          id_bigint: { type: CORE_TYPES.Int64, required: true },
           name: { type: String, required: true },
           email: { type: String, required: false },
         },
@@ -17,11 +19,15 @@ describe('Structure', () => {
 
       const user = new UserStructure({
         id: 1,
+        id_ubigint: 1000n,
+        id_bigint: -1000n,
         name: 'John Doe',
         email: 'john@example.com',
       });
 
       expect(user.value.id).toBe(1);
+      expect(user.value.id_ubigint).toBe(1000n);
+      expect(user.value.id_bigint).toBe(-1000n);
       expect(user.value.name).toBe('John Doe');
       expect(user.value.email).toBe('john@example.com');
     });

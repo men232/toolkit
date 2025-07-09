@@ -122,6 +122,15 @@ const TYPE_HANDLERS: Record<string | number, TypeHandler> = {
     },
     estimatedSizeBytes: 4,
   },
+  [CORE_TYPES.Int64]: {
+    encode: function (this: BinaryWriter, value: any, key: string): void {
+      this.writeInt64(value[key], true);
+    },
+    decode: function (this: BinaryReader, result: any, key: string): void {
+      result[key] = this.readInt64(true);
+    },
+    estimatedSizeBytes: 8,
+  },
   [CORE_TYPES.UInt8]: {
     encode: function (this: BinaryWriter, value: any, key: string): void {
       this.writeInt8(value[key], false);
@@ -148,6 +157,15 @@ const TYPE_HANDLERS: Record<string | number, TypeHandler> = {
       result[key] = this.readInt32(false);
     },
     estimatedSizeBytes: 4,
+  },
+  [CORE_TYPES.UInt64]: {
+    encode: function (this: BinaryWriter, value: any, key: string): void {
+      this.writeInt64(value[key], false);
+    },
+    decode: function (this: BinaryReader, result: any, key: string): void {
+      result[key] = this.readInt64(false);
+    },
+    estimatedSizeBytes: 8,
   },
   [CORE_TYPES.Double]: {
     encode: function (this: BinaryWriter, value: any, key: string): void {
@@ -742,21 +760,27 @@ export namespace Structure {
                     ? boolean
                     : [T] extends [{ type: DateConstructor | CORE_TYPES.Date }]
                       ? Date
-                      : [T] extends [{ type: Constructor<infer U> }]
-                        ? U
-                        : [T] extends [{ type: [infer U] }]
-                          ? U extends DateConstructor
-                            ? Date[]
-                            : U extends Constructor<infer V>
-                              ? V[]
-                              : InferPropType<U, false>[]
-                          : [T] extends [{ type: (infer U)[] }]
+                      : [T] extends [
+                            {
+                              type: CORE_TYPES.UInt64 | CORE_TYPES.Int64;
+                            },
+                          ]
+                        ? bigint
+                        : [T] extends [{ type: Constructor<infer U> }]
+                          ? U
+                          : [T] extends [{ type: [infer U] }]
                             ? U extends DateConstructor
-                              ? Date | InferPropType<U, false>
-                              : InferPropType<U, false>
-                            : [T] extends [Prop<infer V>]
-                              ? V
-                              : T;
+                              ? Date[]
+                              : U extends Constructor<infer V>
+                                ? V[]
+                                : InferPropType<U, false>[]
+                            : [T] extends [{ type: (infer U)[] }]
+                              ? U extends DateConstructor
+                                ? Date | InferPropType<U, false>
+                                : InferPropType<U, false>
+                              : [T] extends [Prop<infer V>]
+                                ? V
+                                : T;
 
   export type ObjectPropsOptions<P = Data> = {
     readonly [K in keyof P]: PropOptions<P[K]>;
