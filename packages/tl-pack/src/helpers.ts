@@ -1,9 +1,6 @@
-import { isPlainObject } from '@andrew_l/toolkit';
+import { isPlainObject, textDecoder, textEncoder } from '@andrew_l/toolkit';
 import { Structure } from './Structure';
 import { CORE_TYPES } from './constants';
-
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
 
 const fromCharCode = String.fromCharCode;
 
@@ -89,8 +86,8 @@ export function utf8Read(target: Uint8Array, length: number, offset: number) {
   if (length < 16) {
     if ((result = utf8ReadShort(target, length, offset))) return result;
   }
-  if (length > 64 && decoder)
-    return decoder.decode(target.subarray(offset, (offset += length)));
+  if (length > 64)
+    return textDecoder.decode(target.subarray(offset, (offset += length)));
   const end = offset + length;
   const units = [];
   result = '';
@@ -289,7 +286,7 @@ export function utf8ReadShort(
 export const utf8Write = function (target: any, value: string, offset: number) {
   return value.length < 0x40
     ? utf8WriteShort(target, value, offset)
-    : encoder.encodeInto(value, target.subarray(offset)).written;
+    : textEncoder.encodeInto(value, target.subarray(offset)).written;
 };
 
 export const utf8WriteShort = (target: any, value: string, offset: number) => {

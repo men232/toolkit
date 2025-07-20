@@ -21,6 +21,7 @@ export * from './snakeCase';
 export * from './sprintf';
 export * from './startCase';
 export * from './strAssign';
+export * from './text.js';
 export * from './truncate';
 export * from './twemojiRegex';
 export * from './wrapText';
