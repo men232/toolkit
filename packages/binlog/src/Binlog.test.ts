@@ -51,6 +51,8 @@ describe('Binlog', () => {
     await binlog.init();
 
     expect(fs.existsSync(TEST_DIR)).toBe(true);
+
+    await binlog.close();
   });
 
   it('should create a createBinlog file when opening', async () => {
@@ -174,6 +176,8 @@ describe('Binlog', () => {
     await expect(binlog.readEntries('invalid-binlog.1')).rejects.toThrowError(
       'Invalid binlog file format',
     );
+
+    await binlog.close();
   });
 
   it('should handle reopening a closed binlog', async () => {
@@ -275,6 +279,8 @@ describe('Binlog', () => {
     expect(syncSpy).toHaveBeenCalled();
 
     vi.restoreAllMocks();
+
+    await binlog.close();
   });
 
   it('should not sync writes when disabled', async () => {
@@ -308,6 +314,8 @@ describe('Binlog', () => {
     expect(syncSpy).not.toHaveBeenCalled();
 
     vi.restoreAllMocks();
+
+    await binlog.close();
   });
 
   it('should handle empty directory for finding latest binlog', async () => {
@@ -324,6 +332,8 @@ describe('Binlog', () => {
 
     // Clean up
     await fs.promises.rmdir(EMPTY_DIR);
+
+    await binlog.close();
   });
 });
 
@@ -353,6 +363,8 @@ describe('Binlog Integration', () => {
     const entries = await binlog.readEntries(binlog.currentFileName);
 
     expect(entries[0].data).toStrictEqual({ ts });
+
+    await binlog.close();
   });
 
   it('should write/read with tl-pack structure', async () => {
@@ -381,6 +393,8 @@ describe('Binlog Integration', () => {
     const entries = await binlog.readEntries(binlog.currentFileName);
 
     expect(entries[0].data).toStrictEqual(user.value);
+
+    await binlog.close();
   });
 
   it('should write and read a large number of entries', async () => {
@@ -421,6 +435,8 @@ describe('Binlog Integration', () => {
       expect(data.index).toBe(i);
       expect(data.value).toBe(`test value ${i}`);
     }
+
+    await binlog.close();
   });
 
   it('should restore state from existing binlog files', async () => {
@@ -460,5 +476,8 @@ describe('Binlog Integration', () => {
     expect(testFiles).toContain('restore-test.1');
     expect(testFiles).toContain('restore-test.2');
     expect(testFiles).toContain('restore-test.3');
+
+    await binlog1.close();
+    await binlog2.close();
   });
 });

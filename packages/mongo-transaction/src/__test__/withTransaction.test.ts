@@ -57,17 +57,17 @@ describe('withTransaction', () => {
 
   it('should handle max retries option', async () => {
     let executes = 0;
-    const maxRetriesNumber = 3;
+    const maxAttempts = 3;
 
     const run = withTransaction(
       function (this: any) {
         executes++;
         throw new Error('test');
       },
-      { maxRetriesNumber: 3 },
+      { maxAttempts },
     );
 
     await expect(() => run()).rejects.toThrowError('test');
-    expect(executes).toBe(maxRetriesNumber);
+    expect(executes).toBe(maxAttempts);
   });
 });
