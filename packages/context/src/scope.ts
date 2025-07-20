@@ -1,15 +1,15 @@
-import { type Awaitable, catchError, isPromise } from '@andrew_l/toolkit';
+import { type Awaitable, catchError, isPromise, noop } from '@andrew_l/toolkit';
 import type { AsyncLocalStorage } from 'node:async_hooks';
 
 let idSec = 0;
 let ALS: AsyncLocalStorage<Scope | null> | undefined;
 let currentScope: Scope | null = null;
 
-catchError(async () => {
-  ALS = new (
-    await import('node:async_hooks')
-  ).AsyncLocalStorage<Scope | null>();
-});
+import('node:async_hooks')
+  .then(r => {
+    ALS = new r.AsyncLocalStorage<Scope | null>();
+  })
+  .catch(noop);
 
 export class Scope {
   /**
