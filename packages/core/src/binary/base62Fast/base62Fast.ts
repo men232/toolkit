@@ -1,8 +1,9 @@
+import { textDecoder } from '@/str';
 import type { BaseX } from '../basex';
 
 var ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 var ENCODE_TABLE = new TextEncoder().encode(ALPHABET);
-var DECODE_TABLE = new Uint8Array(256);
+var DECODE_TABLE = new Uint8Array(128);
 for (let i = 0; i < ENCODE_TABLE.length; ++i) {
   DECODE_TABLE[ENCODE_TABLE[i]] = i;
 }
@@ -13,7 +14,7 @@ for (let i = 1; i < 62; ++i) {
   LOG2_TABLE[i] = Math.ceil(Math.log2(i + 1));
 }
 
-const allocEncode = createAllocator();
+var allocEncode = createAllocator();
 
 /**
  * Base62-like encoder/decoder for binary data but **super fast**. Useful for human readable tokens generation
@@ -48,62 +49,62 @@ export const base62Fast: BaseX = {
 
   /**
    * Encodes a Uint8Array into a Base62 string using a custom 5/6-bit variable length scheme.
-   * Processes bits from right to left (most significant bit first conceptually).
+   * Processes bits from left to right maintaining correct order.
    * @param input The Uint8Array to encode.
    * @returns The encoded Base62 string.
    */
   encode(input: Uint8Array): string {
-    var position = input.length * 8;
-    var output: Uint8Array = allocEncode(((position / 5) | 0) + 1);
+    var totalBits = input.length * 8;
+    var output: Uint8Array = allocEncode(((totalBits / 5) | 0) + 1);
     var outputIndex = 0;
 
+    var bitPosition = 0;
+    var buffer = 0;
+    var inputIndex = 0;
     var chunkSize;
-    var remainderBits;
-    var byteIndex;
-    var extractedBits;
     var value;
 
-    while (position > 0) {
+    // Fill buffer with first byte if available
+    if (input.length > 0) {
+      buffer = input[0];
+      inputIndex = 1;
+      bitPosition = 8;
+    }
+
+    while (bitPosition > 0 || inputIndex < input.length) {
+      // Ensure we have enough bits in buffer
+      while (bitPosition < 6 && inputIndex < input.length) {
+        buffer |= input[inputIndex] << bitPosition;
+        inputIndex++;
+        bitPosition += 8;
+      }
+
+      if (bitPosition === 0) break;
+
+      // Extract value (take from least significant bits)
+      value = buffer & 0x3f;
       chunkSize = 6; // Default to 6 bits
 
-      // Calculate byteIndex and remainderBits for the current position
-      remainderBits = position & 7;
-      byteIndex = position >>> 3;
-
-      // Adjust for byte boundaries: if position is a multiple of 8, it means
-      // we are at the beginning of a byte, so move to the end of the previous byte.
-      if (remainderBits === 0) {
-        byteIndex -= 1;
-        remainderBits = 8;
-      }
-
-      // Extract the relevant bits. This gets the 'remainderBits' high bits of the current byte.
-      extractedBits = input[byteIndex] >> (8 - remainderBits);
-
-      // If we need more bits than available in current 'remainderBits' but less than 6
-      if (remainderBits < 6 && byteIndex > 0) {
-        extractedBits |= input[byteIndex - 1] << remainderBits;
-      }
-
-      // Get the lowest 6 bits to map to a character value (0-63)
-      value = extractedBits & 0x3f;
-
-      // Custom 5-bit encoding logic:
+      // Custom 5-bit encoding logic
       if ((value & 0x1e) === 0x1e) {
-        if (position > 6 || value > 0x1f) {
+        // Check if we should use 5 bits instead
+        var remainingBits = bitPosition + (input.length - inputIndex) * 8;
+        if (remainingBits > 6 || value > 0x1f) {
           chunkSize = 5;
           value &= 0x1f;
         }
       }
 
       // Store the character for the current value
-      output[outputIndex] =
-        ENCODE_TABLE[additiveCipher(value, outputIndex % 0x3f)];
+      output[outputIndex] = ENCODE_TABLE[value];
       outputIndex++;
-      position -= chunkSize;
+
+      // Remove processed bits from buffer
+      buffer >>= chunkSize;
+      bitPosition -= chunkSize;
     }
 
-    return new TextDecoder().decode(output.subarray(0, outputIndex));
+    return textDecoder.decode(output.subarray(0, outputIndex));
   },
 
   /**
@@ -115,21 +116,19 @@ export const base62Fast: BaseX = {
     var inputLength = input.length;
 
     var maxOutputLength = ((inputLength * 6) / 8) | 0;
-    var output = new Uint8Array(maxOutputLength);
+    var output = new Uint8Array(maxOutputLength + 1);
 
-    var writeIndex = maxOutputLength;
+    var writeIndex = 0;
     var bitPosition = 0;
     var buffer = 0;
     var charCode = 0;
     var value = 0;
+    var bitsToAdd = 0;
 
+    // Process characters from left to right (same as original)
     for (var readIndex = 0; readIndex < inputLength; readIndex++) {
       charCode = input.charCodeAt(readIndex);
       value = DECODE_TABLE[charCode];
-      value =
-        DECODE_TABLE[
-          ENCODE_TABLE[additiveCipherReverse(value, readIndex % 0x3f)]
-        ];
 
       // Validate character: must be in the alphabet
       if (isNaN(charCode) || value === undefined) {
@@ -139,10 +138,7 @@ export const base62Fast: BaseX = {
         );
       }
 
-      // Add the decoded value to the buffer.
-      buffer |= value << bitPosition;
-
-      // Determine how many bits this character represents based on its position and value.
+      // Determine how many bits this character represents
       if (readIndex === inputLength - 1) {
         // If it's the very last character
         if (LOG2_TABLE[value] === undefined) {
@@ -150,34 +146,40 @@ export const base62Fast: BaseX = {
             'Invalid Base62 input: unexpected value for last character.',
           );
         }
-        bitPosition += LOG2_TABLE[value]; // Consume bits based on the value (e.g., 0-1 consume 1 bit, 32-61 consume 6 bits)
+        bitsToAdd = LOG2_TABLE[value];
       } else if ((value & 0x1e) === 0x1e) {
-        bitPosition += 5; // Consume 5 bits
+        bitsToAdd = 5; // Consume 5 bits
       } else {
-        bitPosition += 6; // Consume 6 bits
+        bitsToAdd = 6; // Consume 6 bits
       }
 
-      // If we have accumulated 8 or more bits, write a complete byte to output
-      if (bitPosition >= 8) {
-        output[--writeIndex] = buffer;
-        bitPosition &= 7;
+      // Add the decoded value to the buffer
+      buffer |= value << bitPosition;
+      bitPosition += bitsToAdd;
+
+      // If we have accumulated 8 or more bits, write complete bytes to output
+      while (bitPosition >= 8) {
+        output[writeIndex] = buffer & 0xff;
+        writeIndex++;
         buffer >>= 8;
+        bitPosition -= 8;
       }
     }
 
     // After loop, if there are remaining bits in the buffer, write the last partial byte
     if (bitPosition > 0) {
-      output[--writeIndex] = buffer;
+      output[writeIndex] = buffer & 0xff;
+      writeIndex++;
     }
 
-    // Return the relevant part of the output array (from writeIndex to end)
-    return output.subarray(writeIndex);
+    // Return the relevant part of the output array (from 0 to writeIndex)
+    return output.subarray(0, writeIndex);
   },
 };
 
 function createAllocator(): (size: number) => Uint8Array {
-  var currentBuffer = new Uint8Array(512);
-  var currentSize = 512;
+  var currentBuffer = new Uint8Array(256);
+  var currentSize = 256;
 
   return (size: number) => {
     if (currentSize < size) {
@@ -186,12 +188,4 @@ function createAllocator(): (size: number) => Uint8Array {
     }
     return currentBuffer;
   };
-}
-
-function additiveCipher(value: number, shift: number): number {
-  return (value + shift) % 62;
-}
-
-function additiveCipherReverse(obscured: number, shift: number): number {
-  return (obscured - shift + 62) % 62;
 }
