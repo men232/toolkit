@@ -160,7 +160,7 @@ export function onShutdownError(callback: HandlerError): CancelCallback {
 }
 
 export function processGraceful(signal: NodeJS.Signals = 'SIGTERM') {
-  log.warn('Force with signal: %s', signal);
+  log.debug('Force with signal: %s', signal);
   process.emit('SIGTERM', signal);
 }
 
