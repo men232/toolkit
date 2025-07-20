@@ -19,6 +19,7 @@
     "directory": "packages/mongo-transaction"
   },
   "scripts": {
+    "check-types": "tsc --noEmit",
     "build": "unbuild",
     "prepack": "unbuild",
     "test": "vitest run --typecheck",

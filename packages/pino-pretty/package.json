@@ -15,6 +15,7 @@
     "directory": "packages/pino-pretty"
   },
   "scripts": {
+    "check-types": "tsc --noEmit",
     "build": "unbuild",
     "prepack": "unbuild"
   },
