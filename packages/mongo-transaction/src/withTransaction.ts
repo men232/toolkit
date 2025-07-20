@@ -54,6 +54,7 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
   {
     beforeRetryCallback,
     shouldRetryBasedOnError = () => true,
+    maxAttempts,
     maxRetriesNumber = 5,
     delayFactor = 0,
     delayMaxMs = 1000,
@@ -67,6 +68,7 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
       {
         beforeRetryCallback,
         shouldRetryBasedOnError,
+        maxAttempts,
         maxRetriesNumber,
         delayFactor,
         delayMaxMs,
