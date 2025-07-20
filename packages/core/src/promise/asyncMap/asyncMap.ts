@@ -46,33 +46,55 @@ import { nextTickIteration } from '../nextTickIteration';
  *
  * @group Promise
  */
-export async function asyncMap<T, U>(
+export function asyncMap<T, U>(
   array: T[],
   callbackfn: (value: T, index: number, array: Array<T>) => Promise<U> | U,
   { concurrency = 1 } = {},
 ): Promise<Array<U>> {
-  let result: U[] = [];
-
   concurrency = Math.max(concurrency, 1);
 
-  const cooldown = nextTickIteration(10);
+  var result: U[] = [];
+  var i = 0;
+  var cooldown = nextTickIteration(10);
+  var tasks: Promise<any>[] = Array(concurrency);
 
-  let i = 0;
+  return new Promise((resolve, reject) => {
+    var processNextBatch = () => {
+      if (i >= array.length) {
+        resolve(result);
+      } else {
+        cooldown()
+          .then(() => {
+            for (var idx = 0; idx < concurrency; idx++) {
+              tasks[idx] = Promise.resolve(i);
 
-  const handle = (value: T, index: number) => {
-    return callbackfn(value, i + index, array);
-  };
+              if (i < array.length) {
+                tasks[idx] = tasks[idx]
+                  .then(itemIndex =>
+                    callbackfn(array[itemIndex], itemIndex, array),
+                  )
+                  .then(transformed => {
+                    result.push(transformed);
+                  });
+              }
 
-  while (i < array.length) {
-    await cooldown();
+              i++;
+            }
 
-    const batch = await Promise.all(
-      array.slice(i, i + concurrency).map(handle),
-    );
+            return Promise.all(tasks);
+          })
+          .then(() => {
+            if (i < array.length) {
+              // Schedule next batch on next tick to avoid call stack buildup
+              setTimeout(processNextBatch, 0);
+            } else {
+              resolve(result);
+            }
+          })
+          .catch(reject);
+      }
+    };
 
-    result = result.concat(batch);
-    i += batch.length;
-  }
-
-  return result;
+    processNextBatch();
+  });
 }

@@ -34,29 +34,36 @@ import { nextTickIteration } from '../nextTickIteration';
  *
  * @group Promise
  */
-export async function asyncFind<T>(
+export function asyncFind<T>(
   array: T[],
   callbackfn: (
     value: T,
     index: number,
     array: T[],
   ) => Promise<unknown> | unknown,
-) {
-  const cooldown = nextTickIteration(10);
+): Promise<T | undefined> {
+  var i = 0;
+  var cooldown = nextTickIteration(10);
 
-  let i = 0;
+  return new Promise((resolve, reject) => {
+    var processNextBatch = () => {
+      if (i < array.length) {
+        cooldown()
+          .then(() => callbackfn(array[i], i, array))
+          .then(result => {
+            if (Boolean(result)) {
+              resolve(array[i]);
+            } else {
+              i++;
+              setTimeout(processNextBatch, 0);
+            }
+          })
+          .catch(reject);
+      } else {
+        resolve(undefined);
+      }
+    };
 
-  while (i < array.length) {
-    await cooldown();
-
-    const result = await callbackfn(array[i], i, array);
-
-    if (Boolean(result)) {
-      return array[i];
-    }
-
-    i++;
-  }
-
-  return undefined;
+    processNextBatch();
+  });
 }

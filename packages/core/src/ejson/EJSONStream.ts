@@ -35,12 +35,16 @@ export class EJSONStream extends TransformStream<any, string> {
     let firstChunk = true;
 
     super({
-      async start(controller) {
-        if (onStart) {
-          await onStart(controller);
-        }
-
-        controller.enqueue(op);
+      start(controller) {
+        return Promise.resolve()
+          .then(() => {
+            if (onStart) {
+              return onStart(controller);
+            }
+          })
+          .then(() => {
+            controller.enqueue(op);
+          });
       },
       transform(chunk, controller) {
         const jsonString = ejson.stringify(chunk);

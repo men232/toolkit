@@ -32,7 +32,7 @@ import { nextTickIteration } from '@/promise';
  *
  * @group Promise
  */
-export async function asyncFilter<T>(
+export function asyncFilter<T>(
   array: T[],
   predicate: (
     value: T,
@@ -40,20 +40,29 @@ export async function asyncFilter<T>(
     array: Array<T>,
   ) => Promise<boolean> | boolean,
 ): Promise<T[]> {
-  const result: T[] = [];
+  var i = 0;
+  var result: T[] = [];
+  var cooldown = nextTickIteration(10);
 
-  const cooldown = nextTickIteration(10);
+  return new Promise((resolve, reject) => {
+    var processNextBatch = () => {
+      if (i < array.length) {
+        cooldown()
+          .then(() => predicate(array[i], i, array))
+          .then(valid => {
+            if (Boolean(valid)) {
+              result.push(array[i]);
+            }
 
-  for (let idx = 0; idx < array.length; idx++) {
-    await cooldown();
+            i++;
+            setTimeout(processNextBatch, 0);
+          })
+          .catch(reject);
+      } else {
+        resolve(result);
+      }
+    };
 
-    const value = array[idx];
-    const valid = await predicate(value, idx, array);
-
-    if (valid) {
-      result.push(value);
-    }
-  }
-
-  return result;
+    processNextBatch();
+  });
 }

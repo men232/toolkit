@@ -52,15 +52,17 @@ export class AsyncIterableQueue<T> implements AsyncIterable<T> {
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
     return {
-      next: async (): Promise<IteratorResult<T>> => {
+      next: (): Promise<IteratorResult<T>> => {
         if (this._closed && this._queue.items.length === 0) {
-          return { value: undefined, done: true };
+          return Promise.resolve({ value: undefined, done: true });
         }
-        const item = await this._queue.get();
-        if (item === AsyncIterableQueue.QUEUE_END_MARKER && this._closed) {
-          return { value: undefined, done: true };
-        }
-        return { value: item as T, done: false };
+
+        return this._queue.get().then(item => {
+          if (item === AsyncIterableQueue.QUEUE_END_MARKER && this._closed) {
+            return { value: undefined, done: true };
+          }
+          return { value: item as T, done: false };
+        });
       },
     };
   }

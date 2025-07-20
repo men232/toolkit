@@ -1,4 +1,5 @@
 import { assert } from '@/assert';
+import { noop } from '@/is';
 import { type Defer, defer } from '@/promise/defer';
 import { toError } from '@/toError';
 import type { Awaitable } from '@/types';
@@ -47,6 +48,8 @@ interface PoolState<T> {
   queueDrain: Defer<void>[];
   /** Queue of destroy requests waiting for destruction to complete */
   queueDestroy: Defer<void>[];
+  /** Flag indicating if the pool is currently being destroyed */
+  createPending: number;
   /** Flag indicating if the pool is currently being destroyed */
   destroying: boolean;
 }
@@ -128,6 +131,7 @@ export class ResourcePool<
       queueAcquire: [],
       queueDrain: [],
       queueDestroy: [],
+      createPending: 0,
       destroying: false,
     };
   }
@@ -177,27 +181,30 @@ export class ResourcePool<
    * }
    * ```
    */
-  async acquire(): Promise<T> {
+  acquire(): Promise<T> {
     if (this.state.destroying) {
       return this.enqueueAcquireRequest();
     }
     let availableResource = this.tryGetAvailableResource();
     if (availableResource !== null) {
-      return availableResource;
+      return Promise.resolve(availableResource);
     }
 
-    const autoCreatedResource = await this.tryCreateAutoResource();
-    if (autoCreatedResource !== null) {
-      return autoCreatedResource;
-    }
+    return Promise.resolve()
+      .then(() => this.tryCreateAutoResource())
+      .then(autoCreatedResource => {
+        if (autoCreatedResource !== null) {
+          return autoCreatedResource;
+        }
 
-    // Check for available resources again, maybe someone free now
-    availableResource = this.tryGetAvailableResource();
-    if (availableResource !== null) {
-      return availableResource;
-    }
+        // Check for available resources again, maybe someone free now
+        availableResource = this.tryGetAvailableResource();
+        if (availableResource !== null) {
+          return availableResource;
+        }
 
-    return this.enqueueAcquireRequest();
+        return this.enqueueAcquireRequest();
+      });
   }
 
   /**
@@ -279,9 +286,9 @@ export class ResourcePool<
    * - Multiple drain calls can be made concurrently; they will all resolve together
    * - Does not prevent new acquisitions; use destroy() to prevent new usage
    */
-  async drain(): Promise<void> {
+  drain(): Promise<void> {
     if (this.isIdle) {
-      return;
+      return Promise.resolve();
     }
 
     const drainDefer = defer<void>();
@@ -317,28 +324,30 @@ export class ResourcePool<
    * - Resources currently in use will not be force-destroyed; drain() is called first
    * - If destroyResource was not provided, resources are simply discarded
    */
-  async destroy(rejectAcquires = false): Promise<void> {
+  destroy(rejectAcquires = false): Promise<void> {
     if (this.state.destroying) {
       return this.enqueueDestroyRequest();
     }
 
     this.state.destroying = true;
 
-    try {
-      await this.drain();
+    return Promise.resolve()
+      .then(() => this.drain())
+      .then(() => {
+        if (rejectAcquires) {
+          this.rejectPendingAcquires();
+        }
 
-      if (rejectAcquires) {
-        this.rejectPendingAcquires();
-      }
-
-      await this.destroyAllResources();
-      this.resetState();
-    } catch (err) {
-      this.emit('error', toError(err));
-    } finally {
-      this.state.destroying = false;
-      this.resolveDestroyQueue();
-    }
+        return this.destroyAllResources();
+      })
+      .then(() => this.resetState())
+      .catch(err => {
+        this.emit('error', toError(err));
+      })
+      .finally(() => {
+        this.state.destroying = false;
+        this.resolveDestroyQueue();
+      });
   }
 
   private tryGetAvailableResource(): T | null {
@@ -351,14 +360,31 @@ export class ResourcePool<
     return resource;
   }
 
-  private async tryCreateAutoResource(): Promise<T | null> {
-    if (!this.auto || this.state.inUseResources.size >= this.poolSize) {
-      return null;
+  private isLimitReached() {
+    return (
+      this.state.inUseResources.size +
+        this.state.createPending +
+        this.state.availableResources.length >=
+      this.poolSize
+    );
+  }
+
+  private tryCreateAutoResource(): Promise<T | null> {
+    if (!this.auto || this.isLimitReached()) {
+      return Promise.resolve(null);
     }
 
-    const resource = await this.createResource();
-    this.state.inUseResources.add(resource);
-    return resource;
+    this.state.createPending++;
+
+    return Promise.resolve()
+      .then(() => this.createResource())
+      .then(resource => {
+        this.state.inUseResources.add(resource);
+        return resource;
+      })
+      .finally(() => {
+        this.state.createPending--;
+      });
   }
 
   private enqueueAcquireRequest(): Promise<T> {
@@ -401,19 +427,18 @@ export class ResourcePool<
     this.state.queueAcquire = [];
   }
 
-  private async destroyAllResources(): Promise<void> {
+  private destroyAllResources(): Promise<void> {
     if (!this.destroyResource || this.state.availableResources.length === 0) {
-      return;
+      return Promise.resolve();
     }
 
-    await asyncForEach(
+    return asyncForEach(
       this.state.availableResources,
-      async resource => {
-        try {
-          await this.destroyResource!(resource);
-        } catch (err) {
-          this.emit('error', toError(err));
-        }
+      resource => {
+        return Promise.resolve()
+          .then(() => this.destroyResource!(resource))
+          .catch(err => this.emit('error', toError(err)))
+          .then(noop);
       },
       { concurrency: 4 },
     );

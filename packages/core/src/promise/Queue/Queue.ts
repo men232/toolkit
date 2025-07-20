@@ -34,20 +34,31 @@ export class Queue<T> {
     this.#limit = limit;
   }
 
-  async get(): Promise<T> {
+  get(): Promise<T> {
+    var getItem = (): Promise<T> => {
+      const item = this.items.shift()!;
+      this.#events.emit('get');
+      return Promise.resolve(item);
+    };
+
     if (this.items.length === 0) {
-      await SimpleEventEmitter.once(this.#events, 'put');
+      return SimpleEventEmitter.once(this.#events, 'put').then(getItem);
     }
-    const item = this.items.shift()!;
-    this.#events.emit('get');
-    return item;
+
+    return getItem();
   }
 
-  async put(item: T) {
+  put(item: T): Promise<void> {
+    var putItem = (): Promise<void> => {
+      this.items.push(item);
+      this.#events.emit('put');
+      return Promise.resolve();
+    };
+
     if (this.#limit && this.items.length >= this.#limit) {
-      await SimpleEventEmitter.once(this.#events, 'get');
+      return SimpleEventEmitter.once(this.#events, 'get').then(putItem);
     }
-    this.items.push(item);
-    this.#events.emit('put');
+
+    return putItem();
   }
 }

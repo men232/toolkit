@@ -1,11 +1,11 @@
-let AssertionError: any;
+import { BrowserAssertionError } from '../errors/BrowserAssertionError.js';
 
-(async () => {
-  AssertionError = (globalThis as any).window
-    ? await import('../errors/BrowserAssertionError').then(
-        r => r.BrowserAssertionError,
-      )
-    : await import('node:assert').then(r => r.AssertionError);
-})();
+let AssertionError = BrowserAssertionError;
+
+if (!(globalThis as any).window) {
+  import('node:assert')
+    .then(r => (AssertionError = r.AssertionError))
+    .catch(() => {});
+}
 
 export { AssertionError };

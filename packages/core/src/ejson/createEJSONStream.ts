@@ -78,61 +78,65 @@ function createEJSONStreamPayload(
     cl,
     op,
     sep,
-    async onStart(controller) {
+    onStart(controller) {
       if (!prepend) {
         controller.enqueue(`{"${resultKey}":`);
-        return;
+        return Promise.resolve();
       }
 
-      const data = await prepend();
+      return Promise.resolve()
+        .then(() => prepend())
+        .then(data => {
+          if (data === null || data === undefined) {
+            controller.enqueue(`{"${resultKey}":`);
+            return;
+          }
 
-      if (data === null || data === undefined) {
-        controller.enqueue(`{"${resultKey}":`);
-        return;
-      }
+          assert.ok(
+            isPlainObject(data),
+            'prepend result expected to be plain object',
+          );
 
-      assert.ok(
-        isPlainObject(data),
-        'prepend result expected to be plain object',
-      );
+          const dataPart = instance.stringify(data).slice(0, -1);
 
-      const dataPart = instance.stringify(data).slice(0, -1);
+          // Empty prepend object
+          if (dataPart === '{') {
+            controller.enqueue(`{"${resultKey}":`);
+            return;
+          }
 
-      // Empty prepend object
-      if (dataPart === '{') {
-        controller.enqueue(`{"${resultKey}":`);
-        return;
-      }
-
-      controller.enqueue(`${dataPart}${sep}"${resultKey}":`);
+          controller.enqueue(`${dataPart}${sep}"${resultKey}":`);
+        });
     },
-    async onFlush(controller) {
+    onFlush(controller) {
       if (!append) {
         controller.enqueue('}');
-        return;
+        return Promise.resolve();
       }
 
-      const data = await append();
+      return Promise.resolve()
+        .then(() => append())
+        .then(data => {
+          if (data === null || data === undefined) {
+            controller.enqueue('}');
+            return;
+          }
 
-      if (data === null || data === undefined) {
-        controller.enqueue('}');
-        return;
-      }
+          assert.ok(
+            isPlainObject(data),
+            'prepend result expected to be plain object',
+          );
 
-      assert.ok(
-        isPlainObject(data),
-        'prepend result expected to be plain object',
-      );
+          const dataPart = instance.stringify(data).slice(1);
 
-      const dataPart = instance.stringify(data).slice(1);
+          // Empty append object
+          if (dataPart === '}') {
+            controller.enqueue(`}`);
+            return;
+          }
 
-      // Empty append object
-      if (dataPart === '}') {
-        controller.enqueue(`}`);
-        return;
-      }
-
-      controller.enqueue(`${sep}${dataPart}`);
+          controller.enqueue(`${sep}${dataPart}`);
+        });
     },
   });
 
