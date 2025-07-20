@@ -42,19 +42,11 @@ function paginatorNext(this: MongooseQuery, nextToken: string) {
 
 declare module 'mongoose' {
   /**
-   * Patch original mongoose types
+   * Patch original mongoose types for mongoose 8
    */
   // @ts-expect-error
-  class Query<
-    ResultType,
-    DocType,
-    THelpers = {},
-    RawDocType = unknown,
-    QueryOp = 'find',
-    TInstanceMethods = Record<string, never>,
-  > implements SessionOperation
-  {
-    paginator(options?: QueryPaginatorOptions): QueryPaginator<ResultType>;
-    paginatorNext(nextToken: string): QueryPaginator<ResultType>;
+  interface Query<ResultType, DocType> {
+    paginator(options?: QueryPaginatorOptions): QueryPaginator<DocType>;
+    paginatorNext(nextToken: string): QueryPaginator<DocType>;
   }
 }
