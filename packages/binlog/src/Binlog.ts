@@ -5,6 +5,7 @@ import {
   checkBitmask,
   crc32,
   logger,
+  noop,
   timestamp,
 } from '@andrew_l/toolkit';
 import fs from 'node:fs';
@@ -66,6 +67,15 @@ export interface BinlogEntry<TData = Buffer> {
   position: number;
 }
 
+interface EntryHeader {
+  opcode: number;
+  flags: number;
+  timestamp: number;
+  dataLength: number;
+  crc: number;
+  position: number;
+}
+
 /**
  * TypeScript implementation of binlog system
  * Adapted from https://github.com/vk-com/kphp-kdb/blob/master/binlog/kdb-binlog-common.c
@@ -110,63 +120,82 @@ export class Binlog {
    * Initialize the binlog system, ensuring directory exists and pick most recent binlog file
    * @returns Promise resolving to true if successful, false otherwise
    */
-  public async init(): Promise<void> {
-    await fs.promises.mkdir(this._directory, { recursive: true });
-    await this.#findLatestBinlogFile();
+  public init(): Promise<void> {
+    return Promise.resolve()
+      .then(() => fs.promises.mkdir(this._directory, { recursive: true }))
+      .then(() => this.#findLatestBinlogFile());
   }
 
   /**
    * Find the latest binlog file to continue writing
    */
-  async #findLatestBinlogFile(): Promise<void> {
-    const files = await fs.promises.readdir(this._directory);
-    const fileRegEx = filePatternToRegex(this._filePattern);
+  #findLatestBinlogFile(): Promise<void> {
+    return Promise.resolve()
+      .then(() => fs.promises.readdir(this._directory))
+      .then(files => {
+        const fileRegEx = filePatternToRegex(this._filePattern);
 
-    this._currentFileIndex = 0;
+        this._currentFileIndex = 0;
 
-    for (const fileName of files) {
-      const match = fileName.match(fileRegEx);
+        for (const fileName of files) {
+          const match = fileName.match(fileRegEx);
 
-      if (match) {
-        this._currentFileIndex = Math.max(
-          this._currentFileIndex,
-          parseInt(match[1], 10),
-        );
-      }
-    }
+          if (match) {
+            this._currentFileIndex = Math.max(
+              this._currentFileIndex,
+              parseInt(match[1], 10),
+            );
+          }
+        }
+      });
   }
 
   /**
    * Open the binlog for writing
    */
-  public async open(): Promise<void> {
+  public open(): Promise<void> {
     const filePath = path.join(this._directory, this.currentFileName);
 
-    this._currentFileDescriptor = await fs.promises.open(filePath, 'a+');
-    this._currentFile = filePath;
-    this._currentFileSize = (await this._currentFileDescriptor.stat()).size;
-    this._isOpen = true;
+    return Promise.resolve()
+      .then(() => fs.promises.open(filePath, 'a+'))
+      .then(fileDescription => {
+        this._currentFileDescriptor = fileDescription;
+        this._currentFile = filePath;
 
-    // Write the binlog header
-    if (this._currentFileSize === 0) {
-      await this.#writeBinlogHeader();
-    } else {
-      await this.#checkBinlogHeaders(this._currentFileDescriptor);
-    }
+        return this._currentFileDescriptor.stat();
+      })
+      .then(fileStat => {
+        this._currentFileSize = fileStat.size;
+        this._isOpen = true;
+
+        // Write the binlog header
+        if (this._currentFileSize === 0) {
+          return this.#writeBinlogHeader();
+        } else {
+          return this.#checkBinlogHeaders(this._currentFileDescriptor!).then(
+            noop,
+          );
+        }
+      });
   }
 
   /**
    * Close the current binlog file
    */
-  public async close(): Promise<void> {
-    if (!this._isOpen || !this._currentFileDescriptor) return;
+  public close(): Promise<void> {
+    return Promise.resolve()
+      .then(() => {
+        if (!this._isOpen || !this._currentFileDescriptor) {
+          return;
+        }
 
-    // Write footer
-    await this._currentFileDescriptor.close();
-
-    this._currentFileDescriptor = null;
-    this._currentFile = null;
-    this._isOpen = false;
+        return this._currentFileDescriptor.close();
+      })
+      .then(() => {
+        this._currentFileDescriptor = null;
+        this._currentFile = null;
+        this._isOpen = false;
+      });
   }
 
   /**
@@ -175,73 +204,86 @@ export class Binlog {
    * @param data - Data to write
    * @returns Promise resolving to true if successful, false otherwise
    */
-  public async write(opcode: number, data: unknown): Promise<void> {
+  public write(opcode: number, data: unknown): Promise<void> {
+    let promise = Promise.resolve();
+
     if (!this._isOpen) {
-      await this.open();
+      promise = promise.then(() => this.open());
     }
 
     // Check if we need to rotate the file
-    if (
-      this._options.rotation &&
-      this._currentFileSize >= this._options.maxFileSize
-    ) {
-      await this.rotate();
-    }
+    return promise
+      .then(() => {
+        if (
+          this._options.rotation &&
+          this._currentFileSize >= this._options.maxFileSize
+        ) {
+          return this.rotate();
+        }
+      })
+      .then(() => {
+        assert.ok(this._currentFileDescriptor, 'File descriptor is null');
 
-    assert.ok(this._currentFileDescriptor, 'File descriptor is null');
+        let flags = this.BINLOG_FLAG.NONE;
 
-    let flags = this.BINLOG_FLAG.NONE;
+        if (!Buffer.isBuffer(data)) {
+          if (data instanceof Structure) {
+            data = tlEncode(data);
+            flags |= this.BINLOG_FLAG.TL;
+          } else {
+            data = tlEncode(data) as Buffer;
+            flags |= this.BINLOG_FLAG.TL;
+          }
+        }
 
-    if (!Buffer.isBuffer(data)) {
-      if (data instanceof Structure) {
-        data = tlEncode(data);
-        flags |= this.BINLOG_FLAG.TL;
-      } else {
-        data = tlEncode(data) as Buffer;
-        flags |= this.BINLOG_FLAG.TL;
-      }
-    }
+        // Create entry header
+        const dataLength = (data as Buffer).length;
+        const totalLength = this.BINLOG_ENTRY_HEADER_SIZE + dataLength;
 
-    // Create entry header
-    const dataLength = (data as Buffer).length;
-    const totalLength = this.BINLOG_ENTRY_HEADER_SIZE + dataLength;
+        const headerBuffer = Buffer.allocUnsafe(this.BINLOG_ENTRY_HEADER_SIZE);
+        headerBuffer.writeUInt32LE(opcode, 0);
+        headerBuffer.writeUInt32LE(flags, 4);
+        headerBuffer.writeUInt32LE(timestamp(), 8);
+        headerBuffer.writeUInt32LE(dataLength, 12);
 
-    const headerBuffer = Buffer.allocUnsafe(this.BINLOG_ENTRY_HEADER_SIZE);
-    headerBuffer.writeUInt32LE(opcode, 0);
-    headerBuffer.writeUInt32LE(flags, 4);
-    headerBuffer.writeUInt32LE(timestamp(), 8);
-    headerBuffer.writeUInt32LE(dataLength, 12);
+        headerBuffer.writeUInt32LE(
+          crc32(
+            Buffer.concat([headerBuffer.subarray(0, 16), data as Buffer]),
+          ) >>> 0,
+          16,
+        );
 
-    headerBuffer.writeUInt32LE(
-      crc32(Buffer.concat([headerBuffer.subarray(0, 16), data as Buffer])) >>>
-        0,
-      16,
-    );
-
-    // Write the entry
-    await this._currentFileDescriptor.write(headerBuffer);
-    await this._currentFileDescriptor.write(data as Buffer);
-
-    if (this._options.syncWrites) {
-      await this._currentFileDescriptor.sync();
-    }
-
-    this._currentFileSize += totalLength;
+        // Write the entry
+        return Promise.resolve()
+          .then(() => this._currentFileDescriptor!.write(headerBuffer))
+          .then(() => this._currentFileDescriptor!.write(data as Buffer))
+          .then(() => {
+            if (this._options.syncWrites) {
+              return this._currentFileDescriptor!.sync();
+            }
+          })
+          .then(() => {
+            this._currentFileSize += totalLength;
+          });
+      });
   }
 
   /**
    * Rotate the binlog file
    */
-  public async rotate(): Promise<void> {
-    await this.close();
-    this._currentFileIndex++;
-    await this.open();
+  public rotate(): Promise<void> {
+    return Promise.resolve()
+      .then(() => this.close())
+      .then(() => {
+        this._currentFileIndex++;
+        return this.open();
+      });
   }
 
   /**
    * Write the binlog header
    */
-  async #writeBinlogHeader(): Promise<void> {
+  #writeBinlogHeader(): Promise<void> {
     assert.ok(this._currentFileDescriptor, 'File descriptor is null');
 
     const headerBuffer = Buffer.allocUnsafe(this.BINLOG_HEADER_SIZE);
@@ -251,12 +293,15 @@ export class Binlog {
     headerBuffer.writeUInt32LE(timestamp(), 8);
     headerBuffer.writeUInt32LE(0, 12); // Reserved field
 
-    await this._currentFileDescriptor.write(headerBuffer);
-    this._currentFileSize += headerBuffer.length;
+    return Promise.resolve()
+      .then(() => this._currentFileDescriptor!.write(headerBuffer))
+      .then(() => {
+        this._currentFileSize += headerBuffer.length;
 
-    if (this._options.syncWrites) {
-      await this._currentFileDescriptor.sync();
-    }
+        if (this._options.syncWrites) {
+          return this._currentFileDescriptor!.sync();
+        }
+      });
   }
 
   /**
@@ -265,100 +310,149 @@ export class Binlog {
    * @param unsafe - Ignore broken binlog records otherwise throws error
    * @returns Array of parsed entries
    */
-  public async readEntries<TData = Buffer>(
+  public readEntries<TData = Buffer>(
     filename: string,
     unsafe?: boolean,
   ): Promise<BinlogEntry<TData>[]> {
-    const filepath = path.join(this._directory, filename);
-    const fileHandle = await fs.promises.open(filepath, 'r');
+    var filepath = path.join(this._directory, filename);
+    var fileHandle: fs.promises.FileHandle;
+    var entries: BinlogEntry<TData>[] = [];
 
-    if (!(await this.#checkBinlogHeaders(fileHandle))) {
-      if (unsafe) {
-        this._log.warn('Invalid binlog file format: ' + filename);
-        return [];
-      }
-
-      throw new Error('Invalid binlog file format:\n' + filepath);
-    }
-
-    const contentSize =
-      (await fileHandle.stat()).size - this.BINLOG_HEADER_SIZE;
-
-    let position = this.BINLOG_HEADER_SIZE;
-
-    const entries: BinlogEntry<TData>[] = [];
-
-    // Read entries until we reach the end or footer
-    while (position < contentSize) {
-      const entryHeaderBuffer = Buffer.allocUnsafe(
-        this.BINLOG_ENTRY_HEADER_SIZE,
-      );
-      await fileHandle.read(
-        entryHeaderBuffer,
-        0,
-        this.BINLOG_ENTRY_HEADER_SIZE,
-        position,
-      );
-
-      const opcode = entryHeaderBuffer.readUInt32LE(0);
-      const flags = entryHeaderBuffer.readUInt32LE(4);
-      const timestamp = entryHeaderBuffer.readUInt32LE(8);
-      const dataLength = entryHeaderBuffer.readUInt32LE(12);
-      const crc = entryHeaderBuffer.readUInt32LE(16);
-
-      position += this.BINLOG_ENTRY_HEADER_SIZE;
-
-      // Read data
-      let data = Buffer.allocUnsafe(dataLength);
-
-      await fileHandle.read(data, 0, dataLength, position);
-
-      // Verify CRC
-      const calculatedCrc =
-        crc32(Buffer.concat([entryHeaderBuffer.subarray(0, 16), data])) >>> 0;
-
-      if (calculatedCrc === crc) {
-        if (checkBitmask(flags, this.BINLOG_FLAG.TL)) {
-          data = tlDecode(data, {
-            structures: this._options.structures,
-          });
+    return fs.promises
+      .open(filepath, 'r')
+      .then(_fileHandle => {
+        fileHandle = _fileHandle;
+        return this.#checkBinlogHeaders(fileHandle);
+      })
+      .then(isValidHeader => {
+        if (!isValidHeader) {
+          if (unsafe) {
+            this._log.warn('Invalid binlog file format: ' + filename);
+            return;
+          }
+          return Promise.reject(
+            new Error('Invalid binlog file format:\n' + filepath),
+          );
         }
 
-        entries.push({
-          opcode,
-          timestamp,
-          data: data,
-          position: position - this.BINLOG_ENTRY_HEADER_SIZE,
+        return fileHandle.stat();
+      })
+      .then(stats => {
+        if (!stats) return;
+
+        var contentSize = stats.size - this.BINLOG_HEADER_SIZE;
+        var position = this.BINLOG_HEADER_SIZE;
+        var headerBuffer = Buffer.allocUnsafe(this.BINLOG_ENTRY_HEADER_SIZE);
+
+        return new Promise<void>((resolve, reject) => {
+          var processNextBatch = () => {
+            if (position >= contentSize) {
+              return resolve();
+            }
+
+            fileHandle
+              .read(headerBuffer, 0, this.BINLOG_ENTRY_HEADER_SIZE, position)
+              .then(() => {
+                var header = this.#readEntryHeader(headerBuffer, position);
+                var dataBuffer = Buffer.allocUnsafe(header.dataLength);
+
+                position += this.BINLOG_ENTRY_HEADER_SIZE;
+
+                return fileHandle
+                  .read(dataBuffer, 0, header.dataLength, position)
+                  .then(() => {
+                    var entry = this.#readEntry(
+                      headerBuffer,
+                      header,
+                      dataBuffer.subarray(0, header.dataLength),
+                    );
+
+                    if (!entry) {
+                      if (!unsafe) {
+                        return Promise.reject(
+                          new Error(
+                            `CRC mismatch at position ${position - this.BINLOG_ENTRY_HEADER_SIZE}`,
+                          ),
+                        );
+                      } else {
+                        this._log.warn(
+                          `CRC mismatch at position ${position - this.BINLOG_ENTRY_HEADER_SIZE}`,
+                        );
+                      }
+                    } else {
+                      entries.push(entry);
+                    }
+
+                    position += header.dataLength;
+                  })
+                  .then(() => processNextBatch())
+                  .catch(reject);
+              });
+          };
+
+          processNextBatch();
         });
-      } else if (!unsafe) {
-        throw new Error(
-          `CRC mismatch at position ${position - this.BINLOG_ENTRY_HEADER_SIZE}`,
-        );
-      } else {
-        this._log.warn(
-          `CRC mismatch at position ${position - this.BINLOG_ENTRY_HEADER_SIZE}`,
-        );
-      }
-
-      position += dataLength;
-    }
-
-    // Close file
-    await fileHandle.close();
-
-    return entries;
+      })
+      .then(() => fileHandle?.close())
+      .then(() => entries)
+      .catch(error => {
+        return fileHandle.close().then(() => Promise.reject(error));
+      });
   }
 
-  async #checkBinlogHeaders(
-    fileHandle: fs.promises.FileHandle,
-  ): Promise<boolean> {
-    const headerBuffer = Buffer.allocUnsafe(this.BINLOG_HEADER_SIZE);
-    await fileHandle.read(headerBuffer, 0, this.BINLOG_HEADER_SIZE, 0);
+  #readEntryHeader(buffer: Buffer, position: number): EntryHeader {
+    return {
+      opcode: buffer.readUInt32LE(0),
+      flags: buffer.readUInt32LE(4),
+      timestamp: buffer.readUInt32LE(8),
+      dataLength: buffer.readUInt32LE(12),
+      crc: buffer.readUInt32LE(16),
+      position,
+    };
+  }
 
-    const magic = headerBuffer.readUInt32LE(0);
-    const version = headerBuffer.readUInt32LE(4);
+  #readEntry(
+    headerBuffer: Buffer,
+    header: EntryHeader,
+    dataBuffer: Buffer,
+  ): BinlogEntry<any> | null {
+    // Verify CRC
+    var crc = crc32([headerBuffer.subarray(0, 16), dataBuffer]) >>> 0;
 
-    return magic === this.BINLOG_MAGIC && version === this.BINLOG_VERSION;
+    if (crc !== header.crc) {
+      return null;
+    }
+
+    var data: any;
+
+    if (checkBitmask(header.flags, this.BINLOG_FLAG.TL)) {
+      data = tlDecode(dataBuffer, {
+        structures: this._options.structures,
+      });
+    } else {
+      // Make copy
+      data = Buffer.from(dataBuffer);
+    }
+
+    return {
+      opcode: header.opcode,
+      timestamp: header.timestamp,
+      data: data,
+      position: header.position,
+    };
+  }
+
+  #checkBinlogHeaders(fileHandle: fs.promises.FileHandle): Promise<boolean> {
+    var headerBuffer = Buffer.allocUnsafe(this.BINLOG_HEADER_SIZE);
+
+    return Promise.resolve()
+      .then(() => fileHandle.read(headerBuffer, 0, this.BINLOG_HEADER_SIZE, 0))
+      .then(() => {
+        var magic = headerBuffer.readUInt32LE(0);
+        var version = headerBuffer.readUInt32LE(4);
+
+        return magic === this.BINLOG_MAGIC && version === this.BINLOG_VERSION;
+      });
   }
 
   /**
