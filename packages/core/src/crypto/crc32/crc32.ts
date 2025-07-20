@@ -1,6 +1,5 @@
 import { isString } from '@/is';
-
-var encoder = new TextEncoder();
+import { textEncoder } from '@/str/text';
 
 var TABLE = new Int32Array([
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -52,15 +51,26 @@ var TABLE = new Int32Array([
  * Calculate crc32 hash from string
  * @group Crypto
  */
-export function crc32(current: Uint8Array | string, seed?: number): number {
-  if (isString(current)) {
-    return crc32(encoder.encode(current), seed);
+export function crc32(
+  value: Uint8Array | Uint8Array[] | string,
+  seed?: number,
+): number {
+  if (isString(value)) {
+    return crc32(textEncoder.encode(value), seed);
   }
 
   var crc = seed === 0 ? 0 : ~~seed! ^ -1;
 
-  for (var index = 0; index < current.length; index++) {
-    crc = TABLE[(crc ^ current[index]) & 0xff] ^ (crc >>> 8);
+  if (value instanceof Uint8Array) {
+    for (var index = 0; index < value.length; index++) {
+      crc = TABLE[(crc ^ value[index]) & 0xff] ^ (crc >>> 8);
+    }
+  } else {
+    for (var current of value) {
+      for (var index = 0; index < current.length; index++) {
+        crc = TABLE[(crc ^ current[index]) & 0xff] ^ (crc >>> 8);
+      }
+    }
   }
 
   return crc ^ -1;
