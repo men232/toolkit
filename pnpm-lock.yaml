@@ -21,10 +21,10 @@ catalogs:
 
 patchedDependencies:
   mongoose@7.6.3:
-    hash: xt45tprt2dif2sl3eegwe445ni
+    hash: a85136272ebc955cefbc4a7d1e8e8f7667f5da31a74bbd10bd7b125fdd9d1a6c
     path: patches/mongoose@7.6.3.patch
   mongoose@8.8.0:
-    hash: w3f37p5ffkqpkbhblr3dnoqbne
+    hash: 7646de49eb5af441a832f7f19c259bb108dce0a6877006f04b5bd39750b91989
     path: patches/mongoose@8.8.0.patch
 
 importers:
@@ -220,10 +220,10 @@ importers:
         version: 22.10.5
       mongoose-v7:
         specifier: npm:mongoose@7.6.3
-        version: mongoose@7.6.3(patch_hash=xt45tprt2dif2sl3eegwe445ni)
+        version: mongoose@7.6.3(patch_hash=a85136272ebc955cefbc4a7d1e8e8f7667f5da31a74bbd10bd7b125fdd9d1a6c)
       mongoose-v8:
         specifier: npm:mongoose@8.8.0
-        version: mongoose@8.8.0(patch_hash=w3f37p5ffkqpkbhblr3dnoqbne)(socks@2.8.3)
+        version: mongoose@8.8.0(patch_hash=7646de49eb5af441a832f7f19c259bb108dce0a6877006f04b5bd39750b91989)(socks@2.8.3)
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
@@ -251,10 +251,10 @@ importers:
         version: 22.10.5
       mongoose-v7:
         specifier: npm:mongoose@7.6.3
-        version: mongoose@7.6.3(patch_hash=xt45tprt2dif2sl3eegwe445ni)
+        version: mongoose@7.6.3(patch_hash=a85136272ebc955cefbc4a7d1e8e8f7667f5da31a74bbd10bd7b125fdd9d1a6c)
       mongoose-v8:
         specifier: npm:mongoose@8.8.0
-        version: mongoose@8.8.0(patch_hash=w3f37p5ffkqpkbhblr3dnoqbne)(socks@2.8.3)
+        version: mongoose@8.8.0(patch_hash=7646de49eb5af441a832f7f19c259bb108dce0a6877006f04b5bd39750b91989)(socks@2.8.3)
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
@@ -6821,7 +6821,7 @@ snapshots:
     optionalDependencies:
       socks: 2.8.3
 
-  mongoose@7.6.3(patch_hash=xt45tprt2dif2sl3eegwe445ni):
+  mongoose@7.6.3(patch_hash=a85136272ebc955cefbc4a7d1e8e8f7667f5da31a74bbd10bd7b125fdd9d1a6c):
     dependencies:
       bson: 5.5.1
       kareem: 2.5.1
@@ -6838,7 +6838,7 @@ snapshots:
       - snappy
       - supports-color
 
-  mongoose@8.8.0(patch_hash=w3f37p5ffkqpkbhblr3dnoqbne)(socks@2.8.3):
+  mongoose@8.8.0(patch_hash=7646de49eb5af441a832f7f19c259bb108dce0a6877006f04b5bd39750b91989)(socks@2.8.3):
     dependencies:
       bson: 6.10.0
       kareem: 2.6.3
