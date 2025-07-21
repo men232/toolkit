@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/graceful",
-  "version": "0.2.21",
+  "version": "0.3.0",
   "description": "Utility to manage application shutdown.",
   "license": "MIT",
   "type": "module",
