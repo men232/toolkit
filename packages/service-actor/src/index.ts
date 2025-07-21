@@ -42,10 +42,10 @@ export type ServiceActor<T extends Record<PropertyKey, any> = {}> =
     assign(params: Partial<ServiceActorData<T>>): ServiceActor<T>;
   };
 
-const SYM_MARKER = Symbol();
-const SYM_RAW = Symbol();
-const SYM_DATA = Symbol();
-const SYM_API = Symbol();
+var SYM_MARKER = Symbol();
+var SYM_RAW = Symbol();
+var SYM_DATA = Symbol();
+var SYM_API = Symbol();
 
 /**
  * Create service actor hooks
@@ -96,12 +96,11 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
    */
   use: () => ServiceActor<T>;
 } {
-  const injectKey = Symbol();
+  var injectKey = Symbol();
+  var idSeq = 0;
 
-  let idSeq = 0;
-
-  const createActor = (): AnyServiceActor => {
-    const actor = createServiceActor();
+  var createActor = (): AnyServiceActor => {
+    var actor = createServiceActor();
 
     actor.traceId = `trace-${++idSeq}`;
 
@@ -112,13 +111,13 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
     return actor;
   };
 
-  const withHook = <Fn extends AnyFunction>(
+  var withHook = <Fn extends AnyFunction>(
     fn: Fn,
     params?: Partial<ServiceActor<T>>,
   ): Fn => {
     return withContext(function (this: any, ...args: any[]) {
-      const parentActor = inject<ServiceActor>(injectKey);
-      const actor = createActor();
+      var parentActor = inject<ServiceActor>(injectKey);
+      var actor = createActor();
 
       if (parentActor) {
         actor.assign(parentActor);
@@ -134,33 +133,36 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
     }) as Fn;
   };
 
-  const injectHook = (): AnyServiceActor | undefined => {
+  var injectHook = (): AnyServiceActor | undefined => {
     return hasInjectionContext() ? inject<ServiceActor>(injectKey) : undefined;
   };
 
-  const useHok = (): AnyServiceActor => {
-    if (!hasInjectionContext()) {
-      const actor = createActor();
-      provide(injectKey, actor, true);
+  var useHok = (): AnyServiceActor => {
+    var _actor: AnyServiceActor | undefined;
 
-      return actor;
+    if (!hasInjectionContext()) {
+      _actor = createActor();
+      provide(injectKey, _actor, true);
+
+      return _actor;
     }
 
-    const existed = inject<AnyServiceActor>(injectKey);
+    // check for existed
+    _actor = inject<AnyServiceActor>(injectKey);
 
-    if (existed) return existed;
+    if (_actor) return _actor;
 
-    const actor = createActor();
-    provide(injectKey, actor);
+    _actor = createActor();
+    provide(injectKey, _actor);
 
-    return actor;
+    return _actor;
   };
 
   return { with: withHook, use: useHok as any, inject: injectHook as any };
 }
 
 function createServiceActor(): ServiceActor {
-  const actor: ServiceActorInternal = {
+  var actor: ServiceActorInternal = {
     traceId: '',
     actorId: null,
     actorType: 'unknown',
@@ -172,11 +174,11 @@ function createServiceActor(): ServiceActor {
     [SYM_MARKER]: true,
   };
 
-  const reservedKeys = new Set(Object.keys(actor));
+  var reservedKeys = new Set(Object.keys(actor));
 
   actor[SYM_RAW] = actor;
 
-  const newProxy = new Proxy(actor[SYM_DATA], {
+  var newProxy = new Proxy(actor[SYM_DATA], {
     defineProperty(target, key, value) {
       if (key in actor) {
         (actor as any)[key] = value;
@@ -215,7 +217,7 @@ function createServiceActor(): ServiceActor {
       return true;
     },
     get: (target, key) => {
-      let value: any;
+      var value: any;
 
       if (key in actor) {
         value = Reflect.get(actor, key, value);
