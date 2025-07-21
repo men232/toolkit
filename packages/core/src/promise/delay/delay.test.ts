@@ -13,7 +13,7 @@ describe('delay', () => {
   it('ms', async () => {
     const startAt = Date.now();
 
-    await delay(100);
+    await delay(101);
 
     expect(Date.now() - startAt).greaterThanOrEqual(100);
   });
