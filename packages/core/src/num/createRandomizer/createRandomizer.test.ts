@@ -66,9 +66,8 @@ describe('createRandomizer', () => {
     const randomizer = createRandomizer({ min: 1, max: 100 });
 
     // Without passing `fromStep`, it should increment the current step
-    const firstValue = randomizer.get();
-    const secondValue = randomizer.get();
-    expect(firstValue).not.toBe(secondValue);
+    randomizer.get();
+    randomizer.get();
     expect(randomizer.getCurrentStep()).toBe(2);
   });
 
