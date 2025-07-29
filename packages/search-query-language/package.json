@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/search-query-language",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Converts human-readable query strings into structured representations.",
   "license": "MIT",
   "type": "module",
