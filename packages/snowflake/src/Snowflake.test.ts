@@ -1,14 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { type DeconstructedSnowflake, Snowflake } from './Snowflake.js';
+import {
+  type DeconstructedSnowflake,
+  MAX_INCREMENT,
+  MAX_PROCESS_ID,
+  MAX_WORKER_ID,
+  Snowflake,
+} from './Snowflake.js';
 
 // 2020-01-01
 const sampleEpoch = 1577836800000;
-
-// describe('test', () => {
-//   test('test', () => {
-//     console.log(new Snowflake(new Date('2000-01-01T00:00:00.000Z')).generate());
-//   });
-// });
 
 describe('Snowflake', () => {
   beforeAll(() => {
@@ -21,13 +21,13 @@ describe('Snowflake', () => {
   });
 
   describe('processId', () => {
-    test('GIVEN default THEN returns 1n', () => {
+    test('GIVEN default THEN returns 1', () => {
       const snowflake = new Snowflake(sampleEpoch);
       expect(snowflake.processId).toBe(1);
     });
 
     test.each([15, 15n])(
-      'GIVEN valid value (%s) THEN returns same value as bigint',
+      'GIVEN valid value (%s) THEN returns same value',
       value => {
         const snowflake = new Snowflake(sampleEpoch);
         snowflake.processId = value;
@@ -36,11 +36,36 @@ describe('Snowflake', () => {
     );
 
     test.each([4200, 4200n])(
-      'GIVEN out-of-range value (%s) THEN returns masked value as bigint',
+      'GIVEN out-of-range value (%s) THEN returns masked value',
       value => {
         const snowflake = new Snowflake(sampleEpoch);
         snowflake.processId = value;
         expect(snowflake.processId).toBe(8);
+      },
+    );
+  });
+
+  describe('increment', () => {
+    test('GIVEN default THEN returns 1', () => {
+      const snowflake = new Snowflake(sampleEpoch);
+      expect(snowflake.increment).toBe(0);
+    });
+
+    test.each([15, 15n])(
+      'GIVEN valid value (%s) THEN returns same value',
+      value => {
+        const snowflake = new Snowflake(sampleEpoch);
+        snowflake.increment = value;
+        expect(snowflake.increment).toBe(15);
+      },
+    );
+
+    test.each([5000, 5000n])(
+      'GIVEN out-of-range value (%s) THEN returns masked value',
+      value => {
+        const snowflake = new Snowflake(sampleEpoch);
+        snowflake.increment = value;
+        expect(snowflake.increment).toBe(904);
       },
     );
   });
@@ -52,7 +77,7 @@ describe('Snowflake', () => {
     });
 
     test.each([15, 15n])(
-      'GIVEN valid value (%s) THEN returns same value as bigint',
+      'GIVEN valid value (%s) THEN returns same value',
       value => {
         const snowflake = new Snowflake(sampleEpoch);
         snowflake.workerId = value;
@@ -61,7 +86,7 @@ describe('Snowflake', () => {
     );
 
     test.each([4200, 4200n])(
-      'GIVEN out-of-range value (%s) THEN returns masked value as bigint',
+      'GIVEN out-of-range value (%s) THEN returns masked value',
       value => {
         const snowflake = new Snowflake(sampleEpoch);
         snowflake.workerId = value;
@@ -333,6 +358,102 @@ describe('Snowflake', () => {
     test('222 GIVEN id as bigint THEN returns data about snowflake', () => {
       const timestamp = snowflake.deconstruct(3971046231244935168n);
       expect(timestamp.timestamp).toBe(2524608000000);
+    });
+  });
+
+  describe('setHighest', () => {
+    const snowflake = new Snowflake(sampleEpoch);
+
+    test('should set most highest values', () => {
+      snowflake.setHighest();
+
+      expect(snowflake.increment).toBe(MAX_INCREMENT);
+      expect(snowflake.workerId).toBe(MAX_WORKER_ID);
+      expect(snowflake.processId).toBe(MAX_PROCESS_ID);
+    });
+  });
+
+  describe('setLowest', () => {
+    const snowflake = new Snowflake(sampleEpoch);
+
+    test('should set most lowest values', () => {
+      snowflake.setLowest();
+
+      expect(snowflake.increment).toBe(0);
+      expect(snowflake.workerId).toBe(0);
+      expect(snowflake.processId).toBe(0);
+    });
+  });
+
+  describe('withLowest', () => {
+    const snowflake = new Snowflake(sampleEpoch);
+
+    test('callback should be called with snowflake instance', () => {
+      const mockFn = vi.fn();
+      snowflake.withLowest(mockFn);
+
+      expect(mockFn).toBeCalledWith(snowflake);
+    });
+
+    test('callback should returns same value', () => {
+      const expectedResult = Symbol();
+      const mockFn = vi.fn().mockReturnValue(expectedResult);
+      snowflake.withLowest(mockFn);
+
+      expect(mockFn).toHaveReturnedWith(expectedResult);
+    });
+
+    test('should rollback to the same generating values after usage', () => {
+      snowflake.withLowest(v => v.generate());
+      expect(snowflake.generate()).toBe(4096n);
+    });
+
+    test('should throw error when non function provided', () => {
+      expect(() => snowflake.withLowest(null as any)).toThrowError(
+        'function as first argument',
+      );
+    });
+
+    test('should generate id with lowest values', () => {
+      const id = snowflake.withLowest(v => v.generate());
+
+      expect(id).toBe(0n);
+    });
+  });
+
+  describe('withHighest', () => {
+    const snowflake = new Snowflake(sampleEpoch);
+
+    test('callback should be called with snowflake instance', () => {
+      const mockFn = vi.fn();
+      snowflake.withHighest(mockFn);
+
+      expect(mockFn).toBeCalledWith(snowflake);
+    });
+
+    test('callback should returns same value', () => {
+      const expectedResult = Symbol();
+      const mockFn = vi.fn().mockReturnValue(expectedResult);
+      snowflake.withHighest(mockFn);
+
+      expect(mockFn).toHaveReturnedWith(expectedResult);
+    });
+
+    test('should rollback to the same generating values after usage', () => {
+      snowflake.withHighest(v => v.generate());
+      expect(snowflake.generate()).toBe(4096n);
+    });
+
+    test('should throw error when non function provided', () => {
+      expect(() => snowflake.withHighest(null as any)).toThrowError(
+        'function as first argument',
+      );
+    });
+
+    test('should generate id with highest values', () => {
+      const id = snowflake.withHighest(v => v.generate());
+
+      expect(id).toBe(4194303n);
     });
   });
 

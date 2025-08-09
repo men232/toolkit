@@ -2,6 +2,8 @@
  * Based on: https://github.com/sapphiredev/utilities/blob/main/packages/snowflake/src/lib/Snowflake.ts
  */
 import {
+  type AnyFunction,
+  assert,
   bigIntBytes,
   bigIntFromBytes,
   isBigInt,
@@ -99,8 +101,8 @@ export var MAX_INCREMENT = 0xfff;
  * If we have a snowflake `266241948824764416` we can represent it as binary:
  * ```
  * 64                                          22     17     12          0
- *  000000111011000111100001101001000101000000  00001  00000  000000000000
- *           number of ms since epoch           worker  pid    increment
+ * 000000111011000111100001101001000101000000  00001  00000  000000000000
+ *          number of ms since epoch           worker  pid    increment
  * ```
  *
  * @group Main
@@ -153,7 +155,7 @@ export class Snowflake {
       this._epoch = timestampMs(isBigInt(epoch) ? Number(epoch) : epoch);
       this.workerId = workerId;
       this.processId = processId;
-      this._increment = Number(increment) & MAX_INCREMENT;
+      this.increment = increment;
     }
 
     this._buffer = new Uint8Array(8);
@@ -197,6 +199,94 @@ export class Snowflake {
   }
 
   /**
+   * Get incrementor for generating snowflakes
+   */
+  public get increment(): number {
+    return this._increment;
+  }
+
+  /**
+   * Sets the incrementor for generating snowflakes that will be used by default for the {@link generate} method
+   * @param value The new value
+   */
+  public set increment(value: number | bigint) {
+    this._increment = Number(value) & MAX_INCREMENT;
+  }
+
+  private _createSavePoint(): AnyFunction {
+    var increment = this._increment;
+    var workerId = this._workerId;
+    var processId = this._processId;
+
+    return () => {
+      this._increment = increment;
+      this._workerId = workerId;
+      this._processId = processId;
+    };
+  }
+
+  /**
+   * Sets most lowest values for generating snowflakes that will be used by default for the {@link generate} method
+   */
+  setLowest(): void {
+    this._increment = 0;
+    this._workerId = 0;
+    this._processId = 0;
+  }
+
+  /**
+   * Sets most highest values for generating snowflakes that will be used by default for the {@link generate} method
+   */
+  setHighest(): void {
+    this._increment = MAX_INCREMENT;
+    this._workerId = MAX_WORKER_ID;
+    this._processId = MAX_PROCESS_ID;
+  }
+
+  /**
+   * Execute a function in context of most lowest values for generating snowflakes
+   * @example
+   * ```typescript
+   * const epoch = new Date('2000-01-01T00:00:00.000Z');
+   * const snowflake = new Snowflake();
+   * const id = snowflake.withLowest((v) => v.generate(epoch)); // the lowest possible id for that epoch
+   * ```
+   */
+  withLowest<Result = undefined>(fn: (instance: Snowflake) => Result): Result {
+    assert.fn(fn, 'withLowest expected a function as first argument');
+
+    var reset = this._createSavePoint();
+    this.setLowest();
+
+    var result = fn(this);
+    reset();
+
+    return result;
+  }
+
+  /**
+   * Execute a function in context of most highest values for generating snowflakes
+   * @example
+   * ```typescript
+   * const epoch = new Date('2000-01-01T00:00:00.000Z');
+   * const snowflake = new Snowflake();
+   * const id = snowflake.withLowest((v) => v.generate(epoch)); // the highest possible id for that epoch
+   * ```
+   */
+  withHighest<Result = undefined>(fn: (instance: Snowflake) => Result): Result {
+    assert.fn(fn, 'withHighest expected a function as first argument');
+
+    var reset = this._createSavePoint();
+
+    this.setHighest();
+
+    var result = fn(this);
+    reset();
+
+    return result;
+  }
+
+  /**
    * Generates a Snowflake ID as a `Uint8Array` buffer.
    */
   public generate(timestamp: Date | number = Date.now()): bigint {
@@ -228,7 +318,9 @@ export class Snowflake {
    * immediately transform the buffer (e.g., to base62) before calling again.
    * Avoid storing or mutating the returned buffer directly.
    */
-  public generateBufferUnsafe(timestamp: Date | number = Date.now()) {
+  public generateBufferUnsafe(
+    timestamp: Date | number = Date.now(),
+  ): Uint8Array {
     if (timestamp instanceof Date) timestamp = timestamp.getTime();
     if (!isNumber(timestamp)) {
       throw new Error(
@@ -277,7 +369,7 @@ export class Snowflake {
    * ```
    * @returns A unique snowflake as Uint8Array
    */
-  public generateBuffer(timestamp: Date | number = Date.now()) {
+  public generateBuffer(timestamp: Date | number = Date.now()): Uint8Array {
     this.generateBufferUnsafe(timestamp);
     return new Uint8Array(this._buffer);
   }
