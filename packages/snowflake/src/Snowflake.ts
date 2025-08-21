@@ -287,7 +287,7 @@ export class Snowflake {
   }
 
   /**
-   * Generates a Snowflake ID as a `Uint8Array` buffer.
+   * Generates a Snowflake ID as bigint.
    */
   public generate(timestamp: Date | number = Date.now()): bigint {
     if (timestamp instanceof Date) timestamp = timestamp.getTime();
