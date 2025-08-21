@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-pagination",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Manages pagination without relying on traditional offsets.",
   "license": "MIT",
   "type": "module",
