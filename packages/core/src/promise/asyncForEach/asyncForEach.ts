@@ -51,44 +51,44 @@ export function asyncForEach<T>(
 ): Promise<void> {
   concurrency = Math.max(concurrency, 1);
 
-  var i = 0;
+  if (array.length === 0) {
+    return Promise.resolve();
+  }
+
+  var hasError = false;
+  var completed = 0;
+  var currentIndex = 0;
   var cooldown = nextTickIteration(10);
-  var tasks: Promise<any>[] = Array(concurrency);
 
   return new Promise((resolve, reject) => {
-    var processNextBatch = () => {
-      if (i >= array.length) {
-        resolve();
-        return;
-      }
+    var processItem = (index: number) => {
+      if (hasError || index >= array.length) return;
 
       cooldown()
-        .then(() => {
-          for (var idx = 0; idx < concurrency; idx++) {
-            tasks[idx] = Promise.resolve(i);
+        .then(() => callbackfn(array[index], index, array))
+        .then(transformed => {
+          if (hasError) return;
 
-            if (i < array.length) {
-              tasks[idx] = tasks[idx].then(itemIndex =>
-                callbackfn(array[itemIndex], itemIndex, array),
-              );
-            }
+          completed++;
 
-            i++;
-          }
-
-          return Promise.all(tasks);
-        })
-        .then(() => {
-          if (i < array.length) {
-            // Schedule next batch on next tick to avoid call stack buildup
-            setTimeout(processNextBatch, 0);
-          } else {
+          if (completed >= array.length) {
             resolve();
+          } else {
+            if (currentIndex < array.length) {
+              processItem(currentIndex++);
+            }
           }
         })
-        .catch(reject);
+        .catch(error => {
+          if (!hasError) {
+            hasError = true;
+            reject(error);
+          }
+        });
     };
 
-    processNextBatch();
+    for (; currentIndex < concurrency; currentIndex++) {
+      processItem(currentIndex);
+    }
   });
 }
