@@ -1,4 +1,4 @@
-import { nextTickIteration } from '@/promise';
+import { nextTickIteration } from '../nextTickIteration';
 
 /**
  * Asynchronously filters an array using an async predicate function.
@@ -39,30 +39,52 @@ export function asyncFilter<T>(
     index: number,
     array: Array<T>,
   ) => Promise<boolean> | boolean,
+  { concurrency = 1 } = {},
 ): Promise<T[]> {
-  var i = 0;
-  var result: T[] = [];
+  concurrency = Math.max(concurrency, 1);
+
+  if (array.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  var result: number[] = [];
+  var currentIndex = 0;
+  var completed = 0;
+  var hasError = false;
   var cooldown = nextTickIteration(10);
 
   return new Promise((resolve, reject) => {
-    var processNextBatch = () => {
-      if (i < array.length) {
-        cooldown()
-          .then(() => predicate(array[i], i, array))
-          .then(valid => {
-            if (Boolean(valid)) {
-              result.push(array[i]);
-            }
+    var processItem = (index: number) => {
+      if (hasError || index >= array.length) return;
 
-            i++;
-            setTimeout(processNextBatch, 0);
-          })
-          .catch(reject);
-      } else {
-        resolve(result);
-      }
+      cooldown()
+        .then(() => predicate(array[index], index, array))
+        .then(include => {
+          if (hasError) return;
+          if (include) {
+            result.push(index);
+          }
+
+          completed++;
+
+          if (completed >= array.length) {
+            resolve(result.toSorted((a, b) => a - b).map(idx => array[idx]));
+          } else {
+            if (currentIndex < array.length) {
+              processItem(currentIndex++);
+            }
+          }
+        })
+        .catch(error => {
+          if (!hasError) {
+            hasError = true;
+            reject(error);
+          }
+        });
     };
 
-    processNextBatch();
+    for (; currentIndex < concurrency; currentIndex++) {
+      processItem(currentIndex);
+    }
   });
 }

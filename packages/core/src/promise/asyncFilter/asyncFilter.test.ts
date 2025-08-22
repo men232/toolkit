@@ -1,32 +1,29 @@
-import type { AnyFunction } from '@/types';
+import { getRandomInt } from '@/num';
 import { describe, expect, it } from 'vitest';
+import { delay } from '../delay';
 import { asyncFilter } from './asyncFilter';
-
-const createPredicate = (fn: AnyFunction) => {
-  const handledItems: any[] = [];
-  const handledIndexes: number[] = [];
-
-  const predicate = (item: any, idx: number) => {
-    handledItems.push(item);
-    handledIndexes.push(idx);
-    return fn(item, idx);
-  };
-
-  return { predicate, handledIndexes, handledItems };
-};
 
 describe('asyncFilter', () => {
   it('arr.filter capability', async () => {
-    const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-    const filterNative = createPredicate((_, idx) => idx % 2 === 0);
-    const filterAsync = createPredicate((_, idx) => idx % 2 === 0);
+    const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1];
+    const predicate = (v: number, idx: number) => v === 1 || idx % 2 === 0;
 
-    const resultNative = arr.filter(filterNative.predicate);
-    const resultAsync = await asyncFilter(arr, filterAsync.predicate);
+    const resultNative = arr.filter(predicate);
+    const resultAsync = await asyncFilter(
+      arr,
+      async (item, idx) => {
+        // Add random delay to test that filtering works despite async timing
+        await delay(getRandomInt(1, 2));
+        return predicate(item, idx);
+      },
+      { concurrency: 4 },
+    );
 
-    expect(resultNative).toEqual(resultAsync);
-    expect(filterNative.handledIndexes).toEqual(filterAsync.handledIndexes);
-    expect(filterNative.handledItems).toEqual(filterAsync.handledItems);
+    // Test that results are identical
+    expect(resultAsync).toEqual(resultNative);
+
+    // Test that filtered length is correct
+    expect(resultAsync).toHaveLength(resultNative.length);
   });
 
   it('not block event loop', async () => {
