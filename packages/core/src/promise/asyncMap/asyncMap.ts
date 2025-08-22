@@ -53,48 +53,47 @@ export function asyncMap<T, U>(
 ): Promise<Array<U>> {
   concurrency = Math.max(concurrency, 1);
 
-  var result: U[] = [];
-  var i = 0;
+  if (array.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  var hasError = false;
+  var result: U[] = Array(array.length);
+  var completed = 0;
+  var currentIndex = 0;
   var cooldown = nextTickIteration(10);
-  var tasks: Promise<any>[] = Array(concurrency);
 
   return new Promise((resolve, reject) => {
-    var processNextBatch = () => {
-      if (i >= array.length) {
-        resolve(result);
-      } else {
-        cooldown()
-          .then(() => {
-            for (var idx = 0; idx < concurrency; idx++) {
-              tasks[idx] = Promise.resolve(i);
+    var processItem = (index: number) => {
+      if (hasError || index >= array.length) return;
 
-              if (i < array.length) {
-                tasks[idx] = tasks[idx]
-                  .then(itemIndex =>
-                    callbackfn(array[itemIndex], itemIndex, array),
-                  )
-                  .then(transformed => {
-                    result.push(transformed);
-                  });
-              }
+      cooldown()
+        .then(() => callbackfn(array[index], index, array))
+        .then(transformed => {
+          if (hasError) return;
 
-              i++;
+          result[index] = transformed;
+
+          completed++;
+
+          if (completed >= array.length) {
+            resolve(result);
+          } else {
+            if (currentIndex < array.length) {
+              processItem(currentIndex++);
             }
-
-            return Promise.all(tasks);
-          })
-          .then(() => {
-            if (i < array.length) {
-              // Schedule next batch on next tick to avoid call stack buildup
-              setTimeout(processNextBatch, 0);
-            } else {
-              resolve(result);
-            }
-          })
-          .catch(reject);
-      }
+          }
+        })
+        .catch(error => {
+          if (!hasError) {
+            hasError = true;
+            reject(error);
+          }
+        });
     };
 
-    processNextBatch();
+    for (; currentIndex < concurrency; currentIndex++) {
+      processItem(currentIndex);
+    }
   });
 }

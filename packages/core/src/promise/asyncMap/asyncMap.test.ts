@@ -1,5 +1,7 @@
+import { getRandomInt } from '@/num';
 import type { AnyFunction } from '@/types';
 import { describe, expect, it } from 'vitest';
+import { delay } from '../delay';
 import { asyncMap } from './asyncMap';
 
 const createPredicate = (fn: AnyFunction) => {
@@ -18,15 +20,41 @@ const createPredicate = (fn: AnyFunction) => {
 describe('asyncMap', () => {
   it('arr.map capability', async () => {
     const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-    const mapNative = createPredicate(v => v ** 2);
-    const mapAsync = createPredicate(v => v ** 2);
+    const transform = (v: number) => v ** 2;
 
-    const resultNative = arr.map(mapNative.predicate);
-    const resultAsync = await asyncMap(arr, mapAsync.predicate);
+    const resultNative = arr.map(transform);
+    const resultAsync = await asyncMap(
+      arr,
+      async (v, idx) => {
+        // Add random delay to test that results maintain order despite async timing
+        await delay(getRandomInt(1, 2));
+        return transform(v);
+      },
+      { concurrency: 3 },
+    );
 
-    expect(resultNative).toEqual(resultAsync);
-    expect(mapNative.handledIndexes).toEqual(mapAsync.handledIndexes);
-    expect(mapNative.handledItems).toEqual(mapAsync.handledItems);
+    // Test that results are identical
+    expect(resultAsync).toEqual(resultNative);
+
+    // Test that all items were processed
+    expect(resultAsync).toHaveLength(arr.length);
+  });
+
+  it('maintains order with different completion times', async () => {
+    const arr = [1, 2, 3, 4, 5];
+
+    const resultAsync = await asyncMap(
+      arr,
+      async (v, idx) => {
+        // Reverse delay timing - later items complete first
+        await delay((arr.length - idx) * 10);
+        return v * 10;
+      },
+      { concurrency: 5 },
+    );
+
+    // Despite reverse completion order, results should match input order
+    expect(resultAsync).toEqual([10, 20, 30, 40, 50]);
   });
 
   it('not block event loop', async () => {
