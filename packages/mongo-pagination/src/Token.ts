@@ -129,7 +129,7 @@ export class Token {
         ? value
         : base62Fast.decode(value);
 
-    const struct = TokenStructure.fromBuffer(buffer);
+    const struct = TokenStructure.fromBuffer(buffer, { extensions });
 
     const token = new Token();
 
