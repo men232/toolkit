@@ -5,6 +5,7 @@ export * from './base64ToBytes';
 export * from './basex';
 export * from './bigIntBytes';
 export * from './bigIntFromBytes';
+export * from './bitPack';
 export * from './bytesToBase64';
 export * from './compareBytes';
 export * from './concatenateBytes';

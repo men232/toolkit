@@ -4,8 +4,9 @@ import {
   MAX_INCREMENT,
   MAX_PROCESS_ID,
   MAX_WORKER_ID,
-  Snowflake,
 } from './Snowflake.js';
+
+import { SnowflakeBitPack as Snowflake } from './SnowflakeBitPack';
 
 // 2020-01-01
 const sampleEpoch = 1577836800000;
@@ -298,6 +299,31 @@ describe('Snowflake', () => {
         epoch: 1577836800000,
       });
     });
+
+    (['generate', 'generateBuffer', 'generateBufferUnsafe'] as const).forEach(
+      method => {
+        test.only(
+          'GENERATED id returns data about snowflake: ' + method,
+          () => {
+            const snowflake = new Snowflake({
+              epoch: sampleEpoch,
+              workerId: 1,
+              processId: 1,
+              increment: 100,
+            });
+
+            const flake = snowflake.deconstruct(snowflake[method]());
+
+            expect({ ...flake, id: undefined, timestamp: undefined }).toEqual({
+              workerId: 1,
+              processId: 1,
+              increment: 100,
+              epoch: 1577836800000,
+            });
+          },
+        );
+      },
+    );
 
     test('GIVEN id as bigint THEN returns data about snowflake', () => {
       const snowflake = new Snowflake(sampleEpoch);

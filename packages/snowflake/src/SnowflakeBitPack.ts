@@ -3,112 +3,28 @@
  */
 import {
   type AnyFunction,
+  type BitPack,
   assert,
   bigIntFromBytes,
+  bitPack,
   isBigInt,
   isDate,
   isNumber,
   isString,
   timestampMs,
 } from '@andrew_l/toolkit';
-
-/**
- * Object returned by Snowflake#deconstruct
- */
-export interface DeconstructedSnowflake {
-  /**
-   * The id as a number
-   */
-  id: bigint;
-
-  /**
-   * The timestamp stored in the snowflake
-   */
-  timestamp: number;
-
-  /**
-   * The worker id stored in the snowflake
-   */
-  workerId: number;
-
-  /**
-   * The process id stored in the snowflake
-   */
-  processId: number;
-
-  /**
-   * The increment stored in the snowflake
-   */
-  increment: number;
-
-  /**
-   * The epoch to use in the snowflake
-   */
-  epoch: number;
-}
-
-/**
- * Options for Snowflake
- */
-export interface SnowflakeOptions {
-  /**
-   * Timestamp or date of the snowflake to generate
-   */
-  epoch: number | bigint | Date;
-
-  /**
-   * The increment to use
-   * @default 0
-   * @remark keep in mind that this number is auto-incremented between generate calls
-   */
-  increment?: number | bigint;
-
-  /**
-   * The worker ID to use, will be truncated to 5 bits (0-31)
-   * @default 0
-   */
-  workerId?: number | bigint;
-
-  /**
-   * The process ID to use, will be truncated to 5 bits (0-31)
-   * @default 1
-   */
-  processId?: number | bigint;
-}
-
-/**
- * The maximum value the `workerId` field accepts in snowflakes.
- */
-export var MAX_WORKER_ID = 0x1f;
-
-/**
- * The maximum value the `processId` field accepts in snowflakes.
- */
-export var MAX_PROCESS_ID = 0x1f;
-
-/**
- * The maximum value the `increment` field accepts in snowflakes.
- */
-export var MAX_INCREMENT = 0xfff;
+import {
+  type DeconstructedSnowflake,
+  MAX_INCREMENT,
+  MAX_PROCESS_ID,
+  MAX_WORKER_ID,
+  Snowflake,
+  type SnowflakeOptions,
+} from './Snowflake';
 
 var ENCODE_BIGINT_BUFFER = new Uint8Array(8);
 
-/**
- * A class for generating and deconstructing Twitter snowflakes.
- *
- * A {@link https://developer.twitter.com/en/docs/twitter-ids Twitter snowflake}
- * is a 64-bit unsigned integer with 4 fields that have a fixed epoch value.
- *
- * If we have a snowflake `266241948824764416` we can represent it as binary:
- * ```
- * 64                                          22     17     12          0
- * 000000111011000111100001101001000101000000  00001  00000  000000000000
- *          number of ms since epoch           worker  pid    increment
- * ```
- *
- * @group Main
- */
-export class Snowflake {
+export class SnowflakeBitPack {
   /**
    * Alias for {@link deconstruct}
    */
@@ -141,7 +57,17 @@ export class Snowflake {
   /**
    * @internal
    */
-  private _buffer: Uint8Array;
+  private _timestamp = 0;
+
+  private __buf: Uint8Array;
+
+  private _generateBuffer: BitPack.Fn.Buffer<
+    '_timestamp' | '_workerId' | '_processId' | '_increment'
+  >;
+
+  private _generateBigInt: BitPack.Fn.BigInt<
+    '_timestamp' | '_workerId' | '_processId' | '_increment'
+  >;
 
   /**
    * @param epoch the epoch to use
@@ -159,7 +85,20 @@ export class Snowflake {
       this.increment = increment;
     }
 
-    this._buffer = new Uint8Array(8);
+    const { bigint, buffer } = bitPack({
+      totalBits: 64,
+      fields: [
+        { name: '_timestamp', bits: 42, take: 'low' },
+        { name: '_workerId', bits: 5, take: 'low' },
+        { name: '_processId', bits: 5, take: 'low' },
+        { name: '_increment', bits: 12, take: 'low' },
+      ],
+      optimize: true,
+    });
+
+    this.__buf = new Uint8Array(8);
+    this._generateBigInt = bigint;
+    this._generateBuffer = buffer;
   }
 
   /**
@@ -253,7 +192,9 @@ export class Snowflake {
    * const id = snowflake.withLowest((v) => v.generate(epoch)); // the lowest possible id for that epoch
    * ```
    */
-  withLowest<Result = undefined>(fn: (instance: Snowflake) => Result): Result {
+  withLowest<Result = undefined>(
+    fn: (instance: SnowflakeBitPack) => Result,
+  ): Result {
     assert.fn(fn, 'withLowest expected a function as first argument');
 
     var reset = this._createSavePoint();
@@ -274,7 +215,9 @@ export class Snowflake {
    * const id = snowflake.withLowest((v) => v.generate(epoch)); // the highest possible id for that epoch
    * ```
    */
-  withHighest<Result = undefined>(fn: (instance: Snowflake) => Result): Result {
+  withHighest<Result = undefined>(
+    fn: (instance: SnowflakeBitPack) => Result,
+  ): Result {
     assert.fn(fn, 'withHighest expected a function as first argument');
 
     var reset = this._createSavePoint();
@@ -298,15 +241,11 @@ export class Snowflake {
       );
     }
 
-    var increment = this._increment;
+    this._timestamp = timestamp - this._epoch;
+    var res = this._generateBigInt(this as any);
     this._increment = (this._increment + 1) & MAX_INCREMENT;
 
-    return (
-      (BigInt(timestamp - this._epoch) << 22n) |
-      (BigInt(this._workerId & MAX_WORKER_ID) << 17n) |
-      (BigInt(this._processId & MAX_PROCESS_ID) << 12n) |
-      BigInt(increment & MAX_INCREMENT)
-    );
+    return res;
   }
 
   /**
@@ -322,6 +261,30 @@ export class Snowflake {
   public generateBufferUnsafe(
     timestamp: Date | number = Date.now(),
   ): Uint8Array {
+    if (timestamp instanceof Date) timestamp = timestamp.getTime();
+    if (!isNumber(timestamp)) {
+      throw new Error(
+        `"timestamp" argument must be a number or Date (received ${typeof timestamp})`,
+      );
+    }
+
+    this._timestamp = timestamp - this._epoch;
+    this._generateBuffer(this as any);
+    this._increment = (this._increment + 1) & MAX_INCREMENT;
+
+    return this.__buf;
+  }
+
+  /**
+   * Generates a snowflake given an epoch and optionally a timestamp
+   * @example
+   * ```typescript
+   * const epoch = new Date('2000-01-01T00:00:00.000Z');
+   * const snowflake = new Snowflake({ epoch }).generate();
+   * ```
+   * @returns A unique snowflake as Uint8Array
+   */
+  public generateBuffer(timestamp: Date | number = Date.now()): Uint8Array {
     if (timestamp instanceof Date) timestamp = timestamp.getTime();
     if (!isNumber(timestamp)) {
       throw new Error(
@@ -347,7 +310,7 @@ export class Snowflake {
         (increment & MAX_INCREMENT)) >>>
       0;
 
-    var buffer = this._buffer;
+    var buffer = new Uint8Array(8);
 
     buffer[0] = high32 >>> 24;
     buffer[1] = high32 >>> 16;
@@ -359,20 +322,6 @@ export class Snowflake {
     buffer[7] = low32;
 
     return buffer;
-  }
-
-  /**
-   * Generates a snowflake given an epoch and optionally a timestamp
-   * @example
-   * ```typescript
-   * const epoch = new Date('2000-01-01T00:00:00.000Z');
-   * const snowflake = new Snowflake({ epoch }).generate();
-   * ```
-   * @returns A unique snowflake as Uint8Array
-   */
-  public generateBuffer(timestamp: Date | number = Date.now()): Uint8Array {
-    this.generateBufferUnsafe(timestamp);
-    return new Uint8Array(this._buffer);
   }
 
   /**
@@ -388,15 +337,16 @@ export class Snowflake {
   public deconstruct(id: string | bigint | Uint8Array): DeconstructedSnowflake {
     var high32: number, low32: number;
 
-    if (isBigInt(id)) {
-      id = bigintToBuffer(id);
-    } else if (isString(id)) {
-      id = bigintToBuffer(BigInt(id));
+    if (id instanceof Uint8Array) {
+      // Convert from Uint8Array
+      high32 = ((id[0] << 24) | (id[1] << 16) | (id[2] << 8) | id[3]) >>> 0;
+      low32 = ((id[4] << 24) | (id[5] << 16) | (id[6] << 8) | id[7]) >>> 0;
+    } else if (isBigInt(id)) {
+      return this.deconstruct(bigintToBuffer(id));
+    } else {
+      // Convert from string
+      return this.deconstruct(bigintToBuffer(BigInt(id)));
     }
-
-    // Convert from Uint8Array
-    high32 = ((id[0] << 24) | (id[1] << 16) | (id[2] << 8) | id[3]) >>> 0;
-    low32 = ((id[4] << 24) | (id[5] << 16) | (id[6] << 8) | id[7]) >>> 0;
 
     return {
       id: BigInt(high32) * 0x100000000n + BigInt(low32),
@@ -415,7 +365,7 @@ export class Snowflake {
    */
   public timestampFrom(id: string | bigint | Uint8Array): number {
     if (isString(id) || isBigInt(id)) {
-      id = Snowflake.bufferFrom(id);
+      return this.timestampFrom(Snowflake.bufferFrom(id));
     }
 
     var high32 = ((id[0] << 24) | (id[1] << 16) | (id[2] << 8) | id[3]) >>> 0;
@@ -455,6 +405,7 @@ export class Snowflake {
    */
   public static bufferFrom(value: bigint | string): Uint8Array {
     if (isString(value)) value = BigInt(value);
+
     return new Uint8Array(bigintToBuffer(value));
   }
 }
