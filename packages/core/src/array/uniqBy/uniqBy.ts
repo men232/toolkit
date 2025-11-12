@@ -46,7 +46,7 @@ import { get } from '@/object/get';
  * @group Array
  */
 export function uniqBy<T>(
-  array: T[],
+  array: readonly T[],
   comparator: ((value: T) => any) | PropertyKey,
 ): T[] {
   const seen = new Set();

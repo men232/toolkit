@@ -15,10 +15,10 @@
  *
  * @group Array
  */
-export function uniq<T extends any[]>(value: T): T {
+export function uniq<T>(value: readonly T[]): T[] {
   if (!Array.isArray(value)) {
     return [] as any;
   }
 
-  return [...new Set(value)] as T;
+  return [...new Set(value)];
 }

@@ -19,7 +19,7 @@ import { uniq } from '../uniq';
  *
  * @group Array
  */
-export function union<T>(...arrays: readonly T[][]): T[] {
+export function union<T>(...arrays: (readonly T[])[]): T[] {
   if (arrays.length === 0) return [];
   if (arrays.length === 1) return [...arrays[0]];
 

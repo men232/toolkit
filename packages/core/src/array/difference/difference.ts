@@ -17,7 +17,7 @@
  *
  * @group Array
  */
-export function difference<T>(...arrays: readonly T[][]): T[] {
+export function difference<T>(...arrays: (readonly T[])[]): T[] {
   if (arrays.length === 0) return [];
   if (arrays.length === 1) return [...arrays[0]];
 

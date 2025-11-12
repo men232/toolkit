@@ -13,7 +13,7 @@
  *
  * @group Array
  */
-export function chunkSeries(list: number[], step = 1): number[][] {
+export function chunkSeries(list: readonly number[], step = 1): number[][] {
   const result: number[][] = [];
 
   if (!list.length) {
