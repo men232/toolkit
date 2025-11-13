@@ -1,11 +1,17 @@
 import { isFunction } from '@/is';
-import type { IsPropertyKey, MaybePropertyKey } from '../keyBy/types';
+import type { IsPropertyKey, ToPropertyKey } from '../keyBy/types';
 
-export function groupBy<T, K extends MaybePropertyKey<T>>(
+export function groupBy<T, K extends keyof T>(
   array: readonly T[],
   keyBy: K,
   objectMode?: false,
-): Map<IsPropertyKey<T, K, K>, T[]>;
+): Map<IsPropertyKey<T, K, unknown>, T[]>;
+
+export function groupBy<T, K extends PropertyKey>(
+  array: readonly T[],
+  keyBy: K,
+  objectMode?: false,
+): Map<IsPropertyKey<T, K, unknown>, T[]>;
 
 export function groupBy<T, K>(
   array: readonly T[],
@@ -13,17 +19,23 @@ export function groupBy<T, K>(
   objectMode?: false,
 ): Map<K, T[]>;
 
-export function groupBy<T, K extends MaybePropertyKey<T>>(
+export function groupBy<T, K extends keyof T>(
   array: readonly T[],
   keyBy: K,
   objectMode: true,
-): Record<K, T[]>;
+): Record<ToPropertyKey<T[K]>, T[]>;
 
 export function groupBy<T, K extends PropertyKey>(
   array: readonly T[],
+  keyBy: K,
+  objectMode?: true,
+): Record<ToPropertyKey<IsPropertyKey<T, K, unknown>>, T[]>;
+
+export function groupBy<T, K>(
+  array: readonly T[],
   keyBy: (item: T) => K,
   objectMode: true,
-): Record<K, T[]>;
+): Record<ToPropertyKey<K>, T[]>;
 
 /**
  * @group Array

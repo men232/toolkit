@@ -10,6 +10,15 @@ function makeTest(resultModifier: AnyFunction, objectMode: boolean) {
       { name: 'jake', age: 30 },
     ];
 
+    // const a1 = groupBy(people, 'age');
+    // const a2 = groupBy(people, 'age2');
+    // const b1 = groupBy(people, 'age', true);
+    // const b2 = groupBy(people, 'age2', true);
+    // const c1 = groupBy(people, v => v.age);
+    // const c2 = groupBy(people, v => 'test');
+    // const d1 = groupBy(people, v => v.age, true);
+    // const d2 = groupBy(people, v => 'test', true);
+
     const result = groupBy(people, person => person.name, objectMode as any);
     expect(result).toEqual(
       resultModifier(
