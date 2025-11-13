@@ -1,3 +1,4 @@
+import { EJSON } from './ejson';
 import { isNumber } from './is';
 import { round2digits } from './num/round2digits';
 
@@ -217,8 +218,7 @@ export function createEnvParser(
       }
 
       try {
-        // @ts-expect-error
-        return JSON.parse(targetObject[key]);
+        return EJSON.parse<T>(targetObject[key] as string);
       } catch (err) {
         console.warn('Failed to parse json env variable', key);
         return defaultValue;
