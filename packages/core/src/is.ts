@@ -402,3 +402,24 @@ const primitiveTypeofSet = Object.freeze(
 export const isPrimitive = (value: unknown): value is Primitive => {
   return value === null || primitiveTypeofSet.has(typeof value);
 };
+
+/**
+ * Checks if the current environment is Node.js.
+ *
+ * This function checks for the existence of the `process.versions.node` property,
+ * which only exists in Node.js environments.
+ *
+ * @returns {boolean} `true` if the current environment is Node.js, otherwise `false`.
+ *
+ * @example
+ * if (isNode()) {
+ *   console.log('This is running in Node.js');
+ *   const fs = import('node:fs');
+ * }
+ */
+export function isNode(): boolean {
+  return (
+    typeof globalThis?.process !== 'undefined' &&
+    process?.versions?.node != null
+  );
+}

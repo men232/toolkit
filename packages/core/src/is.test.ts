@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEqual } from './is';
+import { isEqual, isNode } from './is';
 
 describe('isEqual', () => {
   it('should handle primitive types', () => {
@@ -133,5 +133,11 @@ describe('isEqual', () => {
     expect(isEqual({ a: 1 }, [1])).toBe(false);
     expect(isEqual(new Set([1, 2]), new Map([[1, 2]]))).toBe(false);
     expect(isEqual(42, null)).toBe(false);
+  });
+});
+
+describe('isNode', () => {
+  it('should return true in node environment', () => {
+    expect(isNode()).toBe(true);
   });
 });
