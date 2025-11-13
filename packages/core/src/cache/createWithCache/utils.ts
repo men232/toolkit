@@ -1,3 +1,4 @@
+import { EJSON } from '@/ejson';
 import { isObject } from '@/is';
 import { randomString } from '@/str/randomString';
 
@@ -36,7 +37,7 @@ export const argToKey = /*#__PURE__*/ (
     let key: string;
 
     if (options.objectStrategy === 'json') {
-      key = JSON.stringify(value);
+      key = EJSON.stringify(value);
     } else {
       key = objectKeys.get(value)!;
 
