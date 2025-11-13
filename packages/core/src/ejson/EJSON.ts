@@ -156,7 +156,7 @@ export class EJSON {
    * @param {string} value - The JSON string to parse.
    * @returns {any} - The decoded JavaScript object.
    */
-  parse(value: string): any {
+  parse<T = any>(value: string): T {
     if (this.pure) {
       return JSON.parse(value);
     }
