@@ -1,7 +1,3 @@
-export type MaybePropertyKey<T> = T extends object
-  ? keyof T | PropertyKey
-  : PropertyKey;
-
 export type PropertyKeyLiteralToType<T> = T extends string
   ? string
   : T extends number
@@ -15,3 +11,5 @@ export type IsPropertyKey<T, V, L> = T extends object
     ? T[V]
     : L
   : PropertyKeyLiteralToType<L>;
+
+export type ToPropertyKey<T> = T extends PropertyKey ? T : string;

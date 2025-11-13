@@ -1,5 +1,41 @@
 import { isFunction } from '@/is';
-import type { IsPropertyKey, MaybePropertyKey } from './types';
+import type { IsPropertyKey, ToPropertyKey } from './types';
+
+export function keyBy<T, K extends keyof T>(
+  array: readonly T[],
+  keyBy: K,
+  objectMode?: false,
+): Map<IsPropertyKey<T, K, unknown>, T>;
+
+export function keyBy<T, K extends PropertyKey>(
+  array: readonly T[],
+  keyBy: K,
+  objectMode?: false,
+): Map<IsPropertyKey<T, K, unknown>, T[]>;
+
+export function keyBy<T, K>(
+  array: readonly T[],
+  keyBy: (item: T) => K,
+  objectMode?: false,
+): Map<K, T>;
+
+export function keyBy<T, K extends keyof T>(
+  array: readonly T[],
+  keyBy: K,
+  objectMode: true,
+): Record<ToPropertyKey<T[K]>, T>;
+
+export function keyBy<T, K extends PropertyKey>(
+  array: readonly T[],
+  keyBy: K,
+  objectMode?: true,
+): Record<ToPropertyKey<IsPropertyKey<T, K, unknown>>, T>;
+
+export function keyBy<T, K>(
+  array: readonly T[],
+  keyBy: (item: T) => K,
+  objectMode: true,
+): Record<ToPropertyKey<K>, T>;
 
 /**
  * Maps each element of an array based on a provided key.
@@ -20,30 +56,6 @@ import type { IsPropertyKey, MaybePropertyKey } from './types';
  *
  * @group Array
  */
-export function keyBy<T, K extends MaybePropertyKey<T>>(
-  array: readonly T[],
-  keyBy: K,
-  objectMode?: false,
-): Map<IsPropertyKey<T, K, K>, T>;
-
-export function keyBy<T, K>(
-  array: readonly T[],
-  keyBy: (item: T) => K,
-  objectMode?: false,
-): Map<K, T>;
-
-export function keyBy<T, K extends MaybePropertyKey<T>>(
-  array: readonly T[],
-  keyBy: K,
-  objectMode: true,
-): Record<K, T>;
-
-export function keyBy<T, K extends PropertyKey>(
-  array: readonly T[],
-  keyBy: (item: T) => K,
-  objectMode: true,
-): Record<K, T>;
-
 export function keyBy(
   array: readonly any[],
   keyBy: unknown | ((item: any) => unknown),

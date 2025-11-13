@@ -9,6 +9,15 @@ describe('keyBy', () => {
       { name: 'jake', age: 30 },
     ];
 
+    // const a1 = keyBy(people, 'age');
+    // const a2 = keyBy(people, 'age2');
+    // const b1 = keyBy(people, 'age', true);
+    // const b2 = keyBy(people, 'age2', true);
+    // const c1 = keyBy(people, v => v.age);
+    // const c2 = keyBy(people, v => 'test');
+    // const d1 = keyBy(people, v => v.age, true);
+    // const d2 = keyBy(people, v => 'test', true);
+
     const result = keyBy(people, person => person.name);
     expect(result).toEqual(
       toMap({
