@@ -13,3 +13,4 @@ export * from './Queue';
 export * from './ResourcePool';
 export * from './SimpleEventEmitter';
 export * from './timeout';
+export * from './withResolve';
