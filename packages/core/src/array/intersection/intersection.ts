@@ -15,12 +15,12 @@
  *
  * @group Array
  */
-export function intersection<T>(...arrays: readonly T[][]): T[] {
+export function intersection<T>(...arrays: (readonly T[])[]): T[] {
   if (arrays.length === 0) return [];
-  if (arrays.length === 1) return arrays[0];
+  if (arrays.length === 1) return [...arrays[0]];
 
   return arrays.reduce((acc, curr) => {
     const set = new Set(curr);
     return acc.filter(item => set.has(item));
-  });
+  }) as T[];
 }

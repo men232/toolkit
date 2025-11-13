@@ -6,6 +6,7 @@ export * from './chunkSeries';
 export * from './difference';
 export * from './groupBy';
 export * from './intersection';
+export * from './intersectionBy';
 export * from './keyBy';
 export * from './orderBy';
 export * from './shuffle';
