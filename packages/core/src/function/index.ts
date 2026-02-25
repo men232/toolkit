@@ -1,3 +1,4 @@
+export * from './createFunction';
 export * from './debounce';
 export * from './execResult';
 export * from './qs';

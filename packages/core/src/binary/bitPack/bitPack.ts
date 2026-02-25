@@ -1,6 +1,6 @@
 import { assert } from '@/assert';
+import { createFunction } from '@/function/createFunction';
 import { def } from '@/object';
-import { toError } from '@/toError';
 import type { AnyFunction } from '@/types';
 
 export namespace BitPack {
@@ -84,8 +84,6 @@ export function bitPack<
   const buf = new Uint8Array(containersCount * 4);
 
   const baseCode = [
-    '// Containers init',
-    initContainers(containersCount),
     '\n// Field init',
     initFields(fields),
     '\n// Plan',
@@ -112,7 +110,7 @@ export function bitPack<
     buildBigIntResult(containersCount),
   ].join('\n');
 
-  const fnBigInt: BitPack.Fn.BigInt = createFunction(
+  const fnBigInt = createFunction<BitPack.Fn.BigInt>(
     'bigint',
     fnBigIntCode,
     'data',
@@ -125,7 +123,7 @@ export function bitPack<
     buildNumberResult(containersCount),
   ].join('\n');
 
-  const fnNumber: BitPack.Fn.Number = createFunction(
+  const fnNumber = createFunction<BitPack.Fn.Number>(
     'number',
     fnNumberCode,
     'data',
@@ -138,13 +136,13 @@ export function bitPack<
     buildBitsResult(containersCount, options.totalBits),
   ].join('\n');
 
-  const fnBits: BitPack.Fn.Bits = createFunction('bits', fnBitsCode, 'data');
+  const fnBits = createFunction<BitPack.Fn.Bits>('bits', fnBitsCode, 'data');
 
-  if (options.debug) {
-    def(fnBuffer, 'code', fnBufferCode);
-    def(fnBigInt, 'code', fnBigIntCode);
-    def(fnNumber, 'code', fnNumberCode);
-    def(fnBits, 'code', fnBitsCode);
+  if (!options.debug) {
+    def(fnBuffer, 'code', undefined);
+    def(fnBigInt, 'code', undefined);
+    def(fnNumber, 'code', undefined);
+    def(fnBits, 'code', undefined);
   }
 
   return {
@@ -157,42 +155,21 @@ export function bitPack<
   } as BitPack.API<TFieldNames>;
 }
 
-function createFunction(
-  fnName: string,
-  code: string,
-  ...args: any[]
-): AnyFunction {
-  try {
-    return new Function(...args, code) as AnyFunction;
-  } catch (err) {
-    throw new Error(
-      `failed to create bitPack.${fnName}()\nError: ${toError(err).message}\n-- CODE START --\n${code}\n-- CODE END--`,
-    );
-  }
-}
-function initContainers(containersCount: number): string {
-  const lines = [];
-  for (let i = 0; i < containersCount; i++) {
-    lines.push(`var c_${i} = 0;`);
-  }
-  return lines.join('\n');
-}
-
 function initFields(fields: FieldInfo[]): string {
   return fields
     .map(field => {
       if (field.bits > 32) {
         return [
-          `var ${field.id}_high = Math.floor(data.${field.name} / 0x100000000);`,
-          `var ${field.id}_low = (data.${field.name} >>> 0);`,
+          `var ${field.id}_high = (data['${field.name}'] / 0x100000000) | 0;`,
+          `var ${field.id}_low = (data['${field.name}'] >>> 0);`,
         ].join('\n');
       }
 
       if (field.take === 'high') {
-        return `var ${field.id} = Math.floor(data.${field.name} / 0x100000000);`;
+        return `var ${field.id} = (data['${field.name}'] / 0x100000000) | 0;`;
       }
 
-      return `var ${field.id} = (data.${field.name} & 0x${field.mask.toString(16)}) >>> 0;`;
+      return `var ${field.id} = (data['${field.name}'] & 0x${field.mask.toString(16)}) >>> 0;`;
     })
     .join('\n');
 }
@@ -253,7 +230,12 @@ function buildBitsResult(containersCount: number, totalBits: number): string {
 }
 
 function compilePlan(plan: Plan[], optimize?: boolean): string {
-  return (optimize ? optimizePlan(plan) : plan).map(compilePlanItem).join('\n');
+  if (optimize) {
+    plan = optimizePlan(plan);
+  }
+
+  const assigned = new Set<number>();
+  return plan.map(item => compilePlanItem(item, assigned)).join('\n');
 }
 
 function optimizePlan(plan: Plan[]): Plan[] {
@@ -289,9 +271,13 @@ function canMergeSetOperations(prev: Plan | undefined, current: Plan): boolean {
   );
 }
 
-function compilePlanItem(plan: Plan): string {
+function compilePlanItem(plan: Plan, assigned?: Set<number>): string {
   switch (plan.object) {
     case 'set':
+      if (assigned && !assigned.has(plan.container!)) {
+        assigned.add(plan.container!);
+        return `var c_${plan.container} = ${compilePlanItem(plan.child!)};`;
+      }
       return `c_${plan.container} |= ${compilePlanItem(plan.child!)};`;
 
     case 'value':
