@@ -123,7 +123,7 @@ export function greaterThan(
   target: number,
   message?: string | Error,
 ): asserts value is number {
-  if (!isNumber(value) || value < target) {
+  if (!isNumber(value) || value <= target) {
     throw toError(
       greaterThan,
       value,

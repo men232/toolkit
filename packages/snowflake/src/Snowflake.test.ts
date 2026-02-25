@@ -299,6 +299,28 @@ describe('Snowflake', () => {
       });
     });
 
+    (['generate', 'generateBuffer', 'generateBufferUnsafe'] as const).forEach(
+      method => {
+        test('GENERATED id returns data about snowflake: ' + method, () => {
+          const snowflake = new Snowflake({
+            epoch: sampleEpoch,
+            workerId: 1,
+            processId: 1,
+            increment: 100,
+          });
+
+          const flake = snowflake.deconstruct(snowflake[method]());
+
+          expect({ ...flake, id: undefined, timestamp: undefined }).toEqual({
+            workerId: 1,
+            processId: 1,
+            increment: 100,
+            epoch: 1577836800000,
+          });
+        });
+      },
+    );
+
     test('GIVEN id as bigint THEN returns data about snowflake', () => {
       const snowflake = new Snowflake(sampleEpoch);
 

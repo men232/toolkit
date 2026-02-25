@@ -3,9 +3,12 @@
  */
 import {
   type AnyFunction,
+  type BitPack,
+  type BitUnpack,
   assert,
-  bigIntBytes,
   bigIntFromBytes,
+  bitPack,
+  bitUnpack,
   isBigInt,
   isDate,
   isNumber,
@@ -92,6 +95,8 @@ export var MAX_PROCESS_ID = 0x1f;
  */
 export var MAX_INCREMENT = 0xfff;
 
+var ENCODE_BIGINT_BUFFER = new Uint8Array(8);
+
 /**
  * A class for generating and deconstructing Twitter snowflakes.
  *
@@ -140,7 +145,25 @@ export class Snowflake {
   /**
    * @internal
    */
-  private _buffer: Uint8Array;
+  private _timestamp = 0;
+
+  private __buf: Uint8Array;
+
+  private _packBuffer: BitPack.Fn.Buffer<
+    '_timestamp' | '_workerId' | '_processId' | '_increment'
+  >;
+
+  private _packBigInt: BitPack.Fn.BigInt<
+    '_timestamp' | '_workerId' | '_processId' | '_increment'
+  >;
+
+  private _unpackBuffer: BitUnpack.Fn.Buffer<
+    'timestamp' | 'workerId' | 'processId' | 'increment'
+  >;
+
+  private _unpackBigInt: BitUnpack.Fn.BigInt<
+    'timestamp' | 'workerId' | 'processId' | 'increment'
+  >;
 
   /**
    * @param epoch the epoch to use
@@ -158,7 +181,34 @@ export class Snowflake {
       this.increment = increment;
     }
 
-    this._buffer = new Uint8Array(8);
+    const packer = bitPack({
+      totalBits: 64,
+      fields: [
+        { name: '_timestamp', bits: 42, take: 'low' },
+        { name: '_workerId', bits: 5, take: 'low' },
+        { name: '_processId', bits: 5, take: 'low' },
+        { name: '_increment', bits: 12, take: 'low' },
+      ],
+      optimize: true,
+      debug: true,
+    });
+
+    const unpacker = bitUnpack({
+      totalBits: 64,
+      fields: [
+        { name: 'timestamp', bits: 42, take: 'low' },
+        { name: 'workerId', bits: 5, take: 'low' },
+        { name: 'processId', bits: 5, take: 'low' },
+        { name: 'increment', bits: 12, take: 'low' },
+      ],
+      debug: true,
+    });
+
+    this.__buf = new Uint8Array(8);
+    this._packBigInt = packer.bigint;
+    this._packBuffer = packer.buffer;
+    this._unpackBigInt = unpacker.bigint;
+    this._unpackBuffer = unpacker.buffer;
   }
 
   /**
@@ -297,15 +347,11 @@ export class Snowflake {
       );
     }
 
-    var increment = this._increment;
+    this._timestamp = timestamp - this._epoch;
+    var res = this._packBigInt(this as any);
     this._increment = (this._increment + 1) & MAX_INCREMENT;
 
-    return (
-      (BigInt(timestamp - this._epoch) << 22n) |
-      (BigInt(this._workerId & MAX_WORKER_ID) << 17n) |
-      (BigInt(this._processId & MAX_PROCESS_ID) << 12n) |
-      BigInt(increment & MAX_INCREMENT)
-    );
+    return res;
   }
 
   /**
@@ -328,36 +374,11 @@ export class Snowflake {
       );
     }
 
-    var increment = this._increment;
+    this._timestamp = timestamp - this._epoch;
+    this._packBuffer(this as any);
     this._increment = (this._increment + 1) & MAX_INCREMENT;
 
-    // Calculate the timestamp delta
-    var timestampDelta = timestamp - this._epoch;
-
-    // Split into 32-bit parts for bitwise operations
-    var timestampHigh = Math.floor(timestampDelta / 0xffffffff);
-    var timestampLow = timestampDelta >>> 0;
-
-    var high32 = ((timestampHigh << 22) | (timestampLow >>> 10)) >>> 0;
-    var low32 =
-      ((timestampLow << 22) |
-        (this._workerId << 17) |
-        (this._processId << 12) |
-        (increment & MAX_INCREMENT)) >>>
-      0;
-
-    var buffer = this._buffer;
-
-    buffer[0] = high32 >>> 24;
-    buffer[1] = high32 >>> 16;
-    buffer[2] = high32 >>> 8;
-    buffer[3] = high32;
-    buffer[4] = low32 >>> 24;
-    buffer[5] = low32 >>> 16;
-    buffer[6] = low32 >>> 8;
-    buffer[7] = low32;
-
-    return buffer;
+    return this.__buf;
   }
 
   /**
@@ -370,8 +391,19 @@ export class Snowflake {
    * @returns A unique snowflake as Uint8Array
    */
   public generateBuffer(timestamp: Date | number = Date.now()): Uint8Array {
-    this.generateBufferUnsafe(timestamp);
-    return new Uint8Array(this._buffer);
+    if (timestamp instanceof Date) timestamp = timestamp.getTime();
+    if (!isNumber(timestamp)) {
+      throw new Error(
+        `"timestamp" argument must be a number or Date (received ${typeof timestamp})`,
+      );
+    }
+
+    this.__buf = new Uint8Array(8);
+    this._timestamp = timestamp - this._epoch;
+    this._packBuffer(this as any);
+    this._increment = (this._increment + 1) & MAX_INCREMENT;
+
+    return this.__buf;
   }
 
   /**
@@ -385,27 +417,24 @@ export class Snowflake {
    * ```
    */
   public deconstruct(id: string | bigint | Uint8Array): DeconstructedSnowflake {
-    var high32: number, low32: number;
-
-    if (id instanceof Uint8Array) {
-      // Convert from Uint8Array
-      high32 = ((id[0] << 24) | (id[1] << 16) | (id[2] << 8) | id[3]) >>> 0;
-      low32 = ((id[4] << 24) | (id[5] << 16) | (id[6] << 8) | id[7]) >>> 0;
-    } else if (isBigInt(id)) {
-      return this.deconstruct(bigIntBytes(id));
-    } else {
-      // Convert from string
-      return this.deconstruct(bigIntBytes(BigInt(id)));
+    if (isString(id)) {
+      id = BigInt(id);
     }
 
-    return {
-      id: BigInt(high32) * 0x100000000n + BigInt(low32),
-      timestamp: high32 * 0x400 + (low32 >>> 22) + this._epoch,
-      workerId: (low32 >>> 17) & MAX_WORKER_ID,
-      processId: (low32 >>> 12) & MAX_PROCESS_ID,
-      increment: low32 & MAX_INCREMENT,
-      epoch: this._epoch,
-    };
+    let result: DeconstructedSnowflake;
+
+    if (isBigInt(id)) {
+      result = this._unpackBigInt(id) as DeconstructedSnowflake;
+      result.id = id;
+    } else {
+      result = this._unpackBuffer(id) as DeconstructedSnowflake;
+      result.id = bigIntFromBytes(id);
+    }
+
+    result.timestamp += this._epoch;
+    result.epoch = this._epoch;
+
+    return result;
   }
 
   /**
@@ -414,14 +443,7 @@ export class Snowflake {
    * @returns The UNIX timestamp that is stored in `id`.
    */
   public timestampFrom(id: string | bigint | Uint8Array): number {
-    if (isString(id) || isBigInt(id)) {
-      return this.timestampFrom(Snowflake.bufferFrom(id));
-    }
-
-    var high32 = ((id[0] << 24) | (id[1] << 16) | (id[2] << 8) | id[3]) >>> 0;
-    var low32 = ((id[4] << 24) | (id[5] << 16) | (id[6] << 8) | id[7]) >>> 0;
-
-    return high32 * 0x400 + (low32 >>> 22) + this._epoch;
+    return this.deconstruct(id).timestamp;
   }
 
   /**
@@ -456,16 +478,18 @@ export class Snowflake {
   public static bufferFrom(value: bigint | string): Uint8Array {
     if (isString(value)) value = BigInt(value);
 
-    var buf = bigIntBytes(value);
-    var bufSize = buf.byteLength;
-
-    // Add padding
-    if (buf.byteLength < 8) {
-      var buf2 = new Uint8Array(8);
-      buf2.set(buf, 8 - bufSize);
-      buf = buf2;
-    }
-
-    return buf;
+    return new Uint8Array(bigintToBuffer(value));
   }
+}
+
+function bigintToBuffer(value: bigint): Uint8Array {
+  if (value < 0n) {
+    value = value * -1n;
+  }
+  for (var i = 0; i < 8; i++) {
+    ENCODE_BIGINT_BUFFER[i] = Number(
+      (value >> BigInt((8 - i - 1) * 8)) & 0xffn,
+    );
+  }
+  return ENCODE_BIGINT_BUFFER;
 }
