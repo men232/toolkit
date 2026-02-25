@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/pino-pretty",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Pino transport for beautiful log output",
   "license": "MIT",
   "type": "module",
