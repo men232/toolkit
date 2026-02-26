@@ -159,8 +159,14 @@ function initFields(fields: FieldInfo[]): string {
   return fields
     .map(field => {
       if (field.bits > 32) {
+        assert.ok(
+          field.take === 'low',
+          `Fields more than 32 bits with take 'high' not yet supported`,
+        );
+
+        const highMask = Math.pow(2, field.bits - 32) - 1;
         return [
-          `var ${field.id}_high = (data['${field.name}'] / 0x100000000) | 0;`,
+          `var ${field.id}_high = ((data['${field.name}'] / 0x100000000) | 0) & 0x${highMask.toString(16)};`,
           `var ${field.id}_low = (data['${field.name}'] >>> 0);`,
         ].join('\n');
       }

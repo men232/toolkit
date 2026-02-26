@@ -268,6 +268,75 @@ describe('BitPack', () => {
     });
   });
 
+  describe('Field overflow handling', () => {
+    it('should take low bits when value overflows field size', () => {
+      const packer = bitPack({
+        totalBits: 8,
+        fields: [{ name: 'a', bits: 4, take: 'low' }],
+      });
+
+      // 0xFF = 11111111, low 4 bits = 1111 = 15
+      // Packed into [a:4][unused:4] = 11110000 = 240
+      expect(packer.number({ a: 0xff })).toBe(240);
+
+      // 0x1234 = 0001001000110100, low 4 bits = 0100 = 4
+      // Packed into [a:4][unused:4] = 01000000 = 64
+      expect(packer.number({ a: 0x1234 })).toBe(64);
+
+      // 0xABCD = 1010101111001101, low 4 bits = 1101 = 13
+      // Packed into [a:4][unused:4] = 11010000 = 208
+      expect(packer.number({ a: 0xabcd })).toBe(208);
+    });
+
+    it('should handle overflow for larger fields', () => {
+      const packer = bitPack({
+        totalBits: 16,
+        fields: [{ name: 'value', bits: 8, take: 'low' }],
+      });
+
+      // 0x12345678, low 8 bits = 0x78
+      // Packed into [value:8][unused:8] = 0x7800 = 30720
+      expect(packer.number({ value: 0x12345678 })).toBe(0x7800);
+    });
+
+    it('should handle bigint overflow with take low', () => {
+      const packer = bitPack({
+        totalBits: 32,
+        fields: [{ name: 'value', bits: 16, take: 'low' }],
+      });
+
+      // Large bigint 0x123456789ABCDEF0n, low 16 bits = 0xDEF0
+      // Packed into [value:16][unused:16] = 0xDEF00000
+      const result = packer.bigint({ value: 0x456789abcdef0 });
+      expect(result.toString(16)).toBe('def00000');
+    });
+
+    it('should handle bigint overflow with take low multiple fields', () => {
+      const packer = bitPack({
+        totalBits: 62,
+        fields: [
+          { name: 'documentId', bits: 51, take: 'low' },
+          { name: 'reserved', bits: 7, take: 'low' },
+          { name: 'documentType', bits: 4, take: 'low' },
+        ],
+      });
+
+      // Layout: [documentId:51][reserved:7][documentType:4] = 62 bits
+      // Test with overflow values to verify take: 'low' truncates properly
+      // documentId: 0xFFFFFFFFFFFFF (52 bits), low 51 = 0x7FFFFFFFFFFFF
+      // reserved: 0xFF (8 bits), low 7 = 0x7F
+      // documentType: 0xFF (8 bits), low 4 = 0xF
+      const result = packer.bigint({
+        documentId: 0xfffffffffffff,
+        reserved: 0xff,
+        documentType: 0xff,
+      });
+
+      // All 62 bits should be set = 2^62 - 1 = 0x3FFFFFFFFFFFFFFF
+      expect(result.toString(16)).toBe('3fffffffffffffff');
+    });
+  });
+
   describe('Edge cases and validation', () => {
     it('should throw error when fields array is empty', () => {
       expect(() => {
@@ -631,11 +700,24 @@ describe('BitPack', () => {
       expect(() => {
         bitPack({
           totalBits: 128,
+          debug: true,
           fields: [
             { name: 'huge', bits: 80, take: 'low' }, // Would span 3 containers
           ],
         });
       }).toThrow('Fields spanning more than 2 containers');
+    });
+
+    it('should throw for fields more then 32bits and take high', () => {
+      expect(() => {
+        bitPack({
+          totalBits: 33,
+          debug: true,
+          fields: [
+            { name: 'huge', bits: 33, take: 'high' }, // Would span 3 containers
+          ],
+        });
+      }).toThrow('Fields more than 32 bits with');
     });
   });
 
