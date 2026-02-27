@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/binlog",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "A high-performance binary logging system for Node.js applications.",
   "license": "MIT",
   "type": "module",
