@@ -1,4 +1,5 @@
 /* eslint-env node */
+import { AssertionError } from '@/errors/AssertionError';
 import {
   isBoolean,
   isDate,
@@ -9,8 +10,6 @@ import {
   isObject,
   isString,
 } from '../is';
-
-import { AssertionError } from './AssertionError.js';
 
 export function ok(value: unknown, message?: string | Error): asserts value {
   if (!value) {

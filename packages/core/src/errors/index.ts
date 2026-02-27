@@ -1,2 +1,2 @@
 export * from './AppError';
-export * from './BrowserAssertionError';
+export * from './AssertionError';
