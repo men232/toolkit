@@ -10,6 +10,8 @@ export * from './bitUnpack';
 export * from './bytesToBase64';
 export * from './compareBytes';
 export * from './concatenateBytes';
+export * from './rleDecode';
+export * from './rleEncode';
 export * from './uint16ToUint8';
 export * from './uint32ToUint8';
 export * from './uint8ToUint16';
