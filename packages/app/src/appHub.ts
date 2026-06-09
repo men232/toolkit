@@ -21,6 +21,11 @@ import {
 import { createAppThread } from './appThread.ts';
 import type { ObjectPropsOptions } from './utils/props.js';
 
+/**
+ * Combine multiple app definitions into a single orchestrated app.
+ * Props from each definition are namespaced by their app name.
+ * @group Internals
+ */
 export function createAppHub(definitions: AppDefinition[]): AppDefinition {
   const props: ObjectPropsOptions = {};
 

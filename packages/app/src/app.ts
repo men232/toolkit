@@ -18,6 +18,10 @@ import { extractOptionsArgs } from './utils/args.js';
 import { filePathFromStack } from './utils/filePathFromStack.js';
 import { isMainFile } from './utils/isMainFile.js';
 
+/**
+ * Shape of an application — name, typed props, lifecycle hooks, and optional methods.
+ * @group Main
+ */
 export interface AppDefinition<
   P extends ObjectPropsOptions = {},
   S extends Record<string, any> = {},
@@ -72,6 +76,10 @@ export interface AppDefinition<
 
 const EVENT_LISTENER_MAP = new WeakMap<AppInstance, EventEmitter>();
 
+/**
+ * Runtime state of a created app instance.
+ * @group Main
+ */
 export interface AppInstance<
   P extends ObjectPropsOptions = {},
   S extends Record<string, any> = {},
@@ -93,6 +101,30 @@ export interface AppInstance<
 const APP_DEF = Symbol('app-definition');
 const APP_DEF_FILEPATH = Symbol('app-definition-filepath');
 
+/**
+ * Define an application with typed props and lifecycle hooks.
+ *
+ * When executed directly (`node app.ts`), the CLI is launched automatically.
+ * @group Main
+ * @example
+ * ```ts
+ * export default defineApp({
+ *   name: 'server',
+ *   props: {
+ *     port: { type: Number, default: () => 3000 },
+ *   },
+ *   setup() {
+ *     return { server: createServer() };
+ *   },
+ *   async entry(props) {
+ *     await this.server.listen(props.port);
+ *   },
+ *   async stop() {
+ *     await this.server.close();
+ *   },
+ * });
+ * ```
+ */
 export function defineApp<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
@@ -129,6 +161,16 @@ export function defineApp<
   return result;
 }
 
+/**
+ * Create a new runtime instance from an app definition.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * const instance = createAppInstance(myApp);
+ * await setupApp(instance, { port: 3000 });
+ * await runApp(instance);
+ * ```
+ */
 export function createAppInstance<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
@@ -147,16 +189,36 @@ export function createAppInstance<
   };
 }
 
+/**
+ * Returns true if the value was created by `defineApp`.
+ * @group Utils
+ */
 export function isAppDefinition(value: unknown): value is AppDefinition {
   return (value as any)?.[APP_DEF] === true;
 }
 
+/**
+ * Returns the absolute file path from which `defineApp` was called, or null if
+ * it could not be detected from the call stack.
+ * @group Utils
+ */
 export function getDefinitionFilePath(
   definition: AppDefinition,
 ): string | null {
   return (definition as any)[APP_DEF_FILEPATH] ?? null;
 }
 
+/**
+ * Run setup and entry in one call. Shuts down automatically if entry fails.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * const result = await startApp(myApp, { port: 3000 });
+ * if (isSuccess(result)) {
+ *   await appWaitShutdown(result.app);
+ * }
+ * ```
+ */
 export async function startApp<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
@@ -187,6 +249,17 @@ export async function startApp<
   };
 }
 
+/**
+ * Run the setup phase of an app instance.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * const result = await setupApp(instance, { port: 3000 });
+ * if (isSuccess(result)) {
+ *   await runApp(instance);
+ * }
+ * ```
+ */
 export async function setupApp(
   instance: AppInstance,
   props: Data,
@@ -257,6 +330,15 @@ export async function setupApp(
   };
 }
 
+/**
+ * Run the entry phase of an app instance.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * await setupApp(instance, props);
+ * await runApp(instance);
+ * ```
+ */
 export async function runApp(instance: AppInstance): Promise<ExecResult> {
   const mutexResolve = await mutexAcquire(instance, 'run');
 
@@ -329,6 +411,17 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
   };
 }
 
+/**
+ * Stop a running app instance and call its `stop` hook.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * process.on('SIGTERM', async () => {
+ *   await stopApp(instance);
+ *   await shutdownApp(instance);
+ * });
+ * ```
+ */
 export async function stopApp(instance: AppInstance): Promise<ExecResult> {
   const mutexResolve = await mutexAcquire(instance, 'stop');
 
@@ -400,6 +493,16 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
   };
 }
 
+/**
+ * Shut down an app instance, call its `shutdown` hook, and reset all state.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * await stopApp(instance);
+ * await shutdownApp(instance);
+ * // instance can be set up and started again after this
+ * ```
+ */
 export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
   const mutexResolve = await mutexAcquire(instance, 'shutdown');
 
@@ -454,6 +557,16 @@ export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
   };
 }
 
+/**
+ * Returns a promise that resolves when the app emits its shutdown event.
+ * Resolves immediately if the app is not running.
+ * @group Lifecycle
+ * @example
+ * ```ts
+ * await startApp(myApp, props);
+ * await appWaitShutdown(instance); // blocks until shutdown
+ * ```
+ */
 export function appWaitShutdown(instance: AppInstance): Promise<void> {
   if (!instance.isRunning) {
     return Promise.resolve();

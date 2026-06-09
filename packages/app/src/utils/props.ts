@@ -7,6 +7,10 @@ import {
 } from '@andrew_l/toolkit';
 import { InvalidArgumentError, Option } from 'commander';
 
+/**
+ * Declaration for a single typed app prop.
+ * @group Props
+ */
 export interface PropOptions<T = any> {
 	type: PropType<T> | null;
 	description?: string;
@@ -18,8 +22,15 @@ export interface PropOptions<T = any> {
 	enum?: string[];
 }
 
+/**
+ * @group Props
+ */
 export type PropType<T> = PropConstructor<T> | PropConstructor<T>[];
 
+/**
+ * Map of prop declarations keyed by name — passed as `props` in `defineApp`.
+ * @group Props
+ */
 export type ObjectPropsOptions<P = Data> = {
 	[K in keyof P]: PropOptions<P[K]>;
 };
@@ -65,6 +76,10 @@ type InferPropType<T> = [T] extends [null]
 		: V
 	: T;
 
+/**
+ * Resolve the concrete prop value types from an `ObjectPropsOptions` declaration.
+ * @group Props
+ */
 export type ExtractPropTypes<O> = {
 	// use `keyof Pick<O, RequiredKeys<O>>` instead of `RequiredKeys<O>` to support IDE features
 	[K in keyof Pick<O, RequiredKeys<O>>]: InferPropType<O[K]>;
@@ -81,6 +96,10 @@ const TYPE_TO_PLACEHOLDER = new Map<any, string>([
 	[Array, '<array>'],
 ]);
 
+/**
+ * Convert an `ObjectPropsOptions` map into Commander `Option` instances.
+ * @group Internals
+ */
 export function propsToOptions(props: ObjectPropsOptions): Option[] {
 	const result: Option[] = [];
 

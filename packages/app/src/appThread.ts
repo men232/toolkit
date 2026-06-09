@@ -208,6 +208,11 @@ async function restartWorker(managed: ManagedWorker): Promise<void> {
   }
 }
 
+/**
+ * Wrap an app definition to run across N worker threads.
+ * Adds a `threads` prop and manages the full lifecycle of each worker.
+ * @group Internals
+ */
 export function createAppThread(definition: AppDefinition): AppDefinition {
   const scriptFile = getDefinitionFilePath(definition);
 
@@ -267,12 +272,20 @@ export function createAppThread(definition: AppDefinition): AppDefinition {
   return app;
 }
 
+/**
+ * @group Internals
+ */
 export interface StartAppThreadParams {
   definition: AppDefinition;
   parentPort: WorkerThreads.MessagePort;
   threadId: number;
 }
 
+/**
+ * Worker-side bootstrap: attach the message protocol listener on `parentPort`
+ * and signal the parent that this thread is ready.
+ * @group Internals
+ */
 export async function createAppThreadInstance({
   definition,
   parentPort,
@@ -358,12 +371,19 @@ const app = await createAppThreadInstance({
 });
 `;
 
+/**
+ * @group Internals
+ */
 export interface CreateThreadParams {
   threadId: number;
   scriptFile: string;
   options?: Omit<WorkerThreads.WorkerOptions, 'workerData'>;
 }
 
+/**
+ * Spawn a raw worker thread running the app thread bootstrap script.
+ * @group Internals
+ */
 export function createThread({
   threadId,
   scriptFile,
