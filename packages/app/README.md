@@ -39,7 +39,7 @@ export default defineApp({
     return { server };
   },
 
-  async entry({ port, host }) {
+  async entry(props) {
     await this.server.listen(props.port, props.host);
   },
 
