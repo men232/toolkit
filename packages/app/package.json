@@ -17,7 +17,7 @@
     "check-types": "tsc --noEmit",
     "build": "unbuild",
     "prepack": "unbuild",
-    "test": "echo todo",
+    "test": "vitest run --typecheck",
     "test:watch": "vitest watch --typecheck"
   },
   "bin": {

@@ -196,23 +196,13 @@ function buildRootCommand({
             process.exit(1);
           }
 
-          const lastRun = (() => {
-            const stored = db.get('app_last_run');
-            if (!stored) return undefined;
-            try {
-              return JSON.parse(stored) as string[];
-            } catch {
-              return [stored];
-            }
-          })();
-
           return log.prompt('Pick apps to run.', {
             type: 'multiselect',
             options: scriptFiles.map(f => ({
               label: path.basename(f),
               value: f,
             })),
-            initial: lastRun,
+            initial: db.get<string[]>('app_last_run'),
             cancel: 'null',
           });
         })
@@ -220,7 +210,7 @@ function buildRootCommand({
           const selectedFiles = (selected as string[] | null) || [];
           if (!selectedFiles.length) process.exit(0);
 
-          db.set('app_last_run', JSON.stringify(selectedFiles));
+          db.set('app_last_run', selectedFiles);
           db.save();
 
           return Promise.all(
@@ -423,7 +413,7 @@ function launchApp(
     .then(startResult => {
       if (isSkip(startResult)) {
         startDefer.resolve();
-        log.warn('Failed to start %s', startResult);
+        log.warn('Failed to start %s', startResult, startResult.error);
         return;
       }
 

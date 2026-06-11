@@ -5,7 +5,6 @@ import {
   type AppInstance,
   createAppInstance,
   defineApp,
-  getDefinitionFilePath,
   runApp,
   setupApp,
   shutdownApp,
@@ -214,10 +213,10 @@ async function restartWorker(managed: ManagedWorker): Promise<void> {
  * @group Internals
  */
 export function createAppThread(definition: AppDefinition): AppDefinition {
-  const scriptFile = getDefinitionFilePath(definition);
+  const scriptFile = definition.filePath;
 
   assert.ok(
-    scriptFile,
+    definition.filePath,
     `Failed to detect definition file path for: ${definition.name}`,
   );
 

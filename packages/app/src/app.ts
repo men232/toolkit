@@ -26,6 +26,9 @@ export interface AppDefinition<
   P extends ObjectPropsOptions = {},
   S extends Record<string, any> = {},
   M extends Record<string, AnyFunction> = {},
+  RuntimeContext extends Data = S & M,
+  EntryContext extends Data = S & M,
+  SetupContext extends Data = M,
 > {
   /**
    * Name of your awesome application
@@ -49,29 +52,35 @@ export interface AppDefinition<
   logging?: boolean;
 
   /**
+   * Path to the file where this definition exports default
+   * Usually you should not use this option, because it tracks automatically
+   */
+  filePath?: string | null;
+
+  /**
    * Setup function to initialize application. Will be called once
    */
-  setup?(this: M, props: ExtractPropTypes<P>): Awaitable<S>;
+  setup?(this: SetupContext, props: ExtractPropTypes<P>): Awaitable<S>;
 
   /**
    * Custom methods which will be available under `this` context
    */
-  methods?: M & ThisType<S & M>;
+  methods?: M & ThisType<RuntimeContext>;
 
   /**
    * Entry function that will be called each time when application starts
    */
-  entry?(this: S & M, props: ExtractPropTypes<P>): Awaitable<any>;
+  entry?(this: EntryContext, props: ExtractPropTypes<P>): Awaitable<any>;
 
   /**
    * Stop function that will be called each time when application stops
    */
-  stop?(this: S & M, props: ExtractPropTypes<P>): Awaitable<void>;
+  stop?(this: RuntimeContext, props: ExtractPropTypes<P>): Awaitable<void>;
 
   /**
    * Shutdown function that will be called before application/process graceful shutdown
    */
-  shutdown?(this: S & M, props: ExtractPropTypes<P>): Awaitable<void>;
+  shutdown?(this: RuntimeContext, props: ExtractPropTypes<P>): Awaitable<void>;
 }
 
 const EVENT_LISTENER_MAP = new WeakMap<AppInstance, EventEmitter>();
@@ -99,7 +108,6 @@ export interface AppInstance<
 }
 
 const APP_DEF = Symbol('app-definition');
-const APP_DEF_FILEPATH = Symbol('app-definition-filepath');
 
 /**
  * Define an application with typed props and lifecycle hooks.
@@ -130,25 +138,22 @@ export function defineApp<
   S extends Record<string, any>,
   M extends Record<string, AnyFunction>,
 >(definition: AppDefinition<P, S, M>): AppDefinition<P, S, M> {
-  const result: AppDefinition<P, S, M> = { logging: true, ...definition };
-
-  const stack = captureStackTrace(defineApp);
-  const filePath = filePathFromStack(stack);
-
-  if (filePath) {
-    def(result, APP_DEF_FILEPATH, filePath);
-  }
+  const result: AppDefinition<P, S, M> = {
+    logging: true,
+    filePath: filePathFromStack(captureStackTrace(defineApp)),
+    ...definition,
+  };
 
   def(result, APP_DEF, true);
 
   if (!CONFIG.IS_VRUN) {
-    if (filePath) {
-      if (isMainFile(filePath)) {
+    if (result.filePath) {
+      if (isMainFile(result.filePath)) {
         // TODO: make sure that filePath export default this definition
         import('./cli/index.js').then(m => {
           m.cli.runApp({
             cliName: 'app',
-            scriptFile: filePath,
+            scriptFile: result.filePath!,
             argv: extractOptionsArgs(process.argv.slice(1)),
           });
         });
@@ -195,17 +200,6 @@ export function createAppInstance<
  */
 export function isAppDefinition(value: unknown): value is AppDefinition {
   return (value as any)?.[APP_DEF] === true;
-}
-
-/**
- * Returns the absolute file path from which `defineApp` was called, or null if
- * it could not be detected from the call stack.
- * @group Utils
- */
-export function getDefinitionFilePath(
-  definition: AppDefinition,
-): string | null {
-  return (definition as any)[APP_DEF_FILEPATH] ?? null;
 }
 
 /**
