@@ -54,8 +54,8 @@ export function base64ToBytes(
   { encoding = 'base64', strict, native = true }: Base64ToBytesOptions = {},
 ): Uint8Array {
   if (encoding === 'base64') {
-    if (native && isFunction(Uint8Array.fromBase64)) {
-      return Uint8Array.fromBase64(data, {
+    if (native && isFunction((Uint8Array as any).fromBase64)) {
+      return (Uint8Array as any).fromBase64(data, {
         alphabet: 'base64',
         lastChunkHandling: (strict ?? true) ? 'strict' : 'loose',
       });
@@ -63,8 +63,8 @@ export function base64ToBytes(
 
     return base64.decode(data, { strict: strict ?? true });
   } else if (encoding === 'base64url') {
-    if (native && isFunction(Uint8Array.fromBase64)) {
-      return Uint8Array.fromBase64(data, {
+    if (native && isFunction((Uint8Array as any).fromBase64)) {
+      return (Uint8Array as any).fromBase64(data, {
         alphabet: 'base64url',
         lastChunkHandling: (strict ?? false) ? 'strict' : 'loose',
       });
