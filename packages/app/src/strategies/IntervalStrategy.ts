@@ -1,9 +1,5 @@
 import { log } from '../logger.js';
-import type {
-  WorkerInstance,
-  WorkerStrategy,
-  WorkerStrategyContext,
-} from '../worker.js';
+import type { WorkerInstance, WorkerStrategy } from '../worker.js';
 
 export namespace IntervalStrategy {
   /**
@@ -17,7 +13,7 @@ export namespace IntervalStrategy {
    * Context emitted by IntervalStrategy on each tick.
    * @group Worker
    */
-  export interface Context extends WorkerStrategyContext {
+  export interface Context extends WorkerStrategy.Context {
     timerSequence: number;
   }
 }
@@ -43,7 +39,7 @@ export class IntervalStrategy
   startSignal(): void {
     this.timer = setInterval(() => {
       if (this.worker.isIdle) {
-        this.worker.addTask(this.getExecutionContext());
+        this.worker.addTask(this.createTask());
       } else {
         log.warn(
           '[%s] Worker busy, skipping tick',
@@ -61,7 +57,7 @@ export class IntervalStrategy
 
   doShutdown(): void {}
 
-  getExecutionContext(): IntervalStrategy.Context {
+  createTask(): IntervalStrategy.Context {
     return { timerSequence: ++this.timerSequence };
   }
 }

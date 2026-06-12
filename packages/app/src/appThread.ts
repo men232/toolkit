@@ -230,10 +230,11 @@ export function createAppThread(definition: AppDefinition): AppDefinition {
         default: () => 1,
       },
     },
-    logging: false,
+
+    logger: false,
 
     async setup(props) {
-      const { threads, ...workerProps } = props as any;
+      const { threads, ...workerProps } = props;
 
       assert.greaterThan(threads, 0, 'threads expected to be greater than 0');
 

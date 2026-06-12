@@ -12,10 +12,6 @@ import {
 import { createAppHub } from './appHub.js';
 import type { PropOptions } from './utils/props.ts';
 
-vi.mock('./logger.js', () => ({
-  log: { start: vi.fn(), success: vi.fn() },
-}));
-
 async function setupHub(hub: AppDefinition) {
   const instance = createAppInstance(hub);
   await setupApp(instance, {});
@@ -31,14 +27,14 @@ async function runHub(hub: AppDefinition) {
 
 describe('createAppHub', () => {
   it('returns an AppDefinition named app-hub', () => {
-    const hub = createAppHub([defineApp({ name: 'foo' })]);
+    const hub = createAppHub([defineApp({ name: 'foo', logger: false })]);
     expect(hub.name).toBe('app-hub');
   });
 
   it('description includes all child app names', () => {
     const hub = createAppHub([
-      defineApp({ name: 'alpha' }),
-      defineApp({ name: 'beta' }),
+      defineApp({ name: 'alpha', logger: false }),
+      defineApp({ name: 'beta', logger: false }),
     ]);
     expect(hub.description).toContain('alpha');
     expect(hub.description).toContain('beta');
@@ -49,8 +45,8 @@ describe('createAppHub', () => {
     const propUrl: PropOptions = { type: String };
 
     const hub = createAppHub([
-      defineApp({ name: 'my-app', props: { port: propPort } }),
-      defineApp({ name: 'db', props: { url: propUrl } }),
+      defineApp({ name: 'my-app', logger: false, props: { port: propPort } }),
+      defineApp({ name: 'db', logger: false, props: { url: propUrl } }),
     ]);
     expect((hub.props as any).myAppPort).toBe(propPort);
     expect((hub.props as any).dbUrl).toBe(propUrl);
@@ -64,8 +60,8 @@ describe('appHub setup', () => {
       vi.fn().mockResolvedValue({}),
     ];
     const hub = createAppHub([
-      defineApp({ name: 'a', setup: setups[0] }),
-      defineApp({ name: 'b', setup: setups[1] }),
+      defineApp({ name: 'a', logger: false, setup: setups[0] }),
+      defineApp({ name: 'b', logger: false, setup: setups[1] }),
     ]);
     const result = await setupApp(createAppInstance(hub), {});
     expect(isSuccess(result)).toBe(true);
@@ -75,7 +71,12 @@ describe('appHub setup', () => {
   it('passes prefixed props down to the correct child', async () => {
     const setup = vi.fn().mockResolvedValue({});
     const hub = createAppHub([
-      defineApp({ name: 'db', props: { url: {} as any }, setup }),
+      defineApp({
+        name: 'db',
+        logger: false,
+        props: { url: {} as any },
+        setup,
+      }),
     ]);
     await setupApp(createAppInstance(hub), { dbUrl: 'postgres://localhost' });
     expect(setup).toHaveBeenCalledWith({ url: 'postgres://localhost' });
@@ -85,6 +86,7 @@ describe('appHub setup', () => {
     const hub = createAppHub([
       defineApp({
         name: 'bad',
+        logger: false,
         setup: vi.fn().mockRejectedValue(new Error('boom')),
       }),
     ]);
@@ -106,8 +108,8 @@ describe('appHub entry', () => {
       vi.fn().mockResolvedValue(undefined),
     ];
     const hub = createAppHub([
-      defineApp({ name: 'a', entry: entries[0] }),
-      defineApp({ name: 'b', entry: entries[1] }),
+      defineApp({ name: 'a', logger: false, entry: entries[0] }),
+      defineApp({ name: 'b', logger: false, entry: entries[1] }),
     ]);
     const instance = await setupHub(hub);
     const result = await runApp(instance);
@@ -119,6 +121,7 @@ describe('appHub entry', () => {
     const hub = createAppHub([
       defineApp({
         name: 'broken',
+        logger: false,
         entry: vi.fn().mockRejectedValue(new Error('entry fail')),
       }),
     ]);
@@ -140,8 +143,8 @@ describe('appHub stop', () => {
       vi.fn().mockResolvedValue(undefined),
     ];
     const hub = createAppHub([
-      defineApp({ name: 'a', stop: stops[0] }),
-      defineApp({ name: 'b', stop: stops[1] }),
+      defineApp({ name: 'a', logger: false, stop: stops[0] }),
+      defineApp({ name: 'b', logger: false, stop: stops[1] }),
     ]);
     const instance = await runHub(hub);
     const result = await stopApp(instance);
@@ -153,6 +156,7 @@ describe('appHub stop', () => {
     const hub = createAppHub([
       defineApp({
         name: 'stubborn',
+        logger: false,
         stop: vi.fn().mockRejectedValue(new Error('no stop')),
       }),
     ]);
@@ -174,8 +178,8 @@ describe('appHub shutdown', () => {
       vi.fn().mockResolvedValue(undefined),
     ];
     const hub = createAppHub([
-      defineApp({ name: 'a', shutdown: shutdowns[0] }),
-      defineApp({ name: 'b', shutdown: shutdowns[1] }),
+      defineApp({ name: 'a', logger: false, shutdown: shutdowns[0] }),
+      defineApp({ name: 'b', logger: false, shutdown: shutdowns[1] }),
     ]);
     const instance = await setupHub(hub);
     const result = await shutdownApp(instance);
@@ -187,6 +191,7 @@ describe('appHub shutdown', () => {
     const hub = createAppHub([
       defineApp({
         name: 'immortal',
+        logger: false,
         shutdown: vi.fn().mockRejectedValue(new Error('no die')),
       }),
     ]);

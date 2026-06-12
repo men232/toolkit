@@ -42,7 +42,7 @@ export function createAppHub(definitions: AppDefinition[]): AppDefinition {
   const app = defineApp({
     name: 'app-hub',
     description: `Application wrapper around: ${definitions.map(v => v.name).join(', ')}`,
-    logging: false,
+    logger: false,
     props,
     setup(props) {
       const instances: AppInstance[] = [];

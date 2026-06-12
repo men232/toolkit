@@ -13,14 +13,14 @@ export default defineApp({
     };
   },
   async entry(props) {
-    console.info(`Start server on ${this.host}:${props.port}`);
+    this.log.info(`Start server on ${this.host}:${props.port}`);
     await delay(1000);
   },
   async stop() {
-    console.info('Stop server');
+    this.log.info('Stop server');
   },
   async shutdown() {
-    console.info('Shutdown server');
+    this.log.info('Shutdown server');
     await delay(1000);
   },
 });

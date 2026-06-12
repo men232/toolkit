@@ -5,6 +5,7 @@ import {
   CancellablePromise,
   type Data,
   type ExecResult,
+  type Logger,
   ResourcePool,
   captureStackTrace,
   catchError,
@@ -16,7 +17,6 @@ import {
 import type { AppDefinition } from './app.js';
 import { defineApp } from './app.js';
 import { CONFIG } from './config.js';
-import { log } from './logger.js';
 import { filePathFromStack } from './utils/filePathFromStack.ts';
 import type { ExtractPropTypes, ObjectPropsOptions } from './utils/props.js';
 
@@ -24,12 +24,14 @@ export type WorkerSuccessData = { [x: string]: unknown };
 export type WorkerSkipData = { error?: boolean; [x: string]: unknown };
 export type WorkerResult = ExecResult<WorkerSuccessData, WorkerSkipData>;
 
-/**
- * Base context bag emitted by strategies per task. Strategies extend this with typed fields.
- * @group Worker
- */
-export interface WorkerStrategyContext {
-  [key: string]: unknown;
+export namespace WorkerStrategy {
+  /**
+   * Base context bag emitted by strategies per task. Strategies extend this with typed fields.
+   * @group Worker
+   */
+  export interface Context {
+    [key: string]: unknown;
+  }
 }
 
 /**
@@ -37,13 +39,13 @@ export interface WorkerStrategyContext {
  * @group Worker
  */
 export interface WorkerStrategy<
-  C extends WorkerStrategyContext = WorkerStrategyContext,
+  C extends WorkerStrategy.Context = WorkerStrategy.Context,
 > {
   doSetup(opts: { worker: WorkerInstance }): Awaitable<void>;
   startSignal(): void;
   stopSignal(done: () => void): void;
   doShutdown(): Awaitable<void>;
-  getExecutionContext(): C;
+  createTask(...args: any[]): C;
   executeSignal?(
     ctx: WorkerDefinition.EntryContext<WorkerStrategy<C>>,
   ): Awaitable<ExecResult>;
@@ -70,17 +72,23 @@ export namespace WorkerDefinition {
     props: Props,
   ) => Awaitable<Result>;
 
-  export type EntryContext<T extends WorkerStrategy = WorkerStrategy> = {
-    worker: WorkerInstance<T>;
-  } & TaskContext<T>;
+  export type EntryContext<T extends WorkerStrategy = WorkerStrategy> =
+    AppDefinition.EntryContext<
+      {
+        worker: WorkerInstance<T>;
+      } & TaskContext<T>
+    >;
 
-  export type SetupContext<T extends Data = Data> = T & {
-    worker: WorkerInstance;
-  };
+  export type SetupContext<T extends Data = Data> = AppDefinition.SetupContext<
+    T & { worker: WorkerInstance }
+  >;
 
-  export type RuntimeContext<T extends Data = Data> = T & {
-    worker: WorkerInstance;
-  };
+  export type RuntimeContext<T extends Data = Data> =
+    AppDefinition.RuntimeContext<
+      T & {
+        worker: WorkerInstance;
+      }
+    >;
 
   export type TaskContext<T extends WorkerStrategy> =
     T extends WorkerStrategy<infer X> ? X : never;
@@ -147,6 +155,7 @@ export interface WorkerInstance<C extends WorkerStrategy = WorkerStrategy> {
   pool: ResourcePool<symbol>;
   runTask: CancellablePromise<void> | null;
   overloadedSignaled: boolean;
+  log: Logger;
 
   readonly queueMaxSize: number;
 
@@ -175,7 +184,7 @@ export interface WorkerInstance<C extends WorkerStrategy = WorkerStrategy> {
 
 const WORKER_DEF = Symbol('worker-definition');
 
-function makePool(size: number): ResourcePool<symbol> {
+function createWorkerPool(size: number): ResourcePool<symbol> {
   return new ResourcePool<symbol>({
     poolSize: size,
     auto: true,
@@ -190,11 +199,13 @@ function makePool(size: number): ResourcePool<symbol> {
  */
 export function createWorkerInstance<C extends WorkerStrategy>(
   definition: WorkerDefinition<{}, {}, {}, C>,
+  logger: Logger,
 ): WorkerInstance<C> {
   const instance: WorkerInstance<C> = {
     definition,
+    log: logger,
     queue: new AsyncIterableQueue(),
-    pool: makePool(definition.taskParallel ?? 2),
+    pool: createWorkerPool(definition.taskParallel ?? 2),
     runTask: null,
     queueMaxSize: definition.taskLimit ?? 50,
     taskParallel: definition.taskParallel ?? 2,
@@ -225,15 +236,16 @@ export function addWorkerTask<C extends WorkerStrategy>(
   ctx: WorkerDefinition.TaskContext<C>,
 ): void {
   instance.queue.put(ctx);
+  checkWorkerPressure(instance);
 }
 
-async function doWork<C extends WorkerStrategy>(
+async function executeWorkerTask<C extends WorkerStrategy>(
   instance: WorkerInstance<C>,
   entryContext: WorkerDefinition.EntryContext<C>,
   props: Data,
   abortSignal: AbortSignal,
 ): Promise<void> {
-  const { executeStrategy, logging, name, entry } = instance.definition;
+  const { executeStrategy, entry } = instance.definition;
 
   if (isFunction(executeStrategy.executeSignal)) {
     const [signalError, signalResult] = await catchError(() =>
@@ -241,16 +253,15 @@ async function doWork<C extends WorkerStrategy>(
     );
 
     if (signalError) {
-      log.error(
-        'Execute signal execution strategy error. Drop from processing.',
-        signalError,
-      );
+      instance.log.error('Strategy executeSignal error, dropping task', {
+        error: signalError,
+      });
       return;
     }
 
     if (isSkip(signalResult)) {
-      log.warn(
-        'Execute signal execution strategy returns skip. Drop from processing.',
+      instance.log.warn(
+        'Strategy executeSignal returned skip, dropping task',
         signalResult,
       );
       return;
@@ -294,14 +305,12 @@ async function doWork<C extends WorkerStrategy>(
     hasSkip = isSkip(result);
   }
 
-  if (logging ?? true) {
-    if (hasError) {
-      log.error('[%s] Task error', name, results);
-    } else if (hasSkip) {
-      log.warn('[%s] Task skipped', name, results);
-    } else {
-      log.debug('[%s] Task completed', name, results);
-    }
+  if (hasError) {
+    instance.log.error('Task error', results);
+  } else if (hasSkip) {
+    instance.log.warn('Task skipped', results);
+  } else {
+    instance.log.debug('Task completed', results);
   }
 
   if (executeStrategy.completeSignal) {
@@ -310,7 +319,9 @@ async function doWork<C extends WorkerStrategy>(
     );
 
     if (completeError) {
-      log.error('Complete signal execution strategy error', completeError);
+      instance.log.error('Strategy completeSignal error', {
+        error: completeError,
+      });
     }
   }
 }
@@ -333,13 +344,13 @@ export function defineWorker<
       return setupWorker(this, definition, props);
     },
     entry(props) {
-      return startWorker(this, definition, props);
+      return runWorkerLoop(this, definition, props);
     },
     stop(props) {
       return stopWorker(this, definition, props);
     },
     shutdown(props) {
-      return workerShutdown(this, definition, props);
+      return shutdownWorker(this, definition, props);
     },
   }) as WorkerDefinition<P, S, M, C>;
 
@@ -354,7 +365,7 @@ function setupWorker<
   S extends Data,
   M extends Record<string, AnyFunction>,
 >(
-  setupContext: M,
+  setupContext: AppDefinition.SetupContext<M>,
   definition: WorkerDefinition<
     P,
     S,
@@ -368,7 +379,7 @@ function setupWorker<
   const setupFn = definition.setup;
   const ctx: WorkerDefinition.SetupContext<M> = {
     ...setupContext,
-    worker: createWorkerInstance(definition),
+    worker: createWorkerInstance(definition, setupContext.log),
   };
 
   return Promise.resolve()
@@ -381,7 +392,7 @@ function setupWorker<
     });
 }
 
-async function startWorker(
+async function runWorkerLoop(
   runtimeContext: WorkerDefinition.RuntimeContext,
   definition: WorkerDefinition,
   props: Data,
@@ -407,38 +418,26 @@ async function startWorker(
 
         if (stopError) {
           worker.queue.close();
-          log.error('Stop signal error', stopError);
+          worker.log.error('Strategy stopSignal error', { error: stopError });
         }
       });
   };
 
   worker.runTask = new CancellablePromise<void>(
-    async (resolve, reject, onCancel) => {
+    async (resolve, _reject, onCancel) => {
       onCancel(onStopSignal);
-
-      const [setupError] = await catchError(() =>
-        executeStrategy.doSetup({
-          worker,
-        }),
-      );
-
-      if (setupError) {
-        log.error('Setup execution strategy error.', setupError);
-        worker.runTask = null;
-        return resolve();
-      }
 
       const [startError] = await catchError(() =>
         executeStrategy.startSignal(),
       );
 
       if (startError) {
-        log.error('Start signal error', startError);
+        worker.log.error('Strategy startSignal error', { error: startError });
         worker.runTask = null;
         return resolve();
       }
 
-      log.info('Worker started.');
+      worker.log.info('Worker started (parallel=%d)', worker.taskParallel);
 
       for await (const taskContext of worker.queue) {
         const jobTicket = await worker.pool.acquire();
@@ -447,31 +446,34 @@ async function startWorker(
           ...taskContext,
         };
 
-        doWork(worker, entryContext, props, abortSignal).finally(() => {
-          worker.pool.release(jobTicket);
-          workerCheckOverloaded(worker);
-        });
+        executeWorkerTask(worker, entryContext, props, abortSignal).finally(
+          () => {
+            worker.pool.release(jobTicket);
+            checkWorkerPressure(worker);
+          },
+        );
       }
 
-      log.info('Wait for completing pool. (used = %d)', worker.pool.usedCount);
+      worker.log.info('Draining task pool (active=%d)', worker.pool.usedCount);
 
       await worker.pool.destroy();
       worker.queue = new AsyncIterableQueue();
       worker.runTask = null;
+      resolve();
     },
   );
 
   worker.runTask.catch(err => {
-    log.error('[%s] Worker crash: %s', definition.name, toError(err).message);
+    worker.log.error('Worker crash: %s', { error: toError(err) });
   });
 }
 
-function workerCheckOverloaded(worker: WorkerInstance): void {
+function checkWorkerPressure(worker: WorkerInstance): void {
   try {
     if (worker.isOverloaded) {
       if (!worker.definition.executeStrategy.overloadedSignal)
-        return void log.warn(
-          'Worker under pressure. (queue = %d, limit = %d)',
+        return void worker.log.warn(
+          'Worker under pressure (queue=%d, limit=%d)',
           worker.queueSize,
           worker.queueMaxSize,
         );
@@ -483,7 +485,7 @@ function workerCheckOverloaded(worker: WorkerInstance): void {
     } else {
       if (!worker.overloadedSignaled) return;
       if (!worker.definition.executeStrategy.availableSignal) {
-        log.warn('Worker has capacity to handle more tasks. 🚀');
+        worker.log.warn('Worker capacity restored');
       } else {
         worker.definition.executeStrategy.availableSignal();
       }
@@ -491,7 +493,7 @@ function workerCheckOverloaded(worker: WorkerInstance): void {
       worker.overloadedSignaled = false;
     }
   } catch (err) {
-    log.error('Execute strategy overloaded signaling error', err);
+    worker.log.error('Backpressure signal error', { error: err });
   }
 }
 
@@ -501,7 +503,7 @@ async function stopWorker(
   props: Data,
 ): Promise<void> {
   const worker = runtimeContext.worker;
-  const userStop = worker.definition.stop;
+  const userStop = definition.stop;
 
   if (worker.runTask) {
     if (isFunction(userStop)) {
@@ -515,7 +517,7 @@ async function stopWorker(
   }
 }
 
-async function workerShutdown(
+async function shutdownWorker(
   runtimeContext: WorkerDefinition.RuntimeContext,
   definition: WorkerDefinition,
   props: Data,
@@ -530,7 +532,7 @@ async function workerShutdown(
   await definition.executeStrategy.doShutdown();
 
   worker.queue = new AsyncIterableQueue<any>();
-  worker.pool = makePool(definition.taskParallel ?? 2);
+  worker.pool = createWorkerPool(definition.taskParallel ?? 2);
 }
 
 /**

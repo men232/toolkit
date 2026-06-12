@@ -3,6 +3,7 @@ import {
   type Awaitable,
   type Data,
   type ExecResult,
+  type Logger,
   captureStackTrace,
   def,
   isFunction,
@@ -13,10 +14,24 @@ import type { ExtractPropTypes, ObjectPropsOptions } from './utils/props.js';
 
 import { EventEmitter } from 'node:events';
 import { CONFIG } from './config.js';
-import { log } from './logger.js';
+import { log, noopLogger } from './logger.js';
 import { extractOptionsArgs } from './utils/args.js';
 import { filePathFromStack } from './utils/filePathFromStack.js';
 import { isMainFile } from './utils/isMainFile.js';
+
+export namespace AppDefinition {
+  export type EntryContext<T extends Data = Data> = T & {
+    log: Logger;
+  };
+
+  export type SetupContext<T extends Data = Data> = T & {
+    log: Logger;
+  };
+
+  export type RuntimeContext<T extends Data = Data> = T & {
+    log: Logger;
+  };
+}
 
 /**
  * Shape of an application — name, typed props, lifecycle hooks, and optional methods.
@@ -26,9 +41,13 @@ export interface AppDefinition<
   P extends ObjectPropsOptions = {},
   S extends Record<string, any> = {},
   M extends Record<string, AnyFunction> = {},
-  RuntimeContext extends Data = S & M,
-  EntryContext extends Data = S & M,
-  SetupContext extends Data = M,
+  RuntimeContext extends
+    AppDefinition.RuntimeContext = AppDefinition.RuntimeContext<S & M>,
+  EntryContext extends AppDefinition.EntryContext = AppDefinition.EntryContext<
+    S & M
+  >,
+  SetupContext extends
+    AppDefinition.SetupContext = AppDefinition.SetupContext<M>,
 > {
   /**
    * Name of your awesome application
@@ -46,16 +65,15 @@ export interface AppDefinition<
   props?: P;
 
   /**
-   * Whatever to log application states
-   * @default true
-   */
-  logging?: boolean;
-
-  /**
    * Path to the file where this definition exports default
    * Usually you should not use this option, because it tracks automatically
    */
   filePath?: string | null;
+
+  /**
+   * Logger instance or constructor function
+   */
+  logger?: false | Logger | ((definition: AppDefinition) => Logger);
 
   /**
    * Setup function to initialize application. Will be called once
@@ -96,7 +114,7 @@ export interface AppInstance<
 > {
   definition: AppDefinition<P, S, M>;
   props: ExtractPropTypes<P> | null;
-  setupState: Data;
+  setupState: AppDefinition.SetupContext<Data>;
   /** @internal */
   mutexName: string | null;
   /** @internal */
@@ -105,6 +123,7 @@ export interface AppInstance<
   isSetupDone: boolean;
   isStopping: boolean;
   isShuttingDown: boolean;
+  logger: Logger;
 }
 
 const APP_DEF = Symbol('app-definition');
@@ -139,7 +158,6 @@ export function defineApp<
   M extends Record<string, AnyFunction>,
 >(definition: AppDefinition<P, S, M>): AppDefinition<P, S, M> {
   const result: AppDefinition<P, S, M> = {
-    logging: true,
     filePath: filePathFromStack(captureStackTrace(defineApp)),
     ...definition,
   };
@@ -181,16 +199,19 @@ export function createAppInstance<
   S extends Record<string, any>,
   M extends Record<string, AnyFunction>,
 >(definition: AppDefinition<P, S, M>): AppInstance<P, S, M> {
+  const setupState = createSetupState(definition);
+
   return {
     definition,
     props: null,
-    setupState: createSetupState(definition),
+    setupState,
     mutexName: null,
     mutexQueue: Promise.resolve(),
     isRunning: false,
     isSetupDone: false,
     isStopping: false,
     isShuttingDown: false,
+    logger: setupState.log,
   };
 }
 
@@ -216,11 +237,10 @@ export function isAppDefinition(value: unknown): value is AppDefinition {
 export async function startApp<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
-  M extends Record<string, (...args: any[]) => any>,
 >(
-  app: AppDefinition<P, S, M> | AppInstance<P, S, M>,
+  app: AppDefinition<P, S> | AppInstance<P, S>,
   props: ExtractPropTypes<P>,
-): Promise<ExecResult<{ app: AppInstance<P, S, M> }>> {
+): Promise<ExecResult<{ app: AppInstance<P, S> }>> {
   const instance = isAppDefinition(app) ? createAppInstance(app) : app;
 
   const setupResult = await setupApp(instance, props);
@@ -372,9 +392,9 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
     };
   }
 
-  const { entry, name, logging } = instance.definition;
+  const { entry } = instance.definition;
 
-  if (logging) log.start(`Starting ${name}...`);
+  instance.logger.info('Starting...');
 
   instance.isRunning = true;
 
@@ -395,9 +415,7 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
 
   mutexResolve();
 
-  if (logging) {
-    log.success(`${name} started`);
-  }
+  instance.logger.info('Started');
 
   return {
     success: true,
@@ -446,11 +464,9 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
     };
   }
 
-  const { stop, name, logging } = instance.definition;
+  const { stop } = instance.definition;
 
-  if (logging) {
-    log.start(`Stopping ${name}...`);
-  }
+  instance.logger.info('Stopping...');
 
   instance.isStopping = true;
 
@@ -477,9 +493,7 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
     };
   }
 
-  if (logging) {
-    log.success(`${name} stopped`);
-  }
+  instance.logger.info('Stopped');
 
   return {
     success: true,
@@ -509,11 +523,9 @@ export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
     };
   }
 
-  const { shutdown, name, logging } = instance.definition;
+  const { shutdown } = instance.definition;
 
-  if (logging) {
-    log.start(`Shutdown ${name}...`);
-  }
+  instance.logger.info('Shutdown...');
 
   let shutdownErr: Error | undefined;
 
@@ -571,8 +583,17 @@ export function appWaitShutdown(instance: AppInstance): Promise<void> {
   });
 }
 
-function createSetupState(definition: AppDefinition): Data {
-  const setupState: Data = {};
+function createSetupState(
+  definition: AppDefinition,
+): AppDefinition.SetupContext {
+  const setupState: AppDefinition.SetupContext = {
+    log:
+      definition.logger === false
+        ? noopLogger
+        : isFunction(definition.logger)
+          ? definition.logger(definition)
+          : definition.logger || (log.withTag(definition.name) as any),
+  };
 
   if (definition.methods) {
     for (const [key, fn] of Object.entries(definition.methods)) {

@@ -13,10 +13,6 @@ import {
 } from './app.js';
 import { createAppThread, createAppThreadInstance } from './appThread.js';
 
-vi.mock('./logger.js', () => ({
-  log: { start: vi.fn(), success: vi.fn(), error: vi.fn() },
-}));
-
 function makeMockPort(): MessagePort & { sent: unknown[] } {
   const emitter = new EventEmitter();
   const sent: unknown[] = [];
@@ -32,7 +28,7 @@ describe('createAppThreadInstance', () => {
   it('sends ready signal on init', async () => {
     const port = makeMockPort();
     await createAppThreadInstance({
-      definition: defineApp({ name: 'test' }),
+      definition: defineApp({ name: 'test', logger: false }),
       parentPort: port,
       threadId: 1,
     });
@@ -42,7 +38,7 @@ describe('createAppThreadInstance', () => {
   it('appends threadId to definition name', async () => {
     const port = makeMockPort();
     const instance = await createAppThreadInstance({
-      definition: defineApp({ name: 'my-app' }),
+      definition: defineApp({ name: 'my-app', logger: false }),
       parentPort: port,
       threadId: 5,
     });
@@ -52,7 +48,7 @@ describe('createAppThreadInstance', () => {
   it('returns the app instance', async () => {
     const port = makeMockPort();
     const instance = await createAppThreadInstance({
-      definition: defineApp({ name: 'test' }),
+      definition: defineApp({ name: 'test', logger: false }),
       parentPort: port,
       threadId: 1,
     });
@@ -62,7 +58,7 @@ describe('createAppThreadInstance', () => {
 
   it('does not mutate the original definition', async () => {
     const port = makeMockPort();
-    const def = defineApp({ name: 'original' });
+    const def = defineApp({ name: 'original', logger: false });
     await createAppThreadInstance({
       definition: def,
       parentPort: port,
@@ -75,7 +71,7 @@ describe('createAppThreadInstance', () => {
     const setup = vi.fn().mockReturnValue({ value: 42 });
     const port = makeMockPort();
     await createAppThreadInstance({
-      definition: defineApp({ name: 'test', setup }),
+      definition: defineApp({ name: 'test', setup, logger: false }),
       parentPort: port,
       threadId: 1,
     });
@@ -96,6 +92,7 @@ describe('createAppThreadInstance', () => {
     await createAppThreadInstance({
       definition: defineApp({
         name: 'test',
+        logger: false,
         setup: () => {
           throw new Error('boom');
         },
@@ -121,7 +118,7 @@ describe('createAppThreadInstance', () => {
     const entry = vi.fn();
     const port = makeMockPort();
     await createAppThreadInstance({
-      definition: defineApp({ name: 'test', entry }),
+      definition: defineApp({ name: 'test', logger: false, entry }),
       parentPort: port,
       threadId: 1,
     });
@@ -143,7 +140,7 @@ describe('createAppThreadInstance', () => {
     const stop = vi.fn();
     const port = makeMockPort();
     await createAppThreadInstance({
-      definition: defineApp({ name: 'test', stop }),
+      definition: defineApp({ name: 'test', logger: false, stop }),
       parentPort: port as any,
       threadId: 1,
     });
@@ -169,7 +166,7 @@ describe('createAppThreadInstance', () => {
     const shutdown = vi.fn();
     const port = makeMockPort();
     await createAppThreadInstance({
-      definition: defineApp({ name: 'test', shutdown }),
+      definition: defineApp({ name: 'test', logger: false, shutdown }),
       parentPort: port as any,
       threadId: 1,
     });
@@ -190,7 +187,7 @@ describe('createAppThreadInstance', () => {
   it('handles ping: sends pong', async () => {
     const port = makeMockPort();
     await createAppThreadInstance({
-      definition: defineApp({ name: 'test' }),
+      definition: defineApp({ name: 'test', logger: false }),
       parentPort: port as any,
       threadId: 1,
     });

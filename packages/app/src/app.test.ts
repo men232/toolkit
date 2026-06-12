@@ -11,14 +11,15 @@ import {
   stopApp,
 } from './app.js';
 
-vi.mock('./logger.js', () => ({
-  log: { start: vi.fn(), success: vi.fn() },
-}));
-
 describe('defineApp', () => {
   it('returns definition with provided fields', () => {
     const setup = vi.fn();
-    const def = defineApp({ name: 'test', description: 'desc', setup });
+    const def = defineApp({
+      name: 'test',
+      description: 'desc',
+      setup,
+      logger: false,
+    });
     expect(def.name).toBe('test');
     expect(def.description).toBe('desc');
     expect(def.setup).toBe(setup);
@@ -27,7 +28,9 @@ describe('defineApp', () => {
 
 describe('isAppDefinition', () => {
   it('returns true for a defineApp result', () => {
-    expect(isAppDefinition(defineApp({ name: 'test' }))).toBe(true);
+    expect(isAppDefinition(defineApp({ name: 'test', logger: false }))).toBe(
+      true,
+    );
   });
 
   it('returns false for a plain object', () => {
@@ -42,7 +45,9 @@ describe('isAppDefinition', () => {
 
 describe('createAppInstance', () => {
   it('initialises all flags to false', () => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     expect(instance.isRunning).toBe(false);
     expect(instance.isSetupDone).toBe(false);
     expect(instance.isStopping).toBe(false);
@@ -54,7 +59,7 @@ describe('createAppInstance', () => {
   it('binds methods onto setupState', () => {
     const greet = vi.fn();
     const instance = createAppInstance(
-      defineApp({ name: 'test', methods: { greet } }),
+      defineApp({ name: 'test', logger: false, methods: { greet } }),
     );
     expect(typeof instance.setupState.greet).toBe('function');
   });
@@ -62,7 +67,9 @@ describe('createAppInstance', () => {
 
 describe('setupApp', () => {
   it('marks isSetupDone and returns success', async () => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     const result = await setupApp(instance, {});
     expect(isSuccess(result)).toBe(true);
     expect(instance.isSetupDone).toBe(true);
@@ -70,7 +77,9 @@ describe('setupApp', () => {
 
   it('calls setup with props and merges returned state', async () => {
     const setup = vi.fn().mockResolvedValue({ value: 42 });
-    const instance = createAppInstance(defineApp({ name: 'test', setup }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, setup }),
+    );
     await setupApp(instance, { foo: 'bar' });
     expect(setup).toHaveBeenCalledWith({ foo: 'bar' });
     expect(instance.setupState.value).toBe(42);
@@ -82,7 +91,9 @@ describe('setupApp', () => {
     ['isStopping', { isStopping: true }],
     ['isShuttingDown', { isShuttingDown: true }],
   ])('skips when %s is true', async (_, flags) => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     Object.assign(instance, flags);
     const result = await setupApp(instance, {});
     expect(isSkip(result)).toBe(true);
@@ -91,7 +102,9 @@ describe('setupApp', () => {
 
   it('skips with error when setup throws', async () => {
     const setup = vi.fn().mockRejectedValue(new Error('boom'));
-    const instance = createAppInstance(defineApp({ name: 'test', setup }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, setup }),
+    );
     const result = await setupApp(instance, {});
     expect(isSkip(result)).toBe(true);
     expect(result.error).toBeInstanceOf(Error);
@@ -102,7 +115,9 @@ describe('setupApp', () => {
 describe('runApp', () => {
   it('calls entry and returns success', async () => {
     const entry = vi.fn().mockResolvedValue(undefined);
-    const instance = createAppInstance(defineApp({ name: 'test', entry }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, entry }),
+    );
     await setupApp(instance, {});
     const result = await runApp(instance);
     expect(isSuccess(result)).toBe(true);
@@ -110,7 +125,9 @@ describe('runApp', () => {
   });
 
   it('leaves isRunning true after a successful entry', async () => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     await setupApp(instance, {});
     await runApp(instance);
     expect(instance.isRunning).toBe(true);
@@ -122,7 +139,9 @@ describe('runApp', () => {
     ['isStopping', { isSetupDone: true, isStopping: true }],
     ['isShuttingDown', { isSetupDone: true, isShuttingDown: true }],
   ])('skips when %s', async (_, flags) => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     Object.assign(instance, flags);
     const result = await runApp(instance);
     expect(isSkip(result)).toBe(true);
@@ -131,7 +150,9 @@ describe('runApp', () => {
 
   it('skips with error and clears isRunning when entry throws', async () => {
     const entry = vi.fn().mockRejectedValue(new Error('entry fail'));
-    const instance = createAppInstance(defineApp({ name: 'test', entry }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, entry }),
+    );
     await setupApp(instance, {});
     const result = await runApp(instance);
     expect(isSkip(result)).toBe(true);
@@ -143,7 +164,9 @@ describe('runApp', () => {
 describe('stopApp', () => {
   it('calls stop, clears isRunning and isStopping', async () => {
     const stop = vi.fn().mockResolvedValue(undefined);
-    const instance = createAppInstance(defineApp({ name: 'test', stop }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, stop }),
+    );
     await startApp(instance, {});
     const result = await stopApp(instance);
     expect(isSuccess(result)).toBe(true);
@@ -157,7 +180,9 @@ describe('stopApp', () => {
     ['isStopping', { isRunning: true, isStopping: true }],
     ['isShuttingDown', { isRunning: true, isShuttingDown: true }],
   ])('skips when %s', async (_, flags) => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     await startApp(instance, {});
     Object.assign(instance, flags);
     const result = await stopApp(instance);
@@ -167,7 +192,9 @@ describe('stopApp', () => {
 
   it('skips with error when stop throws but still clears state', async () => {
     const stop = vi.fn().mockRejectedValue(new Error('stop fail'));
-    const instance = createAppInstance(defineApp({ name: 'test', stop }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, stop }),
+    );
     await startApp(instance, {});
     const result = await stopApp(instance);
     expect(result.skip).toBe(true);
@@ -180,7 +207,9 @@ describe('stopApp', () => {
 describe('shutdownApp', () => {
   it('calls shutdown and resets all instance state', async () => {
     const shutdown = vi.fn().mockResolvedValue(undefined);
-    const instance = createAppInstance(defineApp({ name: 'test', shutdown }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, shutdown }),
+    );
     await startApp(instance, { foo: 1 });
     const result = await shutdownApp(instance);
     expect(isSuccess(result)).toBe(true);
@@ -193,7 +222,9 @@ describe('shutdownApp', () => {
   });
 
   it('skips when isShuttingDown is true', async () => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
     instance.isShuttingDown = true;
     const result = await shutdownApp(instance);
     expect(isSkip(result)).toBe(true);
@@ -202,7 +233,9 @@ describe('shutdownApp', () => {
 
   it('skips with error when shutdown throws but still resets state', async () => {
     const shutdown = vi.fn().mockRejectedValue(new Error('shutdown fail'));
-    const instance = createAppInstance(defineApp({ name: 'test', shutdown }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false, shutdown }),
+    );
     await setupApp(instance, {});
     const result = await shutdownApp(instance);
     expect(isSkip(result)).toBe(true);
@@ -225,7 +258,7 @@ describe('mutex', () => {
     });
 
     const instance = createAppInstance(
-      defineApp({ name: 'test', setup, entry }),
+      defineApp({ name: 'test', logger: false, setup, entry }),
     );
 
     const [setupResult, runResult] = await Promise.all([
@@ -239,7 +272,9 @@ describe('mutex', () => {
   });
 
   it('second concurrent setupApp skips after the first completes', async () => {
-    const instance = createAppInstance(defineApp({ name: 'test' }));
+    const instance = createAppInstance(
+      defineApp({ name: 'test', logger: false }),
+    );
 
     const [r1, r2] = await Promise.all([
       setupApp(instance, {}),
@@ -259,6 +294,7 @@ describe('mutex', () => {
     const instance = createAppInstance(
       defineApp({
         name: 'test',
+        logger: false,
         setup() {
           capturedName = instance.mutexName;
           return {};
@@ -275,7 +311,7 @@ describe('mutex', () => {
 
 describe('startApp', () => {
   it('returns a running app instance on success', async () => {
-    const def = defineApp({ name: 'test' });
+    const def = defineApp({ name: 'test', logger: false });
     const result = await startApp(def, {});
     expect(isSuccess(result)).toBe(true);
     expect(result.app).toBeDefined();
@@ -284,6 +320,7 @@ describe('startApp', () => {
   it('skips when setup throws', async () => {
     const def = defineApp({
       name: 'test',
+      logger: false,
       setup: vi.fn().mockRejectedValue(new Error()),
     });
     const result = await startApp(def, {});
@@ -294,6 +331,7 @@ describe('startApp', () => {
     const shutdown = vi.fn().mockResolvedValue(undefined);
     const def = defineApp({
       name: 'test',
+      logger: false,
       entry: vi.fn().mockRejectedValue(new Error('entry fail')),
       shutdown,
     });

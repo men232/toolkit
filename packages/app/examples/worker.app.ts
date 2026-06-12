@@ -6,6 +6,6 @@ export default defineWorker({
     intervalSeconds: 1,
   }),
   entry() {
-    console.info('tick', this.timerSequence);
+    this.log.info('tick=%d', this.timerSequence);
   },
 });
