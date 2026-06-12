@@ -70,6 +70,31 @@ type Plan = {
   child?: Plan;
 };
 
+/**
+ * Define compact packed structure
+ * @group Binary
+ *
+ * @example
+ * ```typescript
+ * const snowflake = bitPack({
+ *   totalBits: 64,
+ *   fields: [
+ *     { name: 'timestamp', bits: 42, take: 'low' },
+ *     { name: 'workerId', bits: 5, take: 'low' },
+ *     { name: 'processId', bits: 5, take: 'low' },
+ *     { name: 'increment', bits: 12, take: 'low' },
+ *   ],
+ *   optimize: true,
+ * });
+ *
+ * const userId = snowflake.bigint({
+ *   timestamp: 1781295314562,
+ *   workerId: 1,
+ *   processId: 0,
+ *   increment: 0
+ * }); // 7471294063048785920n
+ * ```
+ */
 export function bitPack<
   const TFields extends BitPack.Field[],
   TFieldNames extends string = BitPack.ExtractFieldNames<TFields>,

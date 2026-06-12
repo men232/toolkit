@@ -56,6 +56,27 @@ type FieldInfo = BitUnpack.Field & {
   endBit: number;
 };
 
+/**
+ * Define compact unpacked structure
+ * @group Binary
+ *
+ * @example
+ * ```typescript
+ * const snowflake = bitUnpack({
+ *   totalBits: 64,
+ *   fields: [
+ *     { name: 'timestamp', bits: 42, take: 'low' },
+ *     { name: 'workerId', bits: 5, take: 'low' },
+ *     { name: 'processId', bits: 5, take: 'low' },
+ *     { name: 'increment', bits: 12, take: 'low' },
+ *   ],
+ * });
+ *
+ * console.log(
+ *   snowflake.bigint(7471294063048785920n)
+ * ); // { timestamp: 1781295314562, workerId: 1, processId: 0, increment: 0 }
+ * ```
+ */
 export function bitUnpack<
   const TFields extends BitUnpack.Field[],
   TFieldNames extends string = BitUnpack.ExtractFieldNames<TFields>,
