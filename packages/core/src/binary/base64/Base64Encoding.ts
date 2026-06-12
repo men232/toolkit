@@ -1,3 +1,4 @@
+import { assert } from '@/assert';
 import type { BaseX } from '../basex';
 
 export class Base64Encoding implements BaseX {
@@ -17,9 +18,15 @@ export class Base64Encoding implements BaseX {
     }
     this.alphabet = alphabet;
     this.padding = options?.padding ?? '=';
-    if (this.alphabet.includes(this.padding) || this.padding.length !== 1) {
-      throw new Error('Invalid padding');
+
+    if (this.padding) {
+      assert.ok(
+        !this.alphabet.includes(this.padding),
+        'Padding cannot be a part of alphabet',
+      );
+      assert.ok(this.padding.length === 1, 'Padding length must be a 1');
     }
+
     for (let i = 0; i < alphabet.length; i++) {
       this.decodeMap.set(alphabet[i]!, i);
     }
@@ -43,27 +50,29 @@ export class Base64Encoding implements BaseX {
       includePadding?: boolean;
     },
   ): string {
+    const includePadding = options?.includePadding ?? true;
     let result = '';
     let buffer = 0;
     let shift = 0;
-    for (let i = 0; i < data.length; i++) {
-      buffer = (buffer << 8) | data[i]!;
+
+    for (const byte of data) {
+      buffer = (buffer << 8) | byte;
       shift += 8;
       while (shift >= 6) {
-        shift += -6;
+        shift -= 6;
         result += this.alphabet[(buffer >> shift) & 0x3f];
       }
     }
+
     if (shift > 0) {
       result += this.alphabet[(buffer << (6 - shift)) & 0x3f];
     }
-    const includePadding = options?.includePadding ?? true;
-    if (includePadding) {
+
+    if (includePadding && this.padding) {
       const padCount = (4 - (result.length % 4)) % 4;
-      for (let i = 0; i < padCount; i++) {
-        result += '=';
-      }
+      result += '='.repeat(padCount);
     }
+
     return result;
   }
 
@@ -87,41 +96,29 @@ export class Base64Encoding implements BaseX {
     },
   ): Uint8Array {
     const strict = options?.strict ?? true;
-    const chunkCount = Math.ceil(data.length / 4);
     const result: number[] = [];
-    for (let i = 0; i < chunkCount; i++) {
-      let padCount = 0;
-      let buffer = 0;
-      for (let j = 0; j < 4; j++) {
-        const encoded = data[i * 4 + j];
-        if (encoded === '=') {
-          if (i + 1 !== chunkCount) {
-            throw new Error(`Invalid character: ${encoded}`);
-          }
-          padCount += 1;
-          continue;
-        }
-        if (encoded === undefined) {
-          if (strict) {
-            throw new Error('Invalid data');
-          }
-          padCount += 1;
-          continue;
-        }
-        const value = this.decodeMap.get(encoded) ?? null;
-        if (value === null) {
-          throw new Error(`Invalid character: ${encoded}`);
-        }
-        buffer += value << (6 * (3 - j));
+    let buffer = 0;
+    let bitsCollected = 0;
+
+    if (this.padding && strict) {
+      assert.ok(data.length % 4 === 0, 'Invalid Base64 data');
+    }
+
+    for (const char of data) {
+      if (char === this.padding) break;
+      const value = this.decodeMap.get(char);
+      if (value === undefined) {
+        throw new Error(`Invalid Base64 character: ${char}`);
       }
-      result.push((buffer >> 16) & 0xff);
-      if (padCount < 2) {
-        result.push((buffer >> 8) & 0xff);
-      }
-      if (padCount < 1) {
-        result.push(buffer & 0xff);
+      buffer = (buffer << 6) | value;
+      bitsCollected += 6;
+
+      if (bitsCollected >= 8) {
+        bitsCollected -= 8;
+        result.push((buffer >> bitsCollected) & 0xff);
       }
     }
+
     return Uint8Array.from(result);
   }
 }

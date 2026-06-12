@@ -1,4 +1,5 @@
 import { assert } from '@/assert';
+import { isFunction } from '@/is';
 import { base64, base64url } from '../base64';
 
 export type BytesToBase64Options = {
@@ -11,6 +12,12 @@ export type BytesToBase64Options = {
    * Whether or not to include padding (`=`) in the encoded result. Defaults to `true` for Base64, `false` for Base64URL.
    */
   padding?: boolean;
+
+  /**
+   * Prefer to use native `Uint8Array.toBase64` and `Uint8Array.toBase64` when possible
+   * @default true
+   */
+  native?: boolean;
 };
 
 /**
@@ -53,11 +60,25 @@ export type BytesToBase64Options = {
  */
 export function bytesToBase64(
   data: Uint8Array,
-  { encoding = 'base64', padding }: BytesToBase64Options = {},
+  { encoding = 'base64', padding, native = true }: BytesToBase64Options = {},
 ): string {
   if (encoding === 'base64') {
+    if (native && isFunction(data.toBase64)) {
+      return data.toBase64({
+        alphabet: 'base64',
+        omitPadding: !(padding ?? true),
+      });
+    }
+
     return base64.encode(data, { includePadding: padding ?? true });
   } else if (encoding === 'base64url') {
+    if (native && isFunction(data.toBase64)) {
+      return data.toBase64({
+        alphabet: 'base64url',
+        omitPadding: !(padding ?? false),
+      });
+    }
+
     return base64url.encode(data, { includePadding: padding ?? false });
   }
 

@@ -1,4 +1,5 @@
 import { assert } from '@/assert';
+import { isFunction } from '@/is';
 import { base64, base64url } from '../base64';
 
 export type Base64ToBytesOptions = {
@@ -11,6 +12,12 @@ export type Base64ToBytesOptions = {
    * Whether to enforce strict Base64 decoding.
    */
   strict?: boolean;
+
+  /**
+   * Prefer to use native `Uint8Array.fromBase64` and `Uint8Array.fromBase64` when possible
+   * @default true
+   */
+  native?: boolean;
 };
 
 /**
@@ -44,11 +51,25 @@ export type Base64ToBytesOptions = {
  */
 export function base64ToBytes(
   data: string,
-  { encoding = 'base64', strict }: Base64ToBytesOptions = {},
+  { encoding = 'base64', strict, native = true }: Base64ToBytesOptions = {},
 ): Uint8Array {
   if (encoding === 'base64') {
+    if (native && isFunction(Uint8Array.fromBase64)) {
+      return Uint8Array.fromBase64(data, {
+        alphabet: 'base64',
+        lastChunkHandling: (strict ?? true) ? 'strict' : 'loose',
+      });
+    }
+
     return base64.decode(data, { strict: strict ?? true });
   } else if (encoding === 'base64url') {
+    if (native && isFunction(Uint8Array.fromBase64)) {
+      return Uint8Array.fromBase64(data, {
+        alphabet: 'base64url',
+        lastChunkHandling: (strict ?? false) ? 'strict' : 'loose',
+      });
+    }
+
     return base64url.decode(data, { strict: strict ?? false });
   }
 
