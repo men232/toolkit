@@ -63,8 +63,8 @@ export function bytesToBase64(
   { encoding = 'base64', padding, native = true }: BytesToBase64Options = {},
 ): string {
   if (encoding === 'base64') {
-    if (native && isFunction(data.toBase64)) {
-      return data.toBase64({
+    if (native && isFunction((data as any).toBase64)) {
+      return (data as any).toBase64({
         alphabet: 'base64',
         omitPadding: !(padding ?? true),
       });
@@ -72,8 +72,8 @@ export function bytesToBase64(
 
     return base64.encode(data, { includePadding: padding ?? true });
   } else if (encoding === 'base64url') {
-    if (native && isFunction(data.toBase64)) {
-      return data.toBase64({
+    if (native && isFunction((data as any).toBase64)) {
+      return (data as any).toBase64({
         alphabet: 'base64url',
         omitPadding: !(padding ?? false),
       });
