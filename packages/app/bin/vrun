@@ -1,8 +1,8 @@
 #!/bin/bash
 
-ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_FILE="$ROOT_DIR/../dist/vrun.mjs"
-TSX_BIN="$ROOT_DIR/../node_modules/.bin/tsx"
+ROOT_DIR="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PKG_DIR="$(cd -P -- "$ROOT_DIR/.." && pwd)"
+SCRIPT_FILE="$PKG_DIR/dist/vrun.mjs"
 DEV_MODE=0
 WATCH_MODE=0
 ARGS=()
@@ -18,12 +18,36 @@ for arg in "$@"; do
   fi
 done
 
+resolve_tsx_cli() {
+  # pnpm peer layout: peer is a sibling of the package's parent scope dir.
+  local candidate="$PKG_DIR/../../tsx/dist/cli.mjs"
+  if [ -f "$candidate" ]; then
+    printf '%s\n' "$candidate"
+    return
+  fi
+  # Hoisted layout: walk up looking for node_modules/tsx.
+  local dir="$PKG_DIR"
+  while [ -n "$dir" ] && [ "$dir" != "/" ]; do
+    if [ -f "$dir/node_modules/tsx/dist/cli.mjs" ]; then
+      printf '%s\n' "$dir/node_modules/tsx/dist/cli.mjs"
+      return
+    fi
+    dir="${dir%/*}"
+  done
+}
+
 if [ $DEV_MODE -eq 1 ]; then
   if [ $WATCH_MODE -eq 1 ]; then
-    exec env VRUN=true VRUN_TS_MODE=tsx VRUN_WATCH=true "$TSX_BIN" watch $SCRIPT_FILE "${ARGS[@]}"
+    echo "$PWD"
+    TSX_CLI="$(resolve_tsx_cli)"
+    if [ -z "$TSX_CLI" ]; then
+      echo "vrun: cannot resolve tsx peer dependency. Install tsx ^4.22.4." >&2
+      exit 1
+    fi
+    exec env VRUN=true VRUN_TS_MODE=tsx-register VRUN_WATCH=true node --watch "$SCRIPT_FILE" "${ARGS[@]}"
   else
-    exec env VRUN=true VRUN_TS_MODE=tsx-register node $SCRIPT_FILE "$@"
+    exec env VRUN=true VRUN_TS_MODE=tsx-register node "$SCRIPT_FILE" "$@"
   fi
 else
-  exec env VRUN=true node $SCRIPT_FILE "$@"
+  exec env VRUN=true node "$SCRIPT_FILE" "$@"
 fi
