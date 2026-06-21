@@ -24,6 +24,7 @@ import {
   projectLoadEnv,
   projectPrintInfo,
 } from '../project.js';
+import { launchAppsTui } from '../tui/launchAppsTui.tsx';
 import { isHelpArgument } from '../utils/args.js';
 import { db } from '../utils/db.js';
 import { propsToOptions } from '../utils/props.js';
@@ -350,7 +351,9 @@ function loadAppDefinition(
 
 function buildStartCommand(definitions: AppDefinition[]): Command {
   const rootDefinition =
-    definitions.length > 1 ? createAppHub(definitions) : definitions[0];
+    definitions.length > 1
+      ? createAppHub(definitions.map(v => createAppThread(v)))
+      : createAppThread(definitions[0]);
 
   const program = new Command()
     .name(rootDefinition.name)
@@ -363,25 +366,26 @@ function buildStartCommand(definitions: AppDefinition[]): Command {
   }
 
   program
-    .addOption(
-      new Option('--threads <number>', 'Amount of threads')
-        .default(0)
-        .argParser(v => parseInt(v)),
-    )
     .addOption(new Option('--watch', 'Watch file changes'))
     .addOption(new Option('--dev', 'Allow to import ts files'))
+    .addOption(new Option('--tui', 'Launch interactive terminal UI'))
     .helpCommand(false)
     .command('start', { isDefault: true, hidden: true })
     .allowUnknownOption(true)
     .allowExcessArguments(true)
-    .action(() => {
+    .action((...args) => {
       const props = program.optsWithGlobals();
 
-      if (definitions.length === 1 && props.threads > 1) {
-        return launchApp(createAppThread(rootDefinition), props);
+      if (props.tui) {
+        return launchAppsTui(definitions, props);
       }
 
-      return launchApp(rootDefinition, props);
+      return launchApp(
+        definitions.length > 1 || props.threads > 1
+          ? rootDefinition
+          : definitions[0],
+        props,
+      );
     });
 
   return program;

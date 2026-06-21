@@ -5,8 +5,6 @@ export const CONFIG = Object.freeze({
 
   WATCH_MODE: env.bool('VRUN_WATCH', false),
 
-  WORKER_THREAD: env.bool('VRUN_WORKER_THREAD', false),
-
   /**
    * Root path of application
    */

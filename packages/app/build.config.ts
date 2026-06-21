@@ -6,5 +6,8 @@ export default defineBuildConfig({
   sourcemap: true,
   rollup: {
     emitCJS: true,
+    esbuild: {
+      jsx: 'automatic',
+    },
   },
 });

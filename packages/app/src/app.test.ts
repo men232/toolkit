@@ -1,6 +1,7 @@
 import { isSkip, isSuccess } from '@andrew_l/toolkit';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  APP_INSTANCE_STATE,
   createAppInstance,
   defineApp,
   isAppDefinition,
@@ -48,10 +49,7 @@ describe('createAppInstance', () => {
     const instance = createAppInstance(
       defineApp({ name: 'test', logger: false }),
     );
-    expect(instance.isRunning).toBe(false);
-    expect(instance.isSetupDone).toBe(false);
-    expect(instance.isStopping).toBe(false);
-    expect(instance.isShuttingDown).toBe(false);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.INIT);
     expect(instance.props).toBeNull();
     expect(instance.mutexName).toBeNull();
   });
@@ -72,7 +70,7 @@ describe('setupApp', () => {
     );
     const result = await setupApp(instance, {});
     expect(isSuccess(result)).toBe(true);
-    expect(instance.isSetupDone).toBe(true);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.SETUP);
   });
 
   it('calls setup with props and merges returned state', async () => {
@@ -85,21 +83,6 @@ describe('setupApp', () => {
     expect(instance.setupState.value).toBe(42);
   });
 
-  it.each([
-    ['isSetupDone', { isSetupDone: true }],
-    ['isRunning', { isRunning: true }],
-    ['isStopping', { isStopping: true }],
-    ['isShuttingDown', { isShuttingDown: true }],
-  ])('skips when %s is true', async (_, flags) => {
-    const instance = createAppInstance(
-      defineApp({ name: 'test', logger: false }),
-    );
-    Object.assign(instance, flags);
-    const result = await setupApp(instance, {});
-    expect(isSkip(result)).toBe(true);
-    expect(result.code).toBe('setup_app');
-  });
-
   it('skips with error when setup throws', async () => {
     const setup = vi.fn().mockRejectedValue(new Error('boom'));
     const instance = createAppInstance(
@@ -108,7 +91,7 @@ describe('setupApp', () => {
     const result = await setupApp(instance, {});
     expect(isSkip(result)).toBe(true);
     expect(result.error).toBeInstanceOf(Error);
-    expect(instance.isSetupDone).toBe(false);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
 });
 
@@ -130,7 +113,7 @@ describe('runApp', () => {
     );
     await setupApp(instance, {});
     await runApp(instance);
-    expect(instance.isRunning).toBe(true);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.RUN);
   });
 
   it.each([
@@ -148,7 +131,7 @@ describe('runApp', () => {
     expect(result.code).toBe('execute_app');
   });
 
-  it('skips with error and clears isRunning when entry throws', async () => {
+  it('skips with error when entry throws', async () => {
     const entry = vi.fn().mockRejectedValue(new Error('entry fail'));
     const instance = createAppInstance(
       defineApp({ name: 'test', logger: false, entry }),
@@ -157,12 +140,12 @@ describe('runApp', () => {
     const result = await runApp(instance);
     expect(isSkip(result)).toBe(true);
     expect(result.error).toBeInstanceOf(Error);
-    expect(instance.isRunning).toBe(false);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
 });
 
 describe('stopApp', () => {
-  it('calls stop, clears isRunning and isStopping', async () => {
+  it('calls stop, clears state', async () => {
     const stop = vi.fn().mockResolvedValue(undefined);
     const instance = createAppInstance(
       defineApp({ name: 'test', logger: false, stop }),
@@ -171,23 +154,7 @@ describe('stopApp', () => {
     const result = await stopApp(instance);
     expect(isSuccess(result)).toBe(true);
     expect(stop).toHaveBeenCalled();
-    expect(instance.isRunning).toBe(false);
-    expect(instance.isStopping).toBe(false);
-  });
-
-  it.each([
-    ['not running', { isRunning: false }],
-    ['isStopping', { isRunning: true, isStopping: true }],
-    ['isShuttingDown', { isRunning: true, isShuttingDown: true }],
-  ])('skips when %s', async (_, flags) => {
-    const instance = createAppInstance(
-      defineApp({ name: 'test', logger: false }),
-    );
-    await startApp(instance, {});
-    Object.assign(instance, flags);
-    const result = await stopApp(instance);
-    expect(isSkip(result)).toBe(true);
-    expect(result.code).toBe('stop_app');
+    expect(instance.state).toBe(APP_INSTANCE_STATE.STOP);
   });
 
   it('skips with error when stop throws but still clears state', async () => {
@@ -199,8 +166,7 @@ describe('stopApp', () => {
     const result = await stopApp(instance);
     expect(result.skip).toBe(true);
     expect(result.error).toBeInstanceOf(Error);
-    expect(instance.isRunning).toBe(false);
-    expect(instance.isStopping).toBe(false);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
 });
 
@@ -214,21 +180,8 @@ describe('shutdownApp', () => {
     const result = await shutdownApp(instance);
     expect(isSuccess(result)).toBe(true);
     expect(shutdown).toHaveBeenCalled();
-    expect(instance.isRunning).toBe(false);
-    expect(instance.isSetupDone).toBe(false);
-    expect(instance.isStopping).toBe(false);
-    expect(instance.isShuttingDown).toBe(false);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.SHUTDOWN);
     expect(instance.props).toBeNull();
-  });
-
-  it('skips when isShuttingDown is true', async () => {
-    const instance = createAppInstance(
-      defineApp({ name: 'test', logger: false }),
-    );
-    instance.isShuttingDown = true;
-    const result = await shutdownApp(instance);
-    expect(isSkip(result)).toBe(true);
-    expect(result.code).toBe('shutdown_app');
   });
 
   it('skips with error when shutdown throws but still resets state', async () => {
@@ -240,7 +193,7 @@ describe('shutdownApp', () => {
     const result = await shutdownApp(instance);
     expect(isSkip(result)).toBe(true);
     expect(result.error).toBeInstanceOf(Error);
-    expect(instance.isSetupDone).toBe(false);
+    expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
 });
 

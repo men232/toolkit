@@ -36,6 +36,7 @@
   ],
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/react": "^19.0.0",
     "typescript": "catalog:",
     "unbuild": "catalog:",
     "vitest": "catalog:"
@@ -45,7 +46,9 @@
     "@andrew_l/toolkit": "workspace:*",
     "commander": "^13.0.0",
     "consola": "^3.4.2",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "ink": "^7.0.6",
+    "react": "^19.2.7"
   },
   "peerDependencies": {
     "tsx": "^4.22.4"

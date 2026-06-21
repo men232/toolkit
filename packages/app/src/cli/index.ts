@@ -2,7 +2,7 @@ import { runApp } from './runApp.js';
 
 /**
  * Programmatic access to the `vrun` CLI internals.
- * @group Internals
+ * @group Utils
  */
 export const cli = Object.freeze({
   runApp,

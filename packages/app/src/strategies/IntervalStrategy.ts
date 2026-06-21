@@ -11,7 +11,6 @@ export namespace IntervalStrategy {
 
   /**
    * Context emitted by IntervalStrategy on each tick.
-   * @group Worker
    */
   export interface Context extends WorkerStrategy.Context {
     timerSequence: number;
@@ -21,7 +20,7 @@ export namespace IntervalStrategy {
 /**
  * Triggers a worker task on a fixed interval.
  * Skips the tick with a warning if the worker is not idle.
- * @group Worker
+ * @group Worker Strategies
  */
 export class IntervalStrategy
   implements WorkerStrategy<IntervalStrategy.Context>

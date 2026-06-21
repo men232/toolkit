@@ -4,20 +4,21 @@ import {
   type Data,
   type ExecResult,
   type Logger,
+  SimpleEventEmitter,
   captureStackTrace,
   def,
+  defer,
   isFunction,
   isSkip,
   toError,
 } from '@andrew_l/toolkit';
 import type { ExtractPropTypes, ObjectPropsOptions } from './utils/props.js';
 
-import { EventEmitter } from 'node:events';
 import { CONFIG } from './config.js';
-import { log, noopLogger } from './logger.js';
 import { extractOptionsArgs } from './utils/args.js';
 import { filePathFromStack } from './utils/filePathFromStack.js';
 import { isMainFile } from './utils/isMainFile.js';
+import { createAppLogger } from './utils/log.ts';
 
 export namespace AppDefinition {
   export type EntryContext<T extends Data = Data> = T & {
@@ -35,7 +36,7 @@ export namespace AppDefinition {
 
 /**
  * Shape of an application — name, typed props, lifecycle hooks, and optional methods.
- * @group Main
+ * @group Types
  */
 export interface AppDefinition<
   P extends ObjectPropsOptions = {},
@@ -101,11 +102,34 @@ export interface AppDefinition<
   shutdown?(this: RuntimeContext, props: ExtractPropTypes<P>): Awaitable<void>;
 }
 
-const EVENT_LISTENER_MAP = new WeakMap<AppInstance, EventEmitter>();
+export const APP_INSTANCE_STATE = {
+  INIT: 'init',
+  IN_SETUP: 'in-setup',
+  SETUP: 'setup',
+  IN_STOP: 'in-stop',
+  IN_RUN: 'in-run',
+  RUN: 'run',
+  STOP: 'stop',
+  IN_SHUTDOWN: 'in-shutdown',
+  SHUTDOWN: 'shutdown',
+  ERROR: 'error',
+} as const;
+
+export namespace AppInstance {
+  export type EventMap = {
+    state: [newState: State, oldState: State];
+    error: [err: Error];
+  } & {
+    [K in State as `state:${K}`]: [];
+  };
+
+  export type State =
+    (typeof APP_INSTANCE_STATE)[keyof typeof APP_INSTANCE_STATE];
+}
 
 /**
  * Runtime state of a created app instance.
- * @group Main
+ * @group Types
  */
 export interface AppInstance<
   P extends ObjectPropsOptions = {},
@@ -115,14 +139,12 @@ export interface AppInstance<
   definition: AppDefinition<P, S, M>;
   props: ExtractPropTypes<P> | null;
   setupState: AppDefinition.SetupContext<Data>;
+  eventBus: SimpleEventEmitter<AppInstance.EventMap>;
   /** @internal */
   mutexName: string | null;
   /** @internal */
   mutexQueue: Promise<void>;
-  isRunning: boolean;
-  isSetupDone: boolean;
-  isStopping: boolean;
-  isShuttingDown: boolean;
+  readonly state: AppInstance.State;
   logger: Logger;
 }
 
@@ -135,6 +157,8 @@ const APP_DEF = Symbol('app-definition');
  * @group Main
  * @example
  * ```ts
+ * import { defineApp } from '@andrew_l/app';
+ *
  * export default defineApp({
  *   name: 'server',
  *   props: {
@@ -186,7 +210,7 @@ export function defineApp<
 
 /**
  * Create a new runtime instance from an app definition.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * const instance = createAppInstance(myApp);
@@ -205,12 +229,10 @@ export function createAppInstance<
     definition,
     props: null,
     setupState,
+    eventBus: new SimpleEventEmitter(),
     mutexName: null,
     mutexQueue: Promise.resolve(),
-    isRunning: false,
-    isSetupDone: false,
-    isStopping: false,
-    isShuttingDown: false,
+    state: APP_INSTANCE_STATE.INIT,
     logger: setupState.log,
   };
 }
@@ -225,7 +247,7 @@ export function isAppDefinition(value: unknown): value is AppDefinition {
 
 /**
  * Run setup and entry in one call. Shuts down automatically if entry fails.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * const result = await startApp(myApp, { port: 3000 });
@@ -265,7 +287,7 @@ export async function startApp<
 
 /**
  * Run the setup phase of an app instance.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * const result = await setupApp(instance, { port: 3000 });
@@ -280,50 +302,25 @@ export async function setupApp(
 ): Promise<ExecResult> {
   const mutexResolve = await mutexAcquire(instance, 'setup');
 
-  if (instance.isSetupDone) {
+  if (instance.state !== APP_INSTANCE_STATE.INIT) {
     mutexResolve();
     return {
       skip: true,
       code: 'setup_app',
-      reason: 'application already setup done',
+      reason: `application in ${instance.state} state`,
     };
   }
 
-  if (instance.isRunning) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'setup_app',
-      reason: 'application is running',
-    };
-  }
-
-  if (instance.isStopping) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'setup_app',
-      reason: 'application is stopping',
-    };
-  }
-
-  if (instance.isShuttingDown) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'setup_app',
-      reason: 'application is shutting down',
-    };
-  }
+  setState(instance, APP_INSTANCE_STATE.IN_SETUP);
 
   const { setup } = instance.definition;
 
   if (isFunction(setup)) {
     try {
       const setupResult = await setup.call(instance.setupState, props);
-
       Object.assign(instance.setupState, setupResult);
     } catch (error) {
+      setState(instance, APP_INSTANCE_STATE.ERROR);
       mutexResolve();
       return {
         code: 'setup_app',
@@ -335,7 +332,7 @@ export async function setupApp(
   }
 
   instance.props = props;
-  instance.isSetupDone = true;
+  setState(instance, APP_INSTANCE_STATE.SETUP);
   mutexResolve();
 
   return {
@@ -346,7 +343,7 @@ export async function setupApp(
 
 /**
  * Run the entry phase of an app instance.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * await setupApp(instance, props);
@@ -356,53 +353,25 @@ export async function setupApp(
 export async function runApp(instance: AppInstance): Promise<ExecResult> {
   const mutexResolve = await mutexAcquire(instance, 'run');
 
-  if (!instance.isSetupDone) {
+  if (instance.state !== APP_INSTANCE_STATE.SETUP) {
     mutexResolve();
     return {
       skip: true,
       code: 'execute_app',
-      reason: 'application instance is not setup',
-    };
-  }
-
-  if (instance.isRunning) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'execute_app',
-      reason: 'application is running',
-    };
-  }
-
-  if (instance.isStopping) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'execute_app',
-      reason: 'application is stopping',
-    };
-  }
-
-  if (instance.isShuttingDown) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'execute_app',
-      reason: 'application is shutting down',
+      reason: `application in ${instance.state} state`,
     };
   }
 
   const { entry } = instance.definition;
 
+  setState(instance, APP_INSTANCE_STATE.IN_RUN);
   instance.logger.info('Starting...');
-
-  instance.isRunning = true;
 
   if (isFunction(entry)) {
     try {
       await entry.call(instance.setupState, instance.props!);
     } catch (error) {
-      instance.isRunning = false;
+      setState(instance, APP_INSTANCE_STATE.ERROR);
       mutexResolve();
       return {
         skip: true,
@@ -413,8 +382,8 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
     }
   }
 
+  setState(instance, APP_INSTANCE_STATE.RUN);
   mutexResolve();
-
   instance.logger.info('Started');
 
   return {
@@ -425,7 +394,7 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
 
 /**
  * Stop a running app instance and call its `stop` hook.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * process.on('SIGTERM', async () => {
@@ -437,38 +406,19 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
 export async function stopApp(instance: AppInstance): Promise<ExecResult> {
   const mutexResolve = await mutexAcquire(instance, 'stop');
 
-  if (!instance.isRunning) {
+  if (instance.state !== APP_INSTANCE_STATE.RUN) {
     mutexResolve();
     return {
       skip: true,
       code: 'stop_app',
-      reason: 'application is not running',
-    };
-  }
-
-  if (instance.isStopping) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'stop_app',
-      reason: 'application is already stopping',
-    };
-  }
-
-  if (instance.isShuttingDown) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'stop_app',
-      reason: 'application is shutting down',
+      reason: `application in ${instance.state} state`,
     };
   }
 
   const { stop } = instance.definition;
 
+  setState(instance, APP_INSTANCE_STATE.IN_STOP);
   instance.logger.info('Stopping...');
-
-  instance.isStopping = true;
 
   let stopErr: Error | undefined;
 
@@ -476,12 +426,11 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
     try {
       await stop.call(instance.setupState, instance.props!);
     } catch (err) {
+      setState(instance, APP_INSTANCE_STATE.ERROR);
       stopErr = toError(err);
     }
   }
 
-  instance.isRunning = false;
-  instance.isStopping = false;
   mutexResolve();
 
   if (stopErr) {
@@ -493,6 +442,7 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
     };
   }
 
+  setState(instance, APP_INSTANCE_STATE.STOP);
   instance.logger.info('Stopped');
 
   return {
@@ -503,7 +453,7 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
 
 /**
  * Shut down an app instance, call its `shutdown` hook, and reset all state.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * await stopApp(instance);
@@ -512,26 +462,31 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
  * ```
  */
 export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
+  await stopApp(instance);
+
   const mutexResolve = await mutexAcquire(instance, 'shutdown');
 
-  if (instance.isShuttingDown) {
+  if (
+    instance.state !== APP_INSTANCE_STATE.STOP &&
+    instance.state !== APP_INSTANCE_STATE.SETUP &&
+    instance.state !== APP_INSTANCE_STATE.ERROR
+  ) {
     mutexResolve();
     return {
       skip: true,
       code: 'shutdown_app',
-      reason: 'application is shutting down',
+      reason: `application in ${instance.state} state`,
     };
   }
 
   const { shutdown } = instance.definition;
 
+  setState(instance, APP_INSTANCE_STATE.IN_SHUTDOWN);
   instance.logger.info('Shutdown...');
 
   let shutdownErr: Error | undefined;
 
   if (isFunction(shutdown)) {
-    instance.isShuttingDown = true;
-
     try {
       await shutdown.call(instance.setupState, instance.props!);
     } catch (err) {
@@ -539,16 +494,12 @@ export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
     }
   }
 
-  instance.isRunning = false;
-  instance.isSetupDone = false;
-  instance.isStopping = false;
-  instance.isShuttingDown = false;
   instance.props = null;
   instance.setupState = createSetupState(instance.definition);
   mutexResolve();
-  emit(instance, 'shutdown');
 
   if (shutdownErr) {
+    setState(instance, APP_INSTANCE_STATE.ERROR);
     return {
       skip: true,
       code: 'shutdown_app',
@@ -556,6 +507,8 @@ export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
       error: shutdownErr,
     };
   }
+
+  setState(instance, APP_INSTANCE_STATE.SHUTDOWN);
 
   return {
     success: true,
@@ -566,7 +519,7 @@ export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
 /**
  * Returns a promise that resolves when the app emits its shutdown event.
  * Resolves immediately if the app is not running.
- * @group Lifecycle
+ * @group App Lifecycle
  * @example
  * ```ts
  * await startApp(myApp, props);
@@ -574,12 +527,18 @@ export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
  * ```
  */
 export function appWaitShutdown(instance: AppInstance): Promise<void> {
-  if (!instance.isRunning) {
+  if (instance.state === APP_INSTANCE_STATE.SHUTDOWN) {
     return Promise.resolve();
   }
 
-  return new Promise(resolve => {
-    once(instance, 'shutdown', resolve);
+  const q = defer<void>();
+
+  instance.eventBus.once('state:shutdown', q.resolve);
+  instance.eventBus.once('error', q.reject);
+
+  return q.promise.finally(() => {
+    instance.eventBus.off('state:shutdown', q.resolve);
+    instance.eventBus.off('error', q.reject);
   });
 }
 
@@ -587,12 +546,7 @@ function createSetupState(
   definition: AppDefinition,
 ): AppDefinition.SetupContext {
   const setupState: AppDefinition.SetupContext = {
-    log:
-      definition.logger === false
-        ? noopLogger
-        : isFunction(definition.logger)
-          ? definition.logger(definition)
-          : definition.logger || (log.withTag(definition.name) as any),
+    log: createAppLogger(definition),
   };
 
   if (definition.methods) {
@@ -628,28 +582,13 @@ function mutexAcquire(
   return acquirePromise;
 }
 
-function emitter(app: AppInstance): EventEmitter {
-  let result = EVENT_LISTENER_MAP.get(app);
-  if (!result) {
-    result = new EventEmitter();
-    EVENT_LISTENER_MAP.set(app, result);
+function setState(app: AppInstance, newState: AppInstance.State) {
+  const oldState = app.state;
+
+  if (newState !== oldState) {
+    // @ts-expect-error
+    app.state = newState;
+    app.eventBus.emit('state', newState, oldState);
+    app.eventBus.emit(`state:${newState}`);
   }
-
-  return result;
-}
-
-function on(app: AppInstance, eventName: string, fn: AnyFunction) {
-  emitter(app).on(eventName, fn);
-}
-
-function once(app: AppInstance, eventName: string, fn: AnyFunction) {
-  emitter(app).once(eventName, fn);
-}
-
-function off(app: AppInstance, eventName: string, fn: AnyFunction) {
-  emitter(app).off(eventName, fn);
-}
-
-function emit(app: AppInstance, eventName: string, ...args: any[]) {
-  emitter(app).emit(eventName, ...args);
 }

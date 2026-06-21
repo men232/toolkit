@@ -24,10 +24,13 @@ export type WorkerSuccessData = { [x: string]: unknown };
 export type WorkerSkipData = { error?: boolean; [x: string]: unknown };
 export type WorkerResult = ExecResult<WorkerSuccessData, WorkerSkipData>;
 
+/**
+ * @group Types
+ */
 export namespace WorkerStrategy {
   /**
    * Base context bag emitted by strategies per task. Strategies extend this with typed fields.
-   * @group Worker
+   * @group Types
    */
   export interface Context {
     [key: string]: unknown;
@@ -36,7 +39,7 @@ export namespace WorkerStrategy {
 
 /**
  * Pluggable trigger source. Drives when tasks are enqueued.
- * @group Worker
+ * @group Types
  */
 export interface WorkerStrategy<
   C extends WorkerStrategy.Context = WorkerStrategy.Context,
@@ -96,7 +99,7 @@ export namespace WorkerDefinition {
 
 /**
  * Worker definition — extends AppDefinition with strategy, per-task entry, and concurrency config.
- * @group Worker
+ * @group Types
  */
 export interface WorkerDefinition<
   P extends ObjectPropsOptions = {},
@@ -147,7 +150,7 @@ export interface WorkerDefinition<
 /**
  * Runtime state of a worker instance. Extends AppInstance with task queue and pool.
  * Managed with the standard startApp / stopApp / shutdownApp lifecycle.
- * @group Worker
+ * @group Types
  */
 export interface WorkerInstance<C extends WorkerStrategy = WorkerStrategy> {
   definition: WorkerDefinition<{}, {}, {}, C>;
@@ -329,7 +332,26 @@ async function executeWorkerTask<C extends WorkerStrategy>(
 /**
  * Define a background worker with a pluggable execution strategy.
  * Returns a WorkerDefinition that can be run with createWorkerInstance + startApp.
- * @group Worker
+ *
+ * @example
+ * ```ts
+ * import { defineWorker, IntervalStrategy } from '@andrew_l/app';
+ *
+ * export default defineWorker({
+ *   name: 'clock',
+ *   executeStrategy: new IntervalStrategy({
+ *     intervalSeconds: 1,
+ *   }),
+ *   entry() {
+ *     this.log.info('tick=%d', this.timerSequence);
+ *   },
+ *   async shutdown() {
+ *     await delay(1000);
+ *   },
+ * });
+ * ```
+ *
+ * @group Main
  */
 export function defineWorker<
   P extends ObjectPropsOptions,
@@ -454,7 +476,12 @@ async function runWorkerLoop(
         );
       }
 
-      worker.log.info('Draining task pool (active=%d)', worker.pool.usedCount);
+      if (worker.pool.usedCount > 0) {
+        worker.log.info(
+          'Draining task pool (active=%d)',
+          worker.pool.usedCount,
+        );
+      }
 
       await worker.pool.destroy();
       worker.queue = new AsyncIterableQueue();
@@ -537,7 +564,7 @@ async function shutdownWorker(
 
 /**
  * Returns true if the value was created by defineWorker.
- * @group Worker
+ * @group Utils
  */
 export function isWorkerDefinition(value: unknown): value is WorkerDefinition {
   return (value as any)?.[WORKER_DEF] === true;
@@ -545,7 +572,7 @@ export function isWorkerDefinition(value: unknown): value is WorkerDefinition {
 
 /**
  * Returns true if the value is a WorkerInstance.
- * @group Worker
+ * @group Utils
  */
 export function isWorkerInstance(value: unknown): value is WorkerInstance {
   return isWorkerDefinition((value as WorkerInstance)?.definition);
