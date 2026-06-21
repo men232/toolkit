@@ -24,6 +24,14 @@ const SHUTDOWN_ERROR_HANDLERS: HandlerError[] = [];
 let shuttingDown = false;
 
 /**
+ * Returns true when process received shutdown signal
+ * @group Main
+ */
+export function isShuttingDown(): boolean {
+  return shuttingDown;
+}
+
+/**
  * Gracefully terminate application's modules on shutdown.
  * @param handler - Async or sync function which handles shutdown.
  */
