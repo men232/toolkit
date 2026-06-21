@@ -1,11 +1,12 @@
 import { assert } from './assert';
+import { env } from './env';
 import { isString } from './is';
 import { sprintf } from './str/sprintf';
 import type { Logger } from './types';
 
-type LogLevel = Exclude<keyof Logger, 'extend'>;
+export type LogLevel = Exclude<keyof Logger, 'extend'>;
 
-const LEVEL_NUM: Record<LogLevel, number> = {
+const LEVEL_NAME_TO_NUM: Record<LogLevel, number> = {
   debug: 0,
   log: 1,
   info: 2,
@@ -13,15 +14,36 @@ const LEVEL_NUM: Record<LogLevel, number> = {
   error: 4,
 };
 
-let currentLogLevel: number = LEVEL_NUM.log;
+const LEVEL_NUM_TO_NAME: Record<number, LogLevel> = {
+  0: 'debug',
+  1: 'log',
+  2: 'info',
+  3: 'warn',
+  4: 'error',
+};
+
+const LOG_LEVEL = env.string('LOG_LEVEL', 'info');
+
+let currentLogLevel: number =
+  LOG_LEVEL in LEVEL_NAME_TO_NUM
+    ? LEVEL_NAME_TO_NUM[LOG_LEVEL as LogLevel]
+    : LEVEL_NAME_TO_NUM.log;
 
 /**
  * Set global log level.
  * @group Utility Functions
  */
-export const loggerSetLevel = (level: LogLevel) => {
-  assert.number(LEVEL_NUM[level], `Invalid log level: ${level}`);
-  currentLogLevel = LEVEL_NUM[level];
+export const setLoggerLevel = (level: LogLevel) => {
+  assert.number(LEVEL_NAME_TO_NUM[level], `Invalid log level: ${level}`);
+  currentLogLevel = LEVEL_NAME_TO_NUM[level];
+};
+
+/**
+ * Set global log level.
+ * @group Utility Functions
+ */
+export const getLoggerLevel = (): LogLevel => {
+  return LEVEL_NUM_TO_NAME[currentLogLevel];
 };
 
 /**
@@ -46,7 +68,7 @@ export const logger = (...baseArgs: any[]): Logger => {
   }
 
   const writeLog = (level: LogLevel, ...[pattern, ...args]: any[]) => {
-    const levelNum = LEVEL_NUM[level];
+    const levelNum = LEVEL_NAME_TO_NUM[level];
 
     if (levelNum < currentLogLevel) {
       return;

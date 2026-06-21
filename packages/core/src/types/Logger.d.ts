@@ -4,5 +4,5 @@ export interface Logger {
   error: (...args: unknown[]) => void;
   debug: (...args: unknown[]) => void;
   log: (...args: unknown[]) => void;
-  extend: (...args: unknown[]) => void;
+  extend: (...args: unknown[]) => Logger;
 }
