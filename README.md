@@ -8,6 +8,7 @@ I am deeply grateful to the open-source community and the authors of these funct
 
 # Packages
 
+- [Toolkit (Core)](https://men232.github.io/toolkit/reference/@andrew_l/app/)
 - [Toolkit (Core)](https://men232.github.io/toolkit/reference/@andrew_l/toolkit/)
 - [DOM](https://men232.github.io/toolkit/reference/@andrew_l/dom/)
 - [Context](https://men232.github.io/toolkit/reference/@andrew_l/context/)

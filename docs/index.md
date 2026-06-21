@@ -6,6 +6,10 @@ hero:
   text: 'Collection of utility functions'
 
 features:
+  - title: App
+    icon: 🏁
+    details: Application runner
+    link: /reference/@andrew_l/app/
   - title: Core
     icon: 🚀
     details: General utility functions
