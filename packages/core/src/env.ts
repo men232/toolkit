@@ -25,22 +25,22 @@ export interface EnvParser {
   /**
    * NODE_ENV is `development`
    */
-  isDevelopment: boolean;
+  readonly isDevelopment: boolean;
 
   /**
    * NODE_ENV is `production`
    */
-  isProduction: boolean;
+  readonly isProduction: boolean;
 
   /**
    * NODE_ENV is `stage`
    */
-  isStage: boolean;
+  readonly isStage: boolean;
 
   /**
    * NODE_ENV is `test`
    */
-  isTest: boolean;
+  readonly isTest: boolean;
 
   /**
    * Returns `true` when environment key has set to `"true"`
@@ -139,13 +139,21 @@ export function createEnvParser(
   targetObject: Record<string, string> | Dict<string>,
 ): Readonly<EnvParser> {
   return Object.freeze({
-    isDevelopment: targetObject.NODE_ENV === 'development',
+    get isDevelopment() {
+      return targetObject.NODE_ENV === 'development';
+    },
 
-    isProduction: targetObject.NODE_ENV === 'production',
+    get isProduction() {
+      return targetObject.NODE_ENV === 'production';
+    },
 
-    isStage: targetObject.NODE_ENV === 'state',
+    get isStage() {
+      return targetObject.NODE_ENV === 'state';
+    },
 
-    isTest: targetObject.NODE_ENV === 'test',
+    get isTest() {
+      return targetObject.NODE_ENV === 'test';
+    },
 
     bool(key: string, defaultValue: boolean = false): boolean {
       if (!(key in targetObject)) {
