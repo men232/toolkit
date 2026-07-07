@@ -263,7 +263,7 @@ function executeWorkerTask<C extends WorkerStrategy>(
 
   return Promise.resolve()
     .then(() => catchError(() => executeSignal(entryContext)))
-    .then(([signalError, signalResult]) => {
+    .then(({ 0: signalError, 1: signalResult }) => {
       if (signalError) {
         return void log.error('Strategy executeSignal error, dropping task', {
           error: signalError,
@@ -288,7 +288,7 @@ function executeWorkerTask<C extends WorkerStrategy>(
         .then(() =>
           catchError(() => entry.call(entryContext, props, taskAbort.signal)),
         )
-        .then(([executeError, executeResult]) => {
+        .then(({ 0: executeError, 1: executeResult }) => {
           abortSignal.removeEventListener('abort', handleAbort);
 
           if (executeError) {
@@ -332,7 +332,7 @@ function executeWorkerTask<C extends WorkerStrategy>(
 
           return catchError(() => completeSignal(entryContext, executeResult));
         })
-        .then(([completeError]) => {
+        .then(({ 0: completeError }) => {
           if (completeError) {
             log.error('Strategy completeSignal error', {
               error: completeError,
@@ -452,9 +452,7 @@ function runWorkerLoop(
           executeStrategy.stopSignal(() => worker.queue.close()),
         ),
       )
-      .then(stopResult => {
-        const stopError = stopResult[0];
-
+      .then(({ 0: stopError }) => {
         if (stopError) {
           worker.queue.close();
           worker.log.error('Strategy stopSignal error', { error: stopError });
@@ -466,7 +464,7 @@ function runWorkerLoop(
     async (resolve, _reject, onCancel) => {
       onCancel(onStopSignal);
 
-      const [startError] = await catchError(() =>
+      const { 0: startError } = await catchError(() =>
         executeStrategy.startSignal(),
       );
 
