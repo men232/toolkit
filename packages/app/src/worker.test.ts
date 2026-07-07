@@ -169,35 +169,53 @@ describe('addWorkerTask', () => {
     expect(instance.queueSize).toBe(2);
   });
 
-  it('fires overloadedSignal once when queue exceeds 80% of limit', () => {
+  it('fires overloadedSignal once when queue exceeds 80% of limit', async () => {
     const overloadedSignal = vi.fn();
-    const instance = makeInstance({
-      executeStrategy: { ...makeStrategy(), overloadedSignal },
-      taskLimit: 5,
-    });
+    const app = await launchApp(
+      defineWorker({
+        name: 'simple',
+        executeStrategy: { ...makeStrategy(), overloadedSignal },
+        taskLimit: 5,
+      }),
+      {},
+    );
+    const instance = app.setupState.worker as WorkerInstance;
+
     // queueSize=5 > 5*0.8=4 → overloaded
     for (let i = 0; i < 5; i++) addWorkerTask(instance, {} as any);
     expect(overloadedSignal).toHaveBeenCalledTimes(1);
     expect(instance.overloadedSignaled).toBe(true);
   });
 
-  it('does not fire overloadedSignal again until available', () => {
+  it('does not fire overloadedSignal again until available', async () => {
     const overloadedSignal = vi.fn();
-    const instance = makeInstance({
-      executeStrategy: { ...makeStrategy(), overloadedSignal },
-      taskLimit: 5,
-    });
+    const app = await launchApp(
+      defineWorker({
+        name: 'simple',
+        executeStrategy: { ...makeStrategy(), overloadedSignal },
+        taskLimit: 5,
+      }),
+      {},
+    );
+    const instance = app.setupState.worker as WorkerInstance;
+
     for (let i = 0; i < 10; i++) addWorkerTask(instance, {} as any);
     expect(overloadedSignal).toHaveBeenCalledTimes(1);
   });
 
-  it('fires availableSignal when pressure drops below threshold', () => {
+  it('fires availableSignal when pressure drops below threshold', async () => {
     const availableSignal = vi.fn();
+    const app = await launchApp(
+      defineWorker({
+        name: 'simple',
+        executeStrategy: { ...makeStrategy(), availableSignal },
+        taskLimit: 100,
+      }),
+      {},
+    );
+
     // taskLimit=100: 80%=80, adding 1 task (queueSize=1) is not overloaded
-    const instance = makeInstance({
-      executeStrategy: { ...makeStrategy(), availableSignal },
-      taskLimit: 100,
-    });
+    const instance = app.setupState.worker as WorkerInstance;
     instance.overloadedSignaled = true;
     addWorkerTask(instance, {} as any);
     expect(availableSignal).toHaveBeenCalledTimes(1);

@@ -13,6 +13,7 @@ import {
   def,
   isFunction,
   isSkip,
+  noop,
   toError,
 } from '@andrew_l/toolkit';
 import type { AppDefinition } from './app.js';
@@ -128,7 +129,7 @@ export interface WorkerDefinition<
    */
   setup?(this: SetupContext, props: ExtractPropTypes<P>): Awaitable<S>;
 
-  executeStrategy: C;
+  executeStrategy: C | ((props: ExtractPropTypes<P>) => C);
 
   /**
    * Maximum limit of queued tasks
@@ -159,6 +160,7 @@ export interface WorkerInstance<C extends WorkerStrategy = WorkerStrategy> {
   queue: AsyncIterableQueue<WorkerDefinition.TaskContext<C>>;
   pool: ResourcePool<symbol>;
   runTask: CancellablePromise<void> | null;
+  executeStrategy: C | null;
   overloadedSignaled: boolean;
   log: Logger;
 
@@ -203,11 +205,12 @@ function createWorkerPool(size: number): ResourcePool<symbol> {
  * @group Worker
  */
 export function createWorkerInstance<C extends WorkerStrategy>(
-  definition: WorkerDefinition<{}, {}, {}, C>,
+  definition: WorkerDefinition<any, {}, {}, C>,
   logger: Logger,
 ): WorkerInstance<C> {
   const instance: WorkerInstance<C> = {
     definition,
+    executeStrategy: null,
     log: logger,
     queue: new AsyncIterableQueue(),
     pool: createWorkerPool(definition.taskParallel ?? 2),
@@ -244,101 +247,99 @@ export function addWorkerTask<C extends WorkerStrategy>(
   checkWorkerPressure(instance);
 }
 
-async function executeWorkerTask<C extends WorkerStrategy>(
+var NOOP_EXECUTE_SIGNAL = () => ({ success: true, code: 'ok' }) as ExecResult;
+
+function executeWorkerTask<C extends WorkerStrategy>(
   instance: WorkerInstance<C>,
   entryContext: WorkerDefinition.EntryContext<C>,
   props: Data,
   abortSignal: AbortSignal,
 ): Promise<void> {
   const { log } = instance;
-  const { executeStrategy, entry } = instance.definition;
+  const entry = instance.definition.entry || noop;
+  const executeStrategy = instance.executeStrategy!;
+  const completeSignal = executeStrategy.completeSignal || noop;
+  const executeSignal = executeStrategy.executeSignal || NOOP_EXECUTE_SIGNAL;
 
-  if (isFunction(executeStrategy.executeSignal)) {
-    const [signalError, signalResult] = await catchError(() =>
-      executeStrategy.executeSignal!(entryContext),
-    );
+  return Promise.resolve()
+    .then(() => catchError(() => executeSignal(entryContext)))
+    .then(([signalError, signalResult]) => {
+      if (signalError) {
+        return void log.error('Strategy executeSignal error, dropping task', {
+          error: signalError,
+        });
+      } else if (isSkip(signalResult)) {
+        return void log.warn(
+          'Strategy executeSignal returned skip, dropping task',
+          signalResult,
+        );
+      }
 
-    if (signalError) {
-      log.error('Strategy executeSignal error, dropping task', {
-        error: signalError,
-      });
-      return;
-    }
-
-    if (isSkip(signalResult)) {
-      log.warn(
-        'Strategy executeSignal returned skip, dropping task',
-        signalResult,
-      );
-      return;
-    }
-  }
-
-  const taskAbort = new AbortController();
-  const handleAbort = () => {
-    if (!taskAbort.signal.aborted) {
-      taskAbort.abort(abortSignal.reason);
-    }
-  };
-
-  abortSignal.addEventListener('abort', handleAbort);
-
-  let [executeError, executeResult] = await catchError(() =>
-    entry?.call(entryContext, props, taskAbort.signal),
-  );
-
-  abortSignal.removeEventListener('abort', handleAbort);
-
-  if (executeError) {
-    if (executeStrategy.handleEntryError) {
-      executeResult = executeStrategy.handleEntryError(executeError);
-    }
-
-    if (!executeResult) {
-      executeResult = {
-        skip: true,
-        error: true,
-        code: 'critical_error',
-        reason: executeError.message,
-        stack: executeError.stack,
+      const taskAbort = new AbortController();
+      const handleAbort = () => {
+        if (!taskAbort.signal.aborted) {
+          taskAbort.abort(abortSignal.reason);
+        }
       };
-    }
-  } else if (
-    !executeResult ||
-    (Array.isArray(executeResult) && !executeResult.length)
-  ) {
-    executeResult = { success: true, code: 'void' };
-  }
 
-  const results = arrayable(executeResult);
+      abortSignal.addEventListener('abort', handleAbort);
 
-  let hasError = false;
-  let hasSkip = false;
+      return Promise.resolve()
+        .then(() =>
+          catchError(() => entry.call(entryContext, props, taskAbort.signal)),
+        )
+        .then(([executeError, executeResult]) => {
+          abortSignal.removeEventListener('abort', handleAbort);
 
-  for (const result of results) {
-    hasError = hasError || (isSkip(result) && !!result.error);
-    hasSkip = isSkip(result);
-  }
+          if (executeError) {
+            if (executeStrategy.handleEntryError) {
+              executeResult = executeStrategy.handleEntryError(executeError);
+            }
 
-  if (hasError) {
-    log.error('Task error', results);
-  } else if (hasSkip) {
-    log.warn('Task skipped', results);
-  } else {
-    log.debug('Task completed', results);
-  }
+            if (!executeResult) {
+              executeResult = {
+                skip: true,
+                error: true,
+                code: 'critical_error',
+                reason: executeError.message,
+                stack: executeError.stack,
+              };
+            }
+          } else if (
+            !executeResult ||
+            (Array.isArray(executeResult) && !executeResult.length)
+          ) {
+            executeResult = { success: true, code: 'void' };
+          }
 
-  if (executeStrategy.completeSignal) {
-    const [completeError] = await catchError(() =>
-      executeStrategy.completeSignal!(entryContext, executeResult!),
-    );
+          const results = arrayable(executeResult);
 
-    if (completeError) {
-      log.error('Strategy completeSignal error', {
-        error: completeError,
-      });
-    }
-  }
+          let hasError = false;
+          let hasSkip = false;
+
+          for (const result of results) {
+            hasError = hasError || (isSkip(result) && !!result.error);
+            hasSkip = isSkip(result);
+          }
+
+          if (hasError) {
+            log.error('Task error', results);
+          } else if (hasSkip) {
+            log.warn('Task skipped', results);
+          } else {
+            log.debug('Task completed', results);
+          }
+
+          return catchError(() => completeSignal(entryContext, executeResult));
+        })
+        .then(([completeError]) => {
+          if (completeError) {
+            log.error('Strategy completeSignal error', {
+              error: completeError,
+            });
+          }
+        });
+    });
 }
 
 /**
@@ -378,13 +379,13 @@ export function defineWorker<
       return setupWorker(this, definition, props);
     },
     entry(props) {
-      return runWorkerLoop(this, definition, props);
+      return runWorkerLoop(this, props);
     },
     stop(props) {
-      return stopWorker(this, definition, props);
+      return stopWorker(this, props);
     },
     shutdown(props) {
-      return shutdownWorker(this, definition, props);
+      return shutdownWorker(this, props);
     },
   }) as WorkerDefinition<P, S, M, C>;
 
@@ -416,7 +417,14 @@ function setupWorker<
     worker: createWorkerInstance(definition, setupContext.log),
   };
 
+  if (isFunction(definition.executeStrategy)) {
+    ctx.worker.executeStrategy = definition.executeStrategy(props);
+  } else {
+    ctx.worker.executeStrategy = definition.executeStrategy;
+  }
+
   return Promise.resolve()
+    .then(() => ctx.worker.executeStrategy!.doSetup(ctx))
     .then(() => (setupFn ? setupFn.call(ctx, props) : undefined))
     .then(setupResult => {
       return {
@@ -426,15 +434,12 @@ function setupWorker<
     });
 }
 
-async function runWorkerLoop(
+function runWorkerLoop(
   runtimeContext: WorkerDefinition.RuntimeContext,
-  definition: WorkerDefinition,
   props: Data,
-): Promise<void> {
+): void {
   const worker = runtimeContext.worker;
-  const { executeStrategy } = definition;
-
-  await executeStrategy.doSetup({ worker });
+  const executeStrategy = worker.executeStrategy!;
 
   const abortController = new AbortController();
   const abortSignal = abortController.signal;
@@ -508,9 +513,11 @@ async function runWorkerLoop(
 }
 
 function checkWorkerPressure(worker: WorkerInstance): void {
+  const executeStrategy = worker.executeStrategy;
+
   try {
     if (worker.isOverloaded) {
-      if (!worker.definition.executeStrategy.overloadedSignal)
+      if (!executeStrategy || !executeStrategy.overloadedSignal)
         return void worker.log.warn(
           'Worker under pressure (queue=%d, limit=%d)',
           worker.queueSize,
@@ -520,13 +527,13 @@ function checkWorkerPressure(worker: WorkerInstance): void {
       if (worker.overloadedSignaled) return;
 
       worker.overloadedSignaled = true;
-      worker.definition.executeStrategy.overloadedSignal();
+      executeStrategy.overloadedSignal();
     } else {
       if (!worker.overloadedSignaled) return;
-      if (!worker.definition.executeStrategy.availableSignal) {
+      if (!executeStrategy || !executeStrategy.availableSignal) {
         worker.log.warn('Worker capacity restored');
       } else {
-        worker.definition.executeStrategy.availableSignal();
+        executeStrategy.availableSignal();
       }
 
       worker.overloadedSignaled = false;
@@ -536,42 +543,45 @@ function checkWorkerPressure(worker: WorkerInstance): void {
   }
 }
 
-async function stopWorker(
+function stopWorker(
   runtimeContext: WorkerDefinition.RuntimeContext,
-  definition: WorkerDefinition,
   props: Data,
 ): Promise<void> {
   const worker = runtimeContext.worker;
-  const userStop = definition.stop;
+  const definition = worker.definition;
+  const userStop = definition.stop || noop;
+  const runTask = worker.runTask;
 
-  if (worker.runTask) {
-    if (isFunction(userStop)) {
-      await userStop.call(runtimeContext, props);
-    }
-
-    if (!worker.runTask) return;
-    worker.runTask.cancel();
-    await worker.runTask.catch(() => {});
-    worker.runTask = null;
+  if (!runTask) {
+    return Promise.resolve();
   }
+
+  return Promise.resolve()
+    .then(() => userStop.call(runtimeContext, props))
+    .finally(() => {
+      runTask.cancel();
+      return runTask.finally(() => {
+        worker.runTask = null;
+      });
+    });
 }
 
-async function shutdownWorker(
+function shutdownWorker(
   runtimeContext: WorkerDefinition.RuntimeContext,
-  definition: WorkerDefinition,
   props: Data,
 ): Promise<void> {
   const worker = runtimeContext.worker;
-  const userShutdown = definition.shutdown;
+  const executeStrategy = worker.executeStrategy!;
+  const definition = worker.definition;
+  const userShutdown = definition.shutdown || noop;
 
-  if (isFunction(userShutdown)) {
-    await userShutdown.call(runtimeContext, props);
-  }
-
-  await definition.executeStrategy.doShutdown();
-
-  worker.queue = new AsyncIterableQueue<any>();
-  worker.pool = createWorkerPool(definition.taskParallel ?? 2);
+  return Promise.resolve()
+    .then(() => userShutdown.call(runtimeContext, props))
+    .then(() => executeStrategy.doShutdown())
+    .finally(() => {
+      worker.queue = new AsyncIterableQueue<any>();
+      worker.pool = createWorkerPool(definition.taskParallel ?? 2);
+    });
 }
 
 /**
