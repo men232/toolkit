@@ -38,7 +38,6 @@ resolve_tsx_cli() {
 
 if [ $DEV_MODE -eq 1 ]; then
   if [ $WATCH_MODE -eq 1 ]; then
-    echo "$PWD"
     TSX_CLI="$(resolve_tsx_cli)"
     if [ -z "$TSX_CLI" ]; then
       echo "vrun: cannot resolve tsx peer dependency. Install tsx ^4.22.4." >&2
