@@ -7,6 +7,11 @@ export namespace IntervalStrategy {
    */
   export interface Options {
     intervalSeconds: number;
+
+    /**
+     * @default true
+     */
+    warnOnBusy?: boolean;
   }
 
   /**
@@ -28,8 +33,11 @@ export class IntervalStrategy
   private timerSequence = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private worker!: WorkerInstance;
+  private warnOnBusy: boolean;
 
-  constructor(private readonly options: IntervalStrategy.Options) {}
+  constructor(private readonly options: IntervalStrategy.Options) {
+    this.warnOnBusy = options.warnOnBusy ?? true;
+  }
 
   doSetup({ worker }: { worker: WorkerInstance }): void {
     this.worker = worker;
@@ -39,7 +47,7 @@ export class IntervalStrategy
     this.timer = setInterval(() => {
       if (this.worker.isIdle) {
         this.worker.addTask(this.createTask());
-      } else {
+      } else if (this.warnOnBusy) {
         log.warn(
           '[%s] Worker busy, skipping tick',
           this.worker.definition.name,
