@@ -89,7 +89,11 @@ export interface AppDefinition<
   /**
    * Entry function that will be called each time when application starts
    */
-  entry?(this: EntryContext, props: ExtractPropTypes<P>): Awaitable<any>;
+  entry?(
+    this: EntryContext,
+    props: ExtractPropTypes<P>,
+    ...args: any[]
+  ): Awaitable<any>;
 
   /**
    * Stop function that will be called each time when application stops

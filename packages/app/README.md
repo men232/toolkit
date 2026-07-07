@@ -170,9 +170,10 @@ export default defineWorker({
     },
   },
 
-  async entry() {
+  async entry(props, abortSignal) {
     const pending = await fetchPending();
     for (const msg of pending) {
+      if (abortSignal.aborted) break;
       await this.send(msg.to, msg.body);
     }
   },

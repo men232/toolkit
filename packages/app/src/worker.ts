@@ -7,6 +7,7 @@ import {
   type ExecResult,
   type Logger,
   ResourcePool,
+  arrayable,
   captureStackTrace,
   catchError,
   def,
@@ -119,6 +120,7 @@ export interface WorkerDefinition<
   entry?(
     this: EntryContext,
     props: ExtractPropTypes<P>,
+    abortSignal: AbortSignal,
   ): Awaitable<WorkerResult | WorkerResult[] | void>;
 
   /**
@@ -248,6 +250,7 @@ async function executeWorkerTask<C extends WorkerStrategy>(
   props: Data,
   abortSignal: AbortSignal,
 ): Promise<void> {
+  const { log } = instance;
   const { executeStrategy, entry } = instance.definition;
 
   if (isFunction(executeStrategy.executeSignal)) {
@@ -256,14 +259,14 @@ async function executeWorkerTask<C extends WorkerStrategy>(
     );
 
     if (signalError) {
-      instance.log.error('Strategy executeSignal error, dropping task', {
+      log.error('Strategy executeSignal error, dropping task', {
         error: signalError,
       });
       return;
     }
 
     if (isSkip(signalResult)) {
-      instance.log.warn(
+      log.warn(
         'Strategy executeSignal returned skip, dropping task',
         signalResult,
       );
@@ -271,9 +274,20 @@ async function executeWorkerTask<C extends WorkerStrategy>(
     }
   }
 
+  const taskAbort = new AbortController();
+  const handleAbort = () => {
+    if (!taskAbort.signal.aborted) {
+      taskAbort.abort(abortSignal.reason);
+    }
+  };
+
+  abortSignal.addEventListener('abort', handleAbort);
+
   let [executeError, executeResult] = await catchError(() =>
-    entry?.call(entryContext, props),
+    entry?.call(entryContext, props, taskAbort.signal),
   );
+
+  abortSignal.removeEventListener('abort', handleAbort);
 
   if (executeError) {
     if (executeStrategy.handleEntryError) {
@@ -296,9 +310,7 @@ async function executeWorkerTask<C extends WorkerStrategy>(
     executeResult = { success: true, code: 'void' };
   }
 
-  const results = Array.isArray(executeResult)
-    ? executeResult
-    : [executeResult!];
+  const results = arrayable(executeResult);
 
   let hasError = false;
   let hasSkip = false;
@@ -309,11 +321,11 @@ async function executeWorkerTask<C extends WorkerStrategy>(
   }
 
   if (hasError) {
-    instance.log.error('Task error', results);
+    log.error('Task error', results);
   } else if (hasSkip) {
-    instance.log.warn('Task skipped', results);
+    log.warn('Task skipped', results);
   } else {
-    instance.log.debug('Task completed', results);
+    log.debug('Task completed', results);
   }
 
   if (executeStrategy.completeSignal) {
@@ -322,7 +334,7 @@ async function executeWorkerTask<C extends WorkerStrategy>(
     );
 
     if (completeError) {
-      instance.log.error('Strategy completeSignal error', {
+      log.error('Strategy completeSignal error', {
         error: completeError,
       });
     }

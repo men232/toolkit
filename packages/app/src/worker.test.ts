@@ -205,6 +205,109 @@ describe('addWorkerTask', () => {
   });
 });
 
+describe('entry abortSignal', () => {
+  it('is not aborted when entry starts', () => {
+    let resolveChecked!: () => void;
+    const checked = new Promise<void>(r => {
+      resolveChecked = r;
+    });
+
+    const def = defineWorker({
+      name: 'test',
+      logger: false,
+      executeStrategy: makeStrategy(),
+      entry: vi.fn().mockImplementation(function (_props, signal: AbortSignal) {
+        expect(signal.aborted).toBe(false);
+        resolveChecked();
+      }),
+    });
+
+    return launchApp(def, {}).then(app => {
+      const worker = (app.setupState as any).worker as WorkerInstance;
+      worker.addTask({});
+      return checked.then(() => stopApp(app)).then(() => shutdownApp(app));
+    });
+  });
+
+  it('is aborted when stopApp is called while entry is running', () => {
+    let signalAborted!: (v: boolean) => void;
+    const abortDetected = new Promise<boolean>(r => {
+      signalAborted = r;
+    });
+
+    let releaseEntry!: () => void;
+    const entryStarted = new Promise<void>(r => {
+      releaseEntry = r;
+    });
+
+    const def = defineWorker({
+      name: 'test',
+      logger: false,
+      executeStrategy: makeStrategy(),
+      entry: vi.fn().mockImplementation(function (_props, signal: AbortSignal) {
+        releaseEntry();
+        return new Promise<void>(resolve => {
+          signal.addEventListener('abort', () => {
+            signalAborted(signal.aborted);
+            resolve();
+          });
+        });
+      }),
+    });
+
+    return launchApp(def, {}).then(app => {
+      const worker = (app.setupState as any).worker as WorkerInstance;
+      worker.addTask({});
+      return entryStarted
+        .then(() => stopApp(app))
+        .then(() => abortDetected)
+        .then(aborted => {
+          expect(aborted).toBe(true);
+        })
+        .then(() => shutdownApp(app));
+    });
+  });
+
+  it('receives abort reason from stopApp', () => {
+    let capturedReason!: (v: unknown) => void;
+    const reasonReceived = new Promise<unknown>(r => {
+      capturedReason = r;
+    });
+
+    let releaseEntry!: () => void;
+    const entryStarted = new Promise<void>(r => {
+      releaseEntry = r;
+    });
+
+    const def = defineWorker({
+      name: 'test',
+      logger: false,
+      executeStrategy: makeStrategy(),
+      entry: vi.fn().mockImplementation(function (_props, signal: AbortSignal) {
+        releaseEntry();
+        return new Promise<void>(resolve => {
+          signal.addEventListener('abort', () => {
+            capturedReason(signal.reason);
+            resolve();
+          });
+        });
+      }),
+    });
+
+    return launchApp(def, {}).then(app => {
+      const worker = (app.setupState as any).worker as WorkerInstance;
+      worker.addTask({});
+      return entryStarted
+        .then(() => stopApp(app))
+        .then(() => reasonReceived)
+        .then(reason => {
+          expect(reason).toBeDefined();
+        })
+        .then(() => shutdownApp(app));
+    });
+  });
+});
+
 describe('worker lifecycle', () => {
   it('calls doSetup with worker on start', async () => {
     const strategy = makeStrategy();
