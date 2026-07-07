@@ -61,10 +61,10 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
     delayMinMs = 100,
   }: WithTransactionOptions = {},
 ): (this: K, ...args: Args) => Promise<Awaited<T>> {
-  return async function (this: K, ...args: Args): Promise<Awaited<T>> {
+  return function (this: K, ...args: Args): Promise<Awaited<T>> {
     const scope = createTransactionScope(fn);
 
-    await retryOnError(
+    return retryOnError(
       {
         beforeRetryCallback,
         shouldRetryBasedOnError,
@@ -74,25 +74,26 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
         delayMaxMs,
         delayMinMs,
       },
-      async () => {
-        await scope.run.apply(this, args);
-
-        // explicitly reject to trigger retry
-        if (scope.error) {
-          return Promise.reject(scope.error);
-        }
+      () => {
+        return Promise.resolve()
+          .then(() => scope.run.apply(this, args))
+          .then(() => {
+            // explicitly reject to trigger retry
+            if (scope.error) {
+              return Promise.reject(scope.error);
+            }
+          });
       },
-    )().catch(noop);
+    )()
+      .catch(noop)
+      .then(() => {
+        const { error, result } = scope;
 
-    const { error, result } = scope;
+        if (error) {
+          return scope.rollback().then(() => Promise.reject(error));
+        }
 
-    if (error) {
-      await scope.rollback();
-      return Promise.reject(error) as any;
-    } else {
-      await scope.commit();
-    }
-
-    return result as Awaited<T>;
+        return scope.commit().then(() => result as Awaited<T>);
+      });
   };
 }

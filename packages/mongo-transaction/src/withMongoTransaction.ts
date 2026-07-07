@@ -160,66 +160,74 @@ export function withMongoTransaction(
     timeoutMS,
   } = prepareOptions(connectionOrOptions, maybeFn, maybeOptions);
 
-  return async function (this: any, ...args: any[]) {
-    const connection = isFunction(connectionValue)
-      ? await connectionValue()
-      : connectionValue;
+  return function (this: any, ...args: any[]) {
+    return Promise.resolve()
+      .then(() =>
+        isFunction(connectionValue) ? connectionValue() : connectionValue,
+      )
+      .then(
+        connection => connection.startSession(sessionOptions) as ClientSession,
+      )
+      .then(session => {
+        const scope = createTransactionScope(function (
+          this: any,
+          ...args: any[]
+        ) {
+          provideMongoSession(session);
+          return fn.call(this, session, ...args);
+        });
 
-    const session = (await connection.startSession(
-      sessionOptions,
-    )) as ClientSession;
+        const timeoutAt = timeoutMS ? Date.now() + timeoutMS : 0;
+        const timeoutError = new MongoTransactionError(
+          'Transaction client-side timeout',
+        );
 
-    const scope = createTransactionScope(function (this: any, ...args: any[]) {
-      provideMongoSession(session);
-      return fn.call(this, session, ...args);
-    });
+        return catchError(() =>
+          session.withTransaction(() => {
+            if (timeoutAt && timeoutAt < Date.now()) {
+              return Promise.reject(timeoutError);
+            }
 
-    const timeoutAt = timeoutMS ? Date.now() + timeoutMS : 0;
-    const timeoutError = new MongoTransactionError(
-      'Transaction client-side timeout',
-    );
+            return Promise.resolve()
+              .then(() => scope.run.apply(this, args))
+              .then(() => {
+                if (scope.error) {
+                  return Promise.reject(scope.error);
+                }
+              });
+          }),
+        ).then(({ 0: transactionError, 1: transactionResult }) => {
+          const { result } = scope;
 
-    let [transactionError, transactionResult] = await catchError(() =>
-      session.withTransaction(async () => {
-        if (timeoutAt && timeoutAt < Date.now()) {
-          return Promise.reject(timeoutError);
-        }
+          return session
+            .endSession()
+            .catch(noop)
+            .then(() => {
+              if (
+                transactionResult === undefined &&
+                isTransactionCommittedEmpty(session.transaction)
+              ) {
+                // do nothing here
+              } else if (
+                isTransactionAborted(session.transaction) &&
+                transactionResult === undefined &&
+                transactionError === undefined
+              ) {
+                transactionError = new MongoTransactionError(
+                  'Transaction is explicitly aborted',
+                );
+              }
 
-        await scope.run.apply(this, args);
+              if (transactionError) {
+                return scope
+                  .rollback()
+                  .then(() => Promise.reject(transactionError));
+              }
 
-        if (scope.error) {
-          return Promise.reject(scope.error);
-        }
-      }),
-    );
-
-    const { result } = scope;
-
-    await session.endSession().catch(noop);
-
-    if (
-      transactionResult === undefined &&
-      isTransactionCommittedEmpty(session.transaction)
-    ) {
-      // do nothing here
-    } else if (
-      isTransactionAborted(session.transaction) &&
-      transactionResult === undefined &&
-      transactionError === undefined
-    ) {
-      transactionError = new MongoTransactionError(
-        'Transaction is explicitly aborted',
-      );
-    }
-
-    if (transactionError) {
-      await scope.rollback();
-      return Promise.reject(transactionError);
-    }
-
-    await scope.commit();
-
-    return result!;
+              return scope.commit().then(() => result);
+            });
+        });
+      });
   };
 }
 

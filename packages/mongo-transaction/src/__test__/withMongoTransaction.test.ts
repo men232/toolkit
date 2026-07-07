@@ -38,7 +38,7 @@ describe('withMongoTransaction', () => {
 });
 
 function makeTest(clientValue: MongoClient | (() => MongoClient)) {
-  it('should returns function result', () => {
+  it('should returns function result', async () => {
     const run = withMongoTransaction({
       connection: clientValue,
       async fn(session) {
@@ -46,7 +46,7 @@ function makeTest(clientValue: MongoClient | (() => MongoClient)) {
       },
     });
 
-    expect(run()).resolves.toBe(5);
+    await expect(run()).resolves.toBe(5);
   });
 
   it('should handle function arguments', async () => {
@@ -118,7 +118,7 @@ function makeTest(clientValue: MongoClient | (() => MongoClient)) {
       },
     });
 
-    expect(() => run()).rejects.toThrowError('aborted');
+    await expect(() => run()).rejects.toThrowError('aborted');
   });
 
   it('should rollback when transaction aborted', async () => {

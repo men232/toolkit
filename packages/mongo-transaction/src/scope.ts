@@ -123,63 +123,82 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
   /**
    * @internal
    */
-  async _run(self?: any, ...args: Args): Promise<void> {
-    assert.ok(!this._active, 'Cannot run while transaction active.');
+  _run(self?: any, ...args: Args): Promise<void> {
+    if (this._active) {
+      return Promise.reject(
+        new Error('Cannot commit while transaction active.'),
+      );
+    }
 
     this.reset();
     this._active = true;
 
-    const [cbError, cbResult] = await withContext(() => {
-      provideTransactionScope(this);
-      return catchError(this.fn.bind(self, ...(args as any[])));
-    })();
+    return Promise.resolve()
+      .then(() =>
+        withContext(() => {
+          provideTransactionScope(this);
+          return catchError(() => this.fn.call(self, ...args) as Awaited<T>);
+        })(),
+      )
+      .then(({ 0: cbError, 1: cbResult }) => {
+        if (cbError) {
+          this.error = cbError;
+        } else {
+          return effectsApply(this, 'post').then(applyError => {
+            if (applyError) {
+              this.error = applyError;
+            }
 
-    if (cbError) {
-      this.error = cbError;
-    } else {
-      const applyError = await effectsApply(this, 'post');
-
-      if (applyError) {
-        this.error = applyError;
-      }
-
-      this.result = cbResult;
-    }
-
-    this._active = false;
+            this.result = cbResult;
+          });
+        }
+      })
+      .finally(() => {
+        this._active = false;
+      });
   }
 
-  async commit(): Promise<void> {
-    assert.ok(!this._active, 'Cannot commit while transaction active.');
-    assert.ok(!this.error, this.error);
+  commit(): Promise<void> {
+    if (this._active) {
+      return Promise.reject(
+        new Error('Cannot commit while transaction active.'),
+      );
+    }
+    if (this.error) {
+      return Promise.reject(this.error);
+    }
 
-    await asyncForEach(
+    return asyncForEach(
       this.hooks.committed.byCursor,
       h => catchError(h.callback) as any,
       { concurrency: 4 },
-    );
-
-    this.reset();
-    this.clean();
+    ).then(() => {
+      this.reset();
+      this.clean();
+    });
   }
 
-  async rollback(): Promise<void> {
-    assert.ok(!this._active, 'Cannot rollback while transaction active.');
-
-    const error = await effectsCleanup(this);
-
-    if (error) {
-      return Promise.reject(error);
+  rollback(): Promise<void> {
+    if (this._active) {
+      return Promise.reject(
+        new Error('Cannot rollback while transaction active.'),
+      );
     }
 
-    await asyncForEach(
-      this.hooks.rollbacks.byCursor,
-      h => catchError(h.callback) as any,
-      { concurrency: 4 },
-    );
+    return effectsCleanup(this).then(error => {
+      if (error) {
+        return Promise.reject(error);
+      }
 
-    this.reset();
-    this.clean();
+      return asyncForEach(
+        this.hooks.rollbacks.byCursor,
+        h => catchError(h.callback) as any,
+        { concurrency: 4 },
+      ).then(() => {
+        this.reset();
+        this.clean();
+      });
+    });
   }
 
   reset() {
@@ -206,7 +225,7 @@ export function createTransactionScope<T = any, Args extends any[] = any[]>(
   return new TransactionScope<any>(fn);
 }
 
-export async function effectsApply(
+export function effectsApply(
   scope: TransactionScope,
   reason: string = 'no reason',
 ): Promise<Error | undefined> {
@@ -214,18 +233,16 @@ export async function effectsApply(
 
   const onComplete = (err: Error | undefined) => void (error = err || error);
 
-  await asyncForEach(
+  return asyncForEach(
     scope.hooks.effects.byCursor,
     effect => applyEffect(scope, effect, reason).then(onComplete),
     {
       concurrency: 4,
     },
-  );
-
-  return error;
+  ).then(() => error);
 }
 
-export async function effectsCleanup(
+export function effectsCleanup(
   scope: TransactionScope,
   reason: string = 'no reason',
 ): Promise<Error | undefined> {
@@ -233,23 +250,21 @@ export async function effectsCleanup(
 
   const onComplete = (err: Error | undefined) => void (error = err || error);
 
-  await asyncForEach(
+  return asyncForEach(
     scope.hooks.effects.byCursor,
     effect => cleanupEffect(scope, effect, reason).then(onComplete),
     {
       concurrency: 4,
     },
-  );
-
-  return error;
+  ).then(() => error);
 }
 
-export async function applyEffect(
+export function applyEffect(
   scope: TransactionScope,
   effect: TransactionEffect,
   reason: string = 'no reason',
 ): Promise<Error | undefined> {
-  if (effect.cleanup) return;
+  if (effect.cleanup) return Promise.resolve(undefined);
 
   scope.log.debug(
     'Effect name = %s, flush = %s, apply by %s',
@@ -258,30 +273,30 @@ export async function applyEffect(
     reason,
   );
 
-  const [err, effectResult] = await catchError(effect.setup);
+  return Promise.resolve()
+    .then(() => catchError(effect.setup))
+    .then(({ 0: err, 1: effectResult }) => {
+      if (err) {
+        !env.isTest &&
+          scope.log.error(
+            'Effect name = %s, flush = %s apply error',
+            effect.name,
+            effect.flush,
+            err,
+          );
+        return err;
+      }
 
-  if (err) {
-    !env.isTest &&
-      scope.log.error(
-        'Effect name = %s, flush = %s apply error',
-        effect.name,
-        effect.flush,
-        err,
-      );
-    return err;
-  }
-
-  effect.cleanup = isFunction(effectResult) ? effectResult : noop;
-
-  return;
+      effect.cleanup = isFunction(effectResult) ? effectResult : noop;
+    });
 }
 
-export async function cleanupEffect(
+export function cleanupEffect(
   scope: TransactionScope,
   effect: TransactionEffect,
   reason: string = 'no reason',
 ): Promise<Error | undefined> {
-  if (!effect.cleanup) return;
+  if (!effect.cleanup) return Promise.resolve(undefined);
 
   scope.log.debug(
     'Effect name = %s, flush = %s, cleanup by %s',
@@ -290,18 +305,20 @@ export async function cleanupEffect(
     reason,
   );
 
-  const [err] = await catchError(effect.cleanup);
+  return Promise.resolve()
+    .then(() => catchError(effect.cleanup!))
+    .then(({ 0: err }) => {
+      if (err) {
+        !env.isTest &&
+          scope.log.error(
+            'Effect name = %s, flush = %s, cleanup error',
+            effect.name,
+            effect.flush,
+            err,
+          );
+        return err;
+      }
 
-  if (err) {
-    !env.isTest &&
-      scope.log.error(
-        'Effect name = %s, flush = %s, cleanup error',
-        effect.name,
-        effect.flush,
-        err,
-      );
-    return err;
-  }
-
-  effect.cleanup = undefined;
+      effect.cleanup = undefined;
+    });
 }

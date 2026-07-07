@@ -46,7 +46,7 @@ export type UseTransactionEffectOptions = Partial<
  *
  * @group Hooks
  */
-export async function useTransactionEffect(
+export function useTransactionEffect(
   setup: TransactionEffect['setup'],
   options: UseTransactionEffectOptions = {},
 ): Promise<void> {
@@ -81,7 +81,9 @@ export async function useTransactionEffect(
         },
       );
 
-      await scheduleEffect(scope, cursor);
+      return scheduleEffect(scope, cursor).then(() => {
+        scope.hooks.effects.cursor++;
+      });
     }
   } else {
     scope.log.debug(
@@ -90,27 +92,29 @@ export async function useTransactionEffect(
       flush,
     );
 
-    await scheduleEffect(scope, cursor);
+    return scheduleEffect(scope, cursor).then(() => {
+      scope.hooks.effects.cursor++;
+    });
   }
 
-  scope.hooks.effects.cursor++;
+  return Promise.resolve();
 }
 
-async function scheduleEffect(scope: TransactionScope, cursor: number) {
+function scheduleEffect(scope: TransactionScope, cursor: number) {
   const { byCursor } = scope.hooks.effects;
   const effect = byCursor[cursor]!;
 
-  const cleanupErr = await cleanupEffect(scope, effect, 'schedule pre');
-
-  if (cleanupErr) {
-    return Promise.reject(cleanupErr);
-  }
-
-  if (effect.flush === 'pre') {
-    const err = await applyEffect(scope, effect, 'schedule pre');
-
-    if (err) {
-      return Promise.reject(err);
+  return cleanupEffect(scope, effect, 'schedule pre').then(cleanupErr => {
+    if (cleanupErr) {
+      return Promise.reject(cleanupErr);
     }
-  }
+
+    if (effect.flush === 'pre') {
+      return applyEffect(scope, effect, 'schedule pre').then(err => {
+        if (err) {
+          return Promise.reject(err);
+        }
+      });
+    }
+  });
 }
