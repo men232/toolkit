@@ -20,3 +20,4 @@ export * from './set';
 export * from './toMap';
 export * from './unflatten';
 export * from './unset';
+export * from './updateWith';
