@@ -56,7 +56,7 @@ export class EJSON {
   protected typeHandlers: Map<string, Readonly<EJSONType>> = new Map();
 
   /** @internal */
-  protected replacerReady: (value: any, key: string) => any;
+  protected replacerReady: (value: any, key: PropertyKey | undefined) => any;
 
   /** @internal */
   protected encode: (value: any) => any;
@@ -165,7 +165,7 @@ export class EJSON {
   }
 
   /** @internal */
-  protected _replacer(value: any, key: string) {
+  protected _replacer(value: any, key: PropertyKey | undefined) {
     // deep object check
     if (isPlainObject(value)) return;
     // deep array check
