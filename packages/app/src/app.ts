@@ -260,7 +260,7 @@ export function isAppDefinition(value: unknown): value is AppDefinition {
  * }
  * ```
  */
-export async function startApp<
+export function startApp<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
 >(
@@ -269,24 +269,23 @@ export async function startApp<
 ): Promise<ExecResult<{ app: AppInstance<P, S> }>> {
   const instance = isAppDefinition(app) ? createAppInstance(app) : app;
 
-  const setupResult = await setupApp(instance, props);
+  return setupApp(instance, props).then(setupResult => {
+    if (isSkip(setupResult)) {
+      return setupResult;
+    }
 
-  if (isSkip(setupResult)) {
-    return setupResult;
-  }
+    return runApp(instance).then(runResult => {
+      if (isSkip(runResult)) {
+        return shutdownApp(instance).then(() => runResult);
+      }
 
-  const runResult = await runApp(instance);
-
-  if (isSkip(runResult)) {
-    await shutdownApp(instance);
-    return runResult;
-  }
-
-  return {
-    success: true,
-    code: 'start_app',
-    app: instance,
-  };
+      return {
+        success: true,
+        code: 'start_app',
+        app: instance,
+      };
+    });
+  });
 }
 
 /**
@@ -300,49 +299,55 @@ export async function startApp<
  * }
  * ```
  */
-export async function setupApp(
+export function setupApp(
   instance: AppInstance,
   props: Data,
 ): Promise<ExecResult> {
-  const mutexResolve = await mutexAcquire(instance, 'setup');
-
-  if (instance.state !== APP_INSTANCE_STATE.INIT) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'setup_app',
-      reason: `application in ${instance.state} state`,
-    };
-  }
-
-  setState(instance, APP_INSTANCE_STATE.IN_SETUP);
-
-  const { setup } = instance.definition;
-
-  if (isFunction(setup)) {
-    try {
-      const setupResult = await setup.call(instance.setupState, props);
-      Object.assign(instance.setupState, setupResult);
-    } catch (error) {
-      setState(instance, APP_INSTANCE_STATE.ERROR);
+  return mutexAcquire(instance, 'setup').then(mutexResolve => {
+    if (instance.state !== APP_INSTANCE_STATE.INIT) {
       mutexResolve();
       return {
-        code: 'setup_app',
         skip: true,
-        reason: 'setup function throw error',
-        error: toError(error),
+        code: 'setup_app',
+        reason: `application in ${instance.state} state`,
       };
     }
-  }
 
-  instance.props = props;
-  setState(instance, APP_INSTANCE_STATE.SETUP);
-  mutexResolve();
+    setState(instance, APP_INSTANCE_STATE.IN_SETUP);
 
-  return {
-    success: true,
-    code: 'setup_app',
-  };
+    const { setup } = instance.definition;
+
+    let setupPromise = Promise.resolve();
+
+    if (isFunction(setup)) {
+      setupPromise = setupPromise
+        .then(() => setup.call(instance.setupState, props))
+        .then(
+          setupResult => void Object.assign(instance.setupState, setupResult),
+        );
+    }
+
+    return setupPromise
+      .then(() => {
+        instance.props = props;
+        setState(instance, APP_INSTANCE_STATE.SETUP);
+
+        return {
+          success: true,
+          code: 'setup_app',
+        } as ExecResult;
+      })
+      .catch(error => {
+        setState(instance, APP_INSTANCE_STATE.ERROR);
+        return {
+          code: 'setup_app',
+          skip: true,
+          reason: 'setup function throw error',
+          error: toError(error),
+        } as ExecResult;
+      })
+      .finally(() => mutexResolve());
+  });
 }
 
 /**
@@ -354,46 +359,51 @@ export async function setupApp(
  * await runApp(instance);
  * ```
  */
-export async function runApp(instance: AppInstance): Promise<ExecResult> {
-  const mutexResolve = await mutexAcquire(instance, 'run');
-
-  if (instance.state !== APP_INSTANCE_STATE.SETUP) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'execute_app',
-      reason: `application in ${instance.state} state`,
-    };
-  }
-
-  const { entry } = instance.definition;
-
-  setState(instance, APP_INSTANCE_STATE.IN_RUN);
-  instance.logger.info('Starting...');
-
-  if (isFunction(entry)) {
-    try {
-      await entry.call(instance.setupState, instance.props!);
-    } catch (error) {
-      setState(instance, APP_INSTANCE_STATE.ERROR);
+export function runApp(instance: AppInstance): Promise<ExecResult> {
+  return mutexAcquire(instance, 'run').then(mutexResolve => {
+    if (instance.state !== APP_INSTANCE_STATE.SETUP) {
       mutexResolve();
       return {
         skip: true,
         code: 'execute_app',
-        reason: 'entry function throw error',
-        error: toError(error),
+        reason: `application in ${instance.state} state`,
       };
     }
-  }
 
-  setState(instance, APP_INSTANCE_STATE.RUN);
-  mutexResolve();
-  instance.logger.info('Started');
+    const { entry } = instance.definition;
 
-  return {
-    success: true,
-    code: 'execute_app',
-  };
+    setState(instance, APP_INSTANCE_STATE.IN_RUN);
+    instance.logger.info('Starting...');
+
+    let entryPromise = Promise.resolve();
+
+    if (isFunction(entry)) {
+      entryPromise = entryPromise.then(() =>
+        entry.call(instance.setupState, instance.props!),
+      );
+    }
+
+    return entryPromise
+      .then(() => {
+        setState(instance, APP_INSTANCE_STATE.RUN);
+        instance.logger.info('Started');
+
+        return {
+          success: true,
+          code: 'execute_app',
+        } as ExecResult;
+      })
+      .catch(error => {
+        setState(instance, APP_INSTANCE_STATE.ERROR);
+        return {
+          skip: true,
+          code: 'execute_app',
+          reason: 'entry function throw error',
+          error: toError(error),
+        } as ExecResult;
+      })
+      .finally(() => mutexResolve());
+  });
 }
 
 /**
@@ -407,52 +417,52 @@ export async function runApp(instance: AppInstance): Promise<ExecResult> {
  * });
  * ```
  */
-export async function stopApp(instance: AppInstance): Promise<ExecResult> {
-  const mutexResolve = await mutexAcquire(instance, 'stop');
-
-  if (instance.state !== APP_INSTANCE_STATE.RUN) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'stop_app',
-      reason: `application in ${instance.state} state`,
-    };
-  }
-
-  const { stop } = instance.definition;
-
-  setState(instance, APP_INSTANCE_STATE.IN_STOP);
-  instance.logger.info('Stopping...');
-
-  let stopErr: Error | undefined;
-
-  if (isFunction(stop)) {
-    try {
-      await stop.call(instance.setupState, instance.props!);
-    } catch (err) {
-      setState(instance, APP_INSTANCE_STATE.ERROR);
-      stopErr = toError(err);
+export function stopApp(instance: AppInstance): Promise<ExecResult> {
+  return mutexAcquire(instance, 'stop').then(mutexResolve => {
+    if (instance.state !== APP_INSTANCE_STATE.RUN) {
+      mutexResolve();
+      return {
+        skip: true,
+        code: 'stop_app',
+        reason: `application in ${instance.state} state`,
+      };
     }
-  }
 
-  mutexResolve();
+    const { stop } = instance.definition;
 
-  if (stopErr) {
-    return {
-      skip: true,
-      code: 'stop_app',
-      reason: 'stop function throw error',
-      error: stopErr,
-    };
-  }
+    setState(instance, APP_INSTANCE_STATE.IN_STOP);
+    instance.logger.info('Stopping...');
 
-  setState(instance, APP_INSTANCE_STATE.STOP);
-  instance.logger.info('Stopped');
+    let stopPromise = Promise.resolve();
 
-  return {
-    success: true,
-    code: 'stop_app',
-  };
+    if (isFunction(stop)) {
+      stopPromise = stopPromise.then(() =>
+        stop.call(instance.setupState, instance.props!),
+      );
+    }
+
+    return stopPromise
+      .then(() => {
+        setState(instance, APP_INSTANCE_STATE.STOP);
+        instance.logger.info('Stopped');
+
+        return {
+          success: true,
+          code: 'stop_app',
+        } as ExecResult;
+      })
+      .catch(err => {
+        setState(instance, APP_INSTANCE_STATE.ERROR);
+
+        return {
+          skip: true,
+          code: 'stop_app',
+          reason: 'stop function throw error',
+          error: toError(err),
+        } as ExecResult;
+      })
+      .finally(() => mutexResolve());
+  });
 }
 
 /**
@@ -465,59 +475,60 @@ export async function stopApp(instance: AppInstance): Promise<ExecResult> {
  * // instance can be set up and started again after this
  * ```
  */
-export async function shutdownApp(instance: AppInstance): Promise<ExecResult> {
-  await stopApp(instance);
+export function shutdownApp(instance: AppInstance): Promise<ExecResult> {
+  return stopApp(instance)
+    .then(() => mutexAcquire(instance, 'shutdown'))
+    .then(mutexResolve => {
+      if (
+        instance.state !== APP_INSTANCE_STATE.STOP &&
+        instance.state !== APP_INSTANCE_STATE.SETUP &&
+        instance.state !== APP_INSTANCE_STATE.ERROR
+      ) {
+        mutexResolve();
+        return {
+          skip: true,
+          code: 'shutdown_app',
+          reason: `application in ${instance.state} state`,
+        };
+      }
 
-  const mutexResolve = await mutexAcquire(instance, 'shutdown');
+      const { shutdown } = instance.definition;
 
-  if (
-    instance.state !== APP_INSTANCE_STATE.STOP &&
-    instance.state !== APP_INSTANCE_STATE.SETUP &&
-    instance.state !== APP_INSTANCE_STATE.ERROR
-  ) {
-    mutexResolve();
-    return {
-      skip: true,
-      code: 'shutdown_app',
-      reason: `application in ${instance.state} state`,
-    };
-  }
+      setState(instance, APP_INSTANCE_STATE.IN_SHUTDOWN);
+      instance.logger.info('Shutdown...');
 
-  const { shutdown } = instance.definition;
+      let shutdownPromise = Promise.resolve();
 
-  setState(instance, APP_INSTANCE_STATE.IN_SHUTDOWN);
-  instance.logger.info('Shutdown...');
+      if (isFunction(shutdown)) {
+        shutdownPromise = shutdownPromise.then(() =>
+          shutdown.call(instance.setupState, instance.props!),
+        );
+      }
 
-  let shutdownErr: Error | undefined;
+      return shutdownPromise
+        .then(() => {
+          setState(instance, APP_INSTANCE_STATE.SHUTDOWN);
 
-  if (isFunction(shutdown)) {
-    try {
-      await shutdown.call(instance.setupState, instance.props!);
-    } catch (err) {
-      shutdownErr = toError(err);
-    }
-  }
-
-  instance.props = null;
-  instance.setupState = createSetupState(instance.definition);
-  mutexResolve();
-
-  if (shutdownErr) {
-    setState(instance, APP_INSTANCE_STATE.ERROR);
-    return {
-      skip: true,
-      code: 'shutdown_app',
-      reason: 'shutdown function throw error',
-      error: shutdownErr,
-    };
-  }
-
-  setState(instance, APP_INSTANCE_STATE.SHUTDOWN);
-
-  return {
-    success: true,
-    code: 'shutdown_app',
-  };
+          return {
+            success: true,
+            code: 'shutdown_app',
+          } as ExecResult;
+        })
+        .catch(shutdownErr => {
+          setState(instance, APP_INSTANCE_STATE.ERROR);
+          return {
+            skip: true,
+            code: 'shutdown_app',
+            reason: 'shutdown function throw error',
+            error: shutdownErr,
+          } as ExecResult;
+        })
+        .finally(() => {
+          instance.props = null;
+          instance.setupState = createSetupState(instance.definition);
+          mutexResolve();
+        });
+    });
 }
 
 /**

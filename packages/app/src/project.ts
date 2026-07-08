@@ -1,4 +1,10 @@
-import { assert, getFileExtension, isString, uniq } from '@andrew_l/toolkit';
+import {
+  assert,
+  asyncForEach,
+  getFileExtension,
+  isString,
+  uniq,
+} from '@andrew_l/toolkit';
 
 import dotenv from 'dotenv';
 import fs from 'node:fs';
@@ -156,9 +162,9 @@ export function projectResolveFile(
   return null;
 }
 
-export async function projectLoadEnv(project: Project): Promise<boolean> {
+export function projectLoadEnv(project: Project): Promise<boolean> {
   if (!project.dotenvPath) {
-    return false;
+    return Promise.resolve(false);
   }
 
   dotenv.config({
@@ -166,23 +172,26 @@ export async function projectLoadEnv(project: Project): Promise<boolean> {
     quiet: true,
   });
 
-  return true;
+  return Promise.resolve(true);
 }
 
-export async function projectAutoImport(project: Project): Promise<string[]> {
+export function projectAutoImport(project: Project): Promise<string[]> {
   const result: string[] = [];
   const filePaths = project.autoImports.map(filePath =>
     projectResolveFile(project, filePath),
   );
 
-  for (const filePath of filePaths) {
-    if (filePath) {
-      await projectImportFile(project, filePath);
-      result.push(filePath.replace(project.path, ''));
-    }
-  }
+  return asyncForEach(
+    filePaths,
+    filePath => {
+      if (!filePath) return;
 
-  return result;
+      return projectImportFile(project, filePath).then(() => {
+        result.push(filePath.replace(project.path, ''));
+      });
+    },
+    { concurrency: 4 },
+  ).then(() => result);
 }
 
 export function projectPrintInfo(project: Project) {
