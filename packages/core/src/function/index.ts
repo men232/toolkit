@@ -3,6 +3,7 @@ export * from './createFunction';
 export * from './debounce';
 export * from './execResult';
 export * from './identity';
+export * from './negate';
 export * from './qs';
 export * from './retryOnError';
 export * from './throttle';
