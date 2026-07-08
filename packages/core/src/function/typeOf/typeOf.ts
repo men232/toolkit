@@ -1,5 +1,22 @@
 import { isDate, isFunction, isNumber } from '@/is';
-import { getTag } from '@/object/getTag';
+import {
+  arrayTag,
+  bigintTag,
+  booleanTag,
+  dateTag,
+  functionTag,
+  getTag,
+  mapTag,
+  nullTag,
+  numberTag,
+  objectTag,
+  setTag,
+  stringTag,
+  symbolTag,
+  undefinedTag,
+  weakmapTag,
+  weaksetTag,
+} from '@/object/getTag';
 import type { AnyFunction } from '../../types';
 
 export type TypeOf = keyof TypeOfMap;
@@ -24,21 +41,21 @@ export type TypeOfMap = {
 };
 
 var tagToType: Record<string, TypeOf | ((value: unknown) => TypeOf)> = {
-  '[object Null]': 'null',
-  '[object Undefined]': 'undefined',
-  '[object String]': 'string',
-  '[object Function]': 'function',
-  '[object Array]': 'array',
-  '[object Set]': 'set',
-  '[object Map]': 'map',
-  '[object Date]': v => (isDate(v) ? 'date' : 'unknown'),
-  '[object Object]': 'object',
-  '[object Symbol]': 'symbol',
-  '[object BigInt]': 'bigint',
-  '[object Boolean]': 'boolean',
-  '[object WeakMap]': 'weakmap',
-  '[object WeakSet]': 'weakset',
-  '[object Number]': v => (isNumber(v) ? 'number' : 'unknown'),
+  [nullTag]: 'null',
+  [undefinedTag]: 'undefined',
+  [stringTag]: 'string',
+  [functionTag]: 'function',
+  [arrayTag]: 'array',
+  [setTag]: 'set',
+  [mapTag]: 'map',
+  [dateTag]: v => (isDate(v) ? 'date' : 'unknown'),
+  [objectTag]: 'object',
+  [symbolTag]: 'symbol',
+  [bigintTag]: 'bigint',
+  [booleanTag]: 'boolean',
+  [weakmapTag]: 'weakmap',
+  [weaksetTag]: 'weakset',
+  [numberTag]: v => (isNumber(v) ? 'number' : 'unknown'),
 };
 
 /**
