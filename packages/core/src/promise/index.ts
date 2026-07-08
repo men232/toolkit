@@ -14,4 +14,5 @@ export * from './ResourcePool';
 export * from './scheduler';
 export * from './SimpleEventEmitter';
 export * from './timeout';
+export * from './toPromise';
 export * from './withResolve';
