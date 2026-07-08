@@ -1,12 +1,5 @@
-import {
-  isDate,
-  isMap,
-  isNumber,
-  isObject,
-  isSet,
-  isWeakMap,
-  isWeakSet,
-} from '@/is';
+import { isDate, isFunction, isNumber } from '@/is';
+import { getTag } from '@/object/getTag';
 import type { AnyFunction } from '../../types';
 
 export type TypeOf = keyof TypeOfMap;
@@ -30,31 +23,34 @@ export type TypeOfMap = {
   unknown: unknown;
 };
 
+var tagToType: Record<string, TypeOf | ((value: unknown) => TypeOf)> = {
+  '[object Null]': 'null',
+  '[object Undefined]': 'undefined',
+  '[object String]': 'string',
+  '[object Function]': 'function',
+  '[object Array]': 'array',
+  '[object Set]': 'set',
+  '[object Map]': 'map',
+  '[object Date]': v => (isDate(v) ? 'date' : 'unknown'),
+  '[object Object]': 'object',
+  '[object Symbol]': 'symbol',
+  '[object BigInt]': 'bigint',
+  '[object Boolean]': 'boolean',
+  '[object WeakMap]': 'weakmap',
+  '[object WeakSet]': 'weakset',
+  '[object Number]': v => (isNumber(v) ? 'number' : 'unknown'),
+};
+
 /**
  * Typeof that you deserve
  * @group Utility Functions
  */
 export function typeOf(value: unknown): TypeOf {
-  const type = typeof value;
+  var typeOrGetter = tagToType[getTag(value)] || 'unknown';
 
-  switch (type) {
-    case 'number':
-      return isNumber(value) ? 'number' : 'unknown';
-
-    case 'object': {
-      if (value === null) return 'null';
-      if (Array.isArray(value)) return 'array';
-      if (isSet(value)) return 'set';
-      if (isWeakSet(value)) return 'weakset';
-      if (isMap(value)) return 'map';
-      if (isWeakMap(value)) return 'weakmap';
-      if (isDate(value)) return 'date';
-      if (isObject(value)) return 'object';
-      return 'unknown';
-    }
-
-    default: {
-      return type;
-    }
+  if (isFunction(typeOrGetter)) {
+    return typeOrGetter(value);
   }
+
+  return typeOrGetter;
 }

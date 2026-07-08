@@ -1,3 +1,4 @@
+import { getTag } from './object/getTag';
 import type { Primitive } from './types';
 
 /**
@@ -12,8 +13,6 @@ export const isClient = typeof (globalThis as any)?.window !== 'undefined';
  * @group Predicates
  */
 export const isDef = <T = any>(val?: T): val is T => typeof val !== 'undefined';
-
-const toString = Object.prototype.toString;
 
 /**
  * Checks if the given value is a `null` or `undefined`
@@ -80,7 +79,7 @@ export const isString = (val: unknown): val is string =>
  * @group Predicates
  */
 export const isObject = (val: any): val is object =>
-  toString.call(val) === '[object Object]';
+  getTag(val) === '[object Object]';
 
 /**
  * Checks if the given value is a plain `object`
