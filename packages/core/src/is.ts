@@ -478,6 +478,8 @@ export const isBuffer = (value: unknown): value is globalThis.Buffer => {
  *   console.log('This is running in Node.js');
  *   const fs = import('node:fs');
  * }
+ *
+ * @group Predicates
  */
 export function isNode(): boolean {
   return (
