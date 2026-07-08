@@ -35,9 +35,8 @@ export function nextTickIteration(
   amount: number,
   delay: number | 'tick' = 'tick',
 ): () => Promise<void> {
-  let counter = 0;
-
-  const tickInterval = delay === 'tick';
+  var counter = 0;
+  var tickInterval = delay === 'tick';
 
   return () => {
     counter++;
@@ -48,7 +47,7 @@ export function nextTickIteration(
         if (tickInterval) {
           fastIdle(resolve);
         } else {
-          setTimeout(resolve, delay);
+          setTimeout(resolve, delay as number);
         }
       });
     }
