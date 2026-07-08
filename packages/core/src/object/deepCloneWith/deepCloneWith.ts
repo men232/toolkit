@@ -1,21 +1,21 @@
 import { arrayable } from '@/array/arrayable';
-import { isError, isPrimitive, isString } from '@/is';
-import type { Arrayable } from '@/types';
-import _cloneDeepWith from 'lodash/cloneDeepWith.js';
 import { def } from '../def';
+import { deepCloneWithImpl } from './deepCloneWithImpl';
 
 const WITH_CUSTOMIZER_FACTORY_SYM = Symbol();
 
-export type WithCustomizer = (
+export type WithCustomizer<T = any> = (
   value: any,
-  key: number | string | undefined,
+  key: PropertyKey | undefined,
+  obj: T,
+  stack: Map<any, any>,
 ) => any;
 
 export type WithCustomizerFactory = () => WithCustomizer;
 
-export type WithCustomizerValue = Readonly<
-  Arrayable<WithCustomizer | WithCustomizerFactory>
->;
+export type WithCustomizerValue =
+  | (WithCustomizer | WithCustomizerFactory)
+  | Readonly<(WithCustomizer | WithCustomizerFactory)[]>;
 
 /**
  * Recursively clones the provided value with a customizer function that allows for transformation of certain values during the cloning process.
@@ -57,21 +57,27 @@ export type WithCustomizerValue = Readonly<
 export function deepCloneWith<T>(value: T, customizer: WithCustomizerValue): T {
   const fns = prepareCustomizes(customizer);
 
-  return _cloneDeepWith(value, (value, key) => {
-    let newValue;
-    let replaced = false;
+  return deepCloneWithImpl(
+    value,
+    undefined,
+    value,
+    new Map(),
+    (value, key, obj, stack) => {
+      var newValue;
+      var replaced = false;
 
-    for (const fn of fns) {
-      newValue = fn(value, key);
+      for (const fn of fns) {
+        newValue = fn(value, key, obj, stack);
 
-      if (newValue !== undefined) {
-        value = newValue;
-        replaced = true;
+        if (newValue !== undefined) {
+          value = newValue;
+          replaced = true;
+        }
       }
-    }
 
-    if (replaced) return value;
-  });
+      if (replaced) return value;
+    },
+  );
 }
 
 export function createDeepCloneWith(
@@ -83,7 +89,9 @@ export function createDeepCloneWith(
 }
 
 function prepareCustomizes(value: WithCustomizerValue): WithCustomizer[] {
-  return arrayable(value).map(v => (isCustomizerFactory(v) ? v() : v));
+  return arrayable(value).map(v =>
+    isCustomizerFactory(v) ? v() : v,
+  ) as WithCustomizer[];
 }
 
 export function isCustomizerFactory(
@@ -101,59 +109,5 @@ export function createCustomizerFactory(
   fn: (...args: any[]) => WithCustomizer,
 ): WithCustomizerFactory {
   def(fn, WITH_CUSTOMIZER_FACTORY_SYM, true);
-  return fn;
-}
-
-export interface SecureCustomizerOptions {
-  /**
-   * @default true
-   */
-  normalizeError?: boolean;
-}
-
-export function createSecureCustomizer(
-  properties: string[],
-  opts?: SecureCustomizerOptions,
-): WithCustomizerFactory {
-  const secureLabel = `<** secure **>`;
-  const circularLabel = `<** circular **>`;
-  const propertiesSet = Object.freeze(
-    new Set(properties.map(v => v.toLocaleLowerCase())),
-  );
-
-  const withCustomizer = (
-    seenSet: WeakSet<any>,
-    value: any,
-    key?: PropertyKey,
-  ): any => {
-    if (isPrimitive(value)) {
-      if (!isString(key)) return;
-      if (!propertiesSet.has(key.toLocaleLowerCase())) return;
-
-      return secureLabel;
-    }
-
-    if (seenSet.has(value)) {
-      return circularLabel;
-    }
-
-    seenSet.add(value);
-
-    if (isError(value) && opts?.normalizeError !== false) {
-      return {
-        message: value.message,
-        stack: value.stack,
-        name: value.name,
-        cause:
-          value.cause !== undefined
-            ? withCustomizer(seenSet, value.cause)
-            : undefined,
-      };
-    }
-  };
-
-  return createCustomizerFactory(() => {
-    const seenSet = new WeakSet();
-    return withCustomizer.bind(null, seenSet);
-  });
+  return fn as WithCustomizerFactory;
 }

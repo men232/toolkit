@@ -1,4 +1,4 @@
-import _cloneDeep from 'lodash/cloneDeep.js';
+import { deepCloneWithImpl } from '../deepCloneWith/deepCloneWithImpl';
 
 /**
  * Recursively clones the provided value, creating a deep copy.
@@ -27,5 +27,5 @@ import _cloneDeep from 'lodash/cloneDeep.js';
  * @group Object
  */
 export const deepClone = <T>(value: T): T => {
-  return _cloneDeep(value);
+  return deepCloneWithImpl(value, undefined, value, new Map(), undefined);
 };
