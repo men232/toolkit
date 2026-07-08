@@ -9,6 +9,7 @@ export * from './def';
 export * from './flagsToMap';
 export * from './flatten';
 export * from './get';
+export * from './getTag';
 export * from './has';
 export * from './hasOwn';
 export * from './omit';
