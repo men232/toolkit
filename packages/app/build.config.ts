@@ -1,13 +1,15 @@
-import { defineBuildConfig } from 'unbuild';
+import { defineBuildConfig } from 'obuild/config';
 
 export default defineBuildConfig({
-  entries: ['src/index.ts', { input: 'src/vrun', name: 'vrun' }],
-  declaration: true,
-  sourcemap: true,
-  rollup: {
-    emitCJS: true,
-    esbuild: {
-      jsx: 'automatic',
+  entries: [
+    {
+      input: ['./src/index.ts', './src/vrun.ts'],
+      type: 'bundle',
+      outDir: './dist',
+      dts: {
+        build: true,
+        sourcemap: true,
+      },
     },
-  },
+  ],
 });

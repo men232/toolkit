@@ -28,10 +28,10 @@ export default defineConfig({
 
     sidebar: (typedocSidebar as any[]).map(pkg => {
       pkg.items = pkg.items.filter(
-        v => !EXCLUDE_TYPEDOC_GROUPS.has((v as any).text),
+        (v: any) => !EXCLUDE_TYPEDOC_GROUPS.has((v as any).text),
       );
 
-      const mainGroupIndex = pkg.items.findIndex(v => v.text === 'Main');
+      const mainGroupIndex = pkg.items.findIndex((v: any) => v.text === 'Main');
 
       if (mainGroupIndex > -1) {
         const mainGroupItems = pkg.items[mainGroupIndex].items;

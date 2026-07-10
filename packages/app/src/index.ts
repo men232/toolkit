@@ -8,5 +8,6 @@ export type {
   ExtractPropTypes,
   ObjectPropsOptions,
   PropOptions,
+  PropType,
 } from './utils/props.js';
 export * from './worker.js';

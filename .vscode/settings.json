@@ -5,6 +5,7 @@
     "binlogs",
     "Customizer",
     "ejson",
+    "obuild",
     "Randomizer",
     "sprintf",
     "timespan",

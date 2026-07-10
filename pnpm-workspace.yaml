@@ -1,8 +1,24 @@
 packages:
   - 'packages/*'
 
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+
 catalog:
-  'typescript': ~5.8.3
-  'unbuild': 3.5.0
+  'typescript': 6.0.3
+  'obuild': ^0.4.37
   '@types/node': 22.10.5
   'vitest': ^3.2.4
+
+peerDependencyRules:
+  allowedVersions:
+    'typescript-eslint>eslint': ^9.0.0
+    '@typescript-eslint/eslint-plugin>eslint': ^9.0.0
+    '@typescript-eslint/parser>eslint': ^9.0.0
+    '@typescript-eslint/type-utils>eslint': ^9.0.0
+    '@typescript-eslint/utils>eslint': ^9.0.0
+
+patchedDependencies:
+  'mongoose@7.6.3': 'patches/mongoose@7.6.3.patch'
+  'mongoose@8.8.0': 'patches/mongoose@8.8.0.patch'

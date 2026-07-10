@@ -1,14 +1,15 @@
-import { resolve } from 'node:path';
-import { defineBuildConfig } from 'unbuild';
+import { defineBuildConfig } from 'obuild/config';
 
 export default defineBuildConfig({
-  entries: ['src/index.ts'],
-  declaration: true,
-  sourcemap: true,
-  rollup: {
-    emitCJS: true,
-  },
-  alias: {
-    '@': resolve(__dirname, 'src'),
-  },
+  entries: [
+    {
+      input: './src/index.ts',
+      type: 'bundle',
+      outDir: './dist',
+      dts: {
+        build: true,
+        sourcemap: true,
+      },
+    },
+  ],
 });

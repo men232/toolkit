@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/dom",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "description": "Utility functions to simplify animations, clipboard operations, and smooth scrolling.",
   "license": "MIT",
   "type": "module",
@@ -16,26 +16,27 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "build": "unbuild",
-    "prepack": "unbuild",
+    "build": "obuild",
+    "prepack": "obuild",
     "test": "echo todo",
     "test:watch": "vitest watch --typecheck"
   },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     }
   },
-  "main": "./dist/index.cjs",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "files": [
     "dist"
   ],
   "devDependencies": {
     "@types/node": "catalog:",
+    "obuild": "catalog:",
     "typescript": "catalog:",
-    "unbuild": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {

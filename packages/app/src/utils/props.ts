@@ -1,10 +1,4 @@
-import {
-  type Data,
-  type IfAny,
-  arrayable,
-  isNumber,
-  kebabCase,
-} from '@andrew_l/toolkit';
+import { type Data, arrayable, isNumber, kebabCase } from '@andrew_l/toolkit';
 import { InvalidArgumentError, Option } from 'commander';
 
 /**
@@ -21,6 +15,11 @@ export interface PropOptions<T = any> {
   parser?: (value: string) => InferPropType<T>;
   enum?: string[];
 }
+
+/**
+ * @group Types
+ */
+export type Prop<T> = PropOptions<T> | PropType<T>;
 
 /**
  * @group Types
@@ -52,9 +51,11 @@ type RequiredKeys<T> = {
   [K in keyof T]: T[K] extends { required: true } ? K : never;
 }[keyof T];
 
-type InferPropType<T> = [T] extends [null]
-  ? any // null & true would fail to infer
-  : [T] extends [{ type: null }]
+type InferPropType<T, NullAsAny = true> = [T] extends [null]
+  ? NullAsAny extends true
+    ? any
+    : null
+  : [T] extends [{ type: null | true }]
     ? any // As TS issue https://github.com/Microsoft/TypeScript/issues/14829 // somehow `ObjectConstructor` when inferred from { (): T } becomes `any` // `BooleanConstructor` when inferred from PropConstructor(with PropMethod) becomes `Boolean`
     : [T] extends [ObjectConstructor | { type: ObjectConstructor }]
       ? Record<string, any>
@@ -62,19 +63,13 @@ type InferPropType<T> = [T] extends [null]
         ? boolean
         : [T] extends [DateConstructor | { type: DateConstructor }]
           ? Date
-          : [T] extends [DateConstructor | { type: DateConstructor }]
-            ? Date
-            : [T] extends [StringConstructor | { type: StringConstructor }]
-              ? string
-              : [T] extends [(infer U)[] | { type: (infer U)[] }]
-                ? U extends DateConstructor
-                  ? Date | InferPropType<U>
-                  : InferPropType<U>
-                : [T] extends [PropOptions<infer V>]
-                  ? unknown extends V
-                    ? IfAny<V, V, V>
-                    : V
-                  : T;
+          : [T] extends [(infer U)[] | { type: (infer U)[] }]
+            ? U extends DateConstructor
+              ? Date | InferPropType<U, false>
+              : InferPropType<U, false>
+            : [T] extends [Prop<infer V>]
+              ? V
+              : T;
 
 /**
  * Resolve the concrete prop value types from an `ObjectPropsOptions` declaration.
@@ -90,8 +85,8 @@ export type ExtractPropTypes<O> = {
 
 const TYPE_TO_PLACEHOLDER = new Map<any, string>([
   [String, '<string>'],
-  [Boolean, '<boolean>'],
   [Number, '<number>'],
+  [BigInt, '<bigint>'],
   [Date, '<date>'],
   [Array, '<array>'],
 ]);
@@ -147,13 +142,14 @@ export function propsToOptions(props: ObjectPropsOptions): Option[] {
     option.attributeName();
 
     switch (type) {
-      case Boolean: {
-        option.isBoolean();
+      case Number: {
+        option.argParser(parseNumberArgument);
         break;
       }
 
-      case Number: {
-        option.argParser(parseNumberArgument);
+      case BigInt as any: {
+        option.argParser(parseBigintArgument);
+        break;
       }
     }
 
@@ -176,10 +172,18 @@ function getEnv(variables: string[]): string | undefined {
   }
 }
 
-function parseNumberArgument(value: string) {
+function parseNumberArgument(value: string): number {
   const parsedValue = parseInt(value, 10);
   if (!isNumber(parsedValue)) {
     throw new InvalidArgumentError('Not a number.');
   }
   return parsedValue;
+}
+
+function parseBigintArgument(value: string): bigint {
+  try {
+    return BigInt(value);
+  } catch (_) {
+    throw new InvalidArgumentError('Not a big number.');
+  }
 }

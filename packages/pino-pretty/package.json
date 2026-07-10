@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/pino-pretty",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "description": "Pino transport for beautiful log output",
   "license": "MIT",
   "type": "module",
@@ -16,26 +16,27 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "build": "unbuild",
-    "prepack": "unbuild"
+    "build": "obuild",
+    "prepack": "obuild"
   },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     }
   },
-  "main": "./dist/index.cjs",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "files": [
     "dist"
   ],
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pump": "^1.1.3",
+    "obuild": "catalog:",
     "pino": "^9.7.0",
     "typescript": "catalog:",
-    "unbuild": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {
