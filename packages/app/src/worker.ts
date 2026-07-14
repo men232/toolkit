@@ -108,12 +108,12 @@ export interface WorkerDefinition<
   S extends Record<string, any> = {},
   M extends Record<string, AnyFunction> = {},
   C extends WorkerStrategy = WorkerStrategy,
-  RuntimeContext extends
-    WorkerDefinition.RuntimeContext = WorkerDefinition.RuntimeContext<S & M>,
-  EntryContext extends
-    WorkerDefinition.EntryContext = WorkerDefinition.EntryContext<C> & S & M,
-  SetupContext extends
-    WorkerDefinition.SetupContext = WorkerDefinition.SetupContext<M>,
+  RuntimeContext extends WorkerDefinition.RuntimeContext =
+    WorkerDefinition.RuntimeContext<S & M>,
+  EntryContext extends WorkerDefinition.EntryContext =
+    WorkerDefinition.EntryContext<C> & S & M,
+  SetupContext extends WorkerDefinition.SetupContext =
+    WorkerDefinition.SetupContext<M>,
 > extends AppDefinition<P, S, M, RuntimeContext, EntryContext, SetupContext> {
   /**
    * Entry function that will be called each time when worker handle a job
@@ -478,10 +478,23 @@ function runWorkerLoop(
 
       for await (const taskContext of worker.queue) {
         const jobTicket = await worker.pool.acquire();
-        const entryContext: WorkerDefinition.EntryContext<WorkerStrategy> = {
-          ...runtimeContext,
-          ...taskContext,
-        };
+
+        const entryContext = new Proxy(taskContext, {
+          get(target, key, receiver) {
+            if (Object.prototype.hasOwnProperty.call(target, key)) {
+              return Reflect.get(target, key, receiver);
+            }
+            return Reflect.get(runtimeContext, key);
+          },
+          set(target, key, value) {
+            if (Object.prototype.hasOwnProperty.call(target, key)) {
+              Reflect.set(target, key, value, target);
+            } else {
+              Reflect.set(runtimeContext, key, value, runtimeContext);
+            }
+            return true;
+          },
+        }) as WorkerDefinition.EntryContext<WorkerStrategy>;
 
         executeWorkerTask(worker, entryContext, props, abortSignal).finally(
           () => {

@@ -438,4 +438,47 @@ describe('worker lifecycle', () => {
     await stopApp(app);
     await shutdownApp(app);
   });
+
+  it('entry has access and able to modify setup context', async () => {
+    let capturedEntryContext: any;
+    let capturedSetupContext: any;
+    let capturedMethodContext: any;
+
+    const def = defineWorker({
+      name: 'test',
+      logger: false,
+      executeStrategy: makeStrategy(),
+      methods: {
+        testMethod() {
+          capturedMethodContext = this;
+        },
+      },
+      setup() {
+        capturedSetupContext = this;
+
+        return {
+          modified: false,
+          task: false,
+        };
+      },
+      entry() {
+        this.testMethod();
+
+        capturedEntryContext = this;
+        this.modified = true;
+        this.task = true;
+      },
+    });
+
+    const app = await launchApp(def, {});
+    const worker = (app.setupState as any).worker as WorkerInstance;
+    worker.addTask({ task: 1 });
+    await stopApp(app);
+    await shutdownApp(app);
+
+    expect(capturedEntryContext.modified).toBe(true);
+    expect(capturedEntryContext.task).toBe(true);
+    expect(capturedMethodContext.modified).toBe(true);
+    expect(capturedMethodContext.task).toBe(false);
+  });
 });
