@@ -1,3 +1,5 @@
+import type { Brand } from './brand';
+
 export type Arrayable<T> = T[] | T;
 
 export type Awaitable<T> = Promise<T> | T;
@@ -130,4 +132,4 @@ export interface SelectOptionItem<T = any> {
 export type Primitive =
   null | undefined | string | number | bigint | boolean | symbol;
 
-export type SpecialValue = symbol & { __brand: '@andrewl/toolkit' };
+export type SpecialValue = Brand<symbol, 'special-value'>;
