@@ -1,6 +1,9 @@
 /* eslint-env node */
 import { AssertionError } from '@/errors/AssertionError';
+import { isSkip, isSuccess, stringifyExecResult } from '@/function';
+import type { ExecSkip, ExecSuccess } from '@/types';
 import {
+  isBigInt,
   isBoolean,
   isDate,
   isEmpty,
@@ -28,7 +31,7 @@ export function equal<T>(
   message?: string | Error,
 ): asserts actual is T {
   if (actual !== expected) {
-    new AssertionError({
+    throw new AssertionError({
       actual,
       expected,
       message: isString(message)
@@ -96,6 +99,15 @@ export function number(
 ): asserts value is number {
   if (!isNumber(value)) {
     throw toError(number, value, message, 'Expected number value.');
+  }
+}
+
+export function bigint(
+  value: unknown,
+  message?: string | Error,
+): asserts value is bigint {
+  if (!isBigInt(value)) {
+    throw toError(bigint, value, message, 'Expected bigint value.');
   }
 }
 
@@ -171,6 +183,42 @@ export function arrayNumbers(
 ): asserts value is number[] {
   if (!Array.isArray(value) || !value.every(isNumber)) {
     throw toError(arrayNumbers, value, message, 'Expected numbers list value.');
+  }
+}
+
+export function execSuccess(
+  value: unknown,
+  message?: string | Error,
+): asserts value is ExecSuccess {
+  if (isSkip(value)) {
+    throw toError(
+      execSuccess,
+      value,
+      message,
+      `Unexpected ${stringifyExecResult(value)}`,
+    );
+  }
+
+  if (!isSuccess(value)) {
+    throw toError(execSuccess, value, message, 'Expected ExecSuccess value.');
+  }
+}
+
+export function execSkip(
+  value: unknown,
+  message?: string | Error,
+): asserts value is ExecSkip {
+  if (isSuccess(value)) {
+    throw toError(
+      execSkip,
+      value,
+      message,
+      `Unexpected ${stringifyExecResult(value)}`,
+    );
+  }
+
+  if (!isSkip(value)) {
+    throw toError(execSkip, value, message, 'Expected ExecSkip value.');
   }
 }
 
