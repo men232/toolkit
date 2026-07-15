@@ -1,4 +1,5 @@
 export * from './asyncFilter';
+export * from './asyncFilterMap';
 export * from './asyncFind';
 export * from './asyncForEach';
 export * from './AsyncIterableQueue';
