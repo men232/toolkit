@@ -327,7 +327,11 @@ function executeWorkerTask<C extends WorkerStrategy>(
           } else if (hasSkip) {
             log.warn('Task skipped', results);
           } else {
-            log.debug('Task completed', results);
+            if (results[0].code === 'void') {
+              log.debug('Task completed', results);
+            } else {
+              log.info('Task completed', results);
+            }
           }
 
           return catchError(() => completeSignal(entryContext, executeResult));
