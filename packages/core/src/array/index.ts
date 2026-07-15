@@ -4,6 +4,7 @@ export * from './avgCircular';
 export * from './chunk';
 export * from './chunkSeries';
 export * from './difference';
+export * from './filterMap';
 export * from './groupBy';
 export * from './intersection';
 export * from './intersectionBy';

@@ -128,10 +128,6 @@ export interface SelectOptionItem<T = any> {
 }
 
 export type Primitive =
-  | null
-  | undefined
-  | string
-  | number
-  | bigint
-  | boolean
-  | symbol;
+  null | undefined | string | number | bigint | boolean | symbol;
+
+export type SpecialValue = symbol & { __brand: '@andrewl/toolkit' };
