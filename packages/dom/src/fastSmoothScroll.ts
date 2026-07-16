@@ -189,12 +189,13 @@ function scrollWithJs(
 
       container.scrollTop = Math.round(target - currentPath);
 
-      if (t > 0) {
-        return true;
+      const isAnimating = t < 1;
+
+      if (!isAnimating) {
+        onComplete?.(container);
       }
 
-      onComplete?.(container);
-      return false;
+      return isAnimating;
     });
   });
 }
