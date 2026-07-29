@@ -179,8 +179,11 @@ export function launchAppsTui(
       return Promise.resolve();
     }
 
-    if (w.state === APP_INSTANCE_STATE.STOP) return startThreadApp(w);
-    return setupThreadApp(w).then(() => startThreadApp(w));
+    if (w.state === APP_INSTANCE_STATE.STOP)
+      return startThreadApp(w).then(noop);
+    return setupThreadApp(w)
+      .then(() => startThreadApp(w))
+      .then(noop);
   };
 
   store.handlers = {
@@ -189,7 +192,7 @@ export function launchAppsTui(
       if (r)
         return Promise.all(r.threads.map(w => stopThreadApp(w))).then(() => {});
       const found = findThread(id);
-      if (found) return stopThreadApp(found.thread);
+      if (found) return stopThreadApp(found.thread).then(noop);
       return Promise.resolve();
     },
     start(id) {
@@ -214,7 +217,7 @@ export function launchAppsTui(
       const found = findThread(id);
       if (found) {
         found.thread.restartCount = 0;
-        return restartThreadApp(found.thread);
+        return restartThreadApp(found.thread).then(noop);
       }
       return Promise.resolve();
     },

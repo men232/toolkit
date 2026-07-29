@@ -1,4 +1,5 @@
 import { isSkip, isSuccess } from '@andrew_l/toolkit';
+import assert from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
 import {
   APP_INSTANCE_STATE,
@@ -89,7 +90,7 @@ describe('setupApp', () => {
       defineApp({ name: 'test', logger: false, setup }),
     );
     const result = await setupApp(instance, {});
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'setup_app_error');
     expect(result.error).toBeInstanceOf(Error);
     expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
@@ -128,7 +129,7 @@ describe('runApp', () => {
     Object.assign(instance, flags);
     const result = await runApp(instance);
     expect(isSkip(result)).toBe(true);
-    expect(result.code).toBe('execute_app');
+    expect(result.code).toBe('execute_app_invalid_state');
   });
 
   it('skips with error when entry throws', async () => {
@@ -138,7 +139,7 @@ describe('runApp', () => {
     );
     await setupApp(instance, {});
     const result = await runApp(instance);
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'execute_app_error');
     expect(result.error).toBeInstanceOf(Error);
     expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
@@ -164,7 +165,7 @@ describe('stopApp', () => {
     );
     await startApp(instance, {});
     const result = await stopApp(instance);
-    expect(result.skip).toBe(true);
+    assert(isSkip(result) && result.code === 'stop_app_error');
     expect(result.error).toBeInstanceOf(Error);
     expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
@@ -191,7 +192,7 @@ describe('shutdownApp', () => {
     );
     await setupApp(instance, {});
     const result = await shutdownApp(instance);
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'shutdown_app_error');
     expect(result.error).toBeInstanceOf(Error);
     expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
   });
@@ -267,6 +268,7 @@ describe('startApp', () => {
     const def = defineApp({ name: 'test', logger: false });
     const result = await startApp(def, {});
     expect(isSuccess(result)).toBe(true);
+    assert.ok(isSuccess(result));
     expect(result.app).toBeDefined();
   });
 

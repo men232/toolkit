@@ -2,10 +2,12 @@ import { isShuttingDown } from '@andrew_l/graceful';
 import {
   type Data,
   type ExecResult,
+  type ExecSkip,
+  type ExecSkipData,
   type LogLevel,
   Scheduler,
   isObject,
-  noop,
+  isSkip,
   toError,
 } from '@andrew_l/toolkit';
 import * as cp from 'node:child_process';
@@ -17,7 +19,7 @@ import { type LogEventFields, formatLogEvent } from './utils/log.ts';
 const MAX_RESTARTS = 3;
 const HEARTBEAT_INTERVAL_MS = 5_000;
 const HEARTBEAT_TIMEOUT_MS = 10_000;
-const SHUTDOWN_EXIT_TIMEOUT_MS = 5_000;
+const SHUTDOWN_EXIT_TIMEOUT_MS = 30_000;
 const SHUTDOWN_REPLY_TIMEOUT_MS = 30_000;
 
 const appModulePath = import.meta.url.endsWith('.ts')
@@ -82,7 +84,7 @@ const app = createAppThreadInstance({
   threadId,
   definition,
   parentPort: port,
-  // onShutdown: () => processGraceful()
+  onShutdown: () => processGraceful(),
 });
 
 const log = app.logger;
@@ -153,16 +155,24 @@ export namespace ManagedThread {
     };
 
     export type Start = Base<'start'>;
-    export type StartDone = Base<'start_done'> & { result: ExecResult };
+    export type StartDone = Base<'start_done'> & {
+      result: AppInstance.RunResult;
+    };
 
     export type Setup = Base<'setup'> & { props: Data };
-    export type SetupDone = Base<'setup_done'> & { result: ExecResult };
+    export type SetupDone = Base<'setup_done'> & {
+      result: AppInstance.SetupResult;
+    };
 
     export type Stop = Base<'stop'>;
-    export type StopDone = Base<'stop_done'> & { result: ExecResult };
+    export type StopDone = Base<'stop_done'> & {
+      result: AppInstance.StopResult;
+    };
 
     export type Shutdown = Base<'shutdown'>;
-    export type ShutdownDone = Base<'shutdown_done'> & { result: ExecResult };
+    export type ShutdownDone = Base<'shutdown_done'> & {
+      result: AppInstance.ShutdownResult;
+    };
 
     export type Ping = Base<'ping'>;
     export type Pong = Base<'pong'>;
@@ -171,6 +181,37 @@ export namespace ManagedThread {
       pid: number;
     };
   }
+
+  /**
+   * IPC-level skip variants — returned when no reply/result is available
+   * because the round-trip itself failed.
+   */
+  export type IpcSkip =
+    | { code: 'thread.exit' }
+    | { code: 'parent.ipc.timeout' }
+    | { code: 'parent.ipc.fail' };
+
+  /** An IPC-level skip on its own (no app result). */
+  export type IpcSkipResult = ExecSkip<IpcSkip>;
+
+  export type SetupResult = AppInstance.SetupResult | IpcSkipResult;
+  export type StartResult = AppInstance.RunResult | IpcSkipResult;
+  export type StopResult = AppInstance.StopResult | IpcSkipResult;
+  export type ShutdownResult = AppInstance.ShutdownResult | IpcSkipResult;
+
+  export type ReadyResult = ExecResult<
+    { code: 'thread.ready' },
+    | { code: 'thread.exit-before-ready'; exitCode: number | null }
+    | { code: 'thread.error'; error: Error }
+  >;
+
+  export type RestartResult = ExecResult<
+    { code: 'thread.restart' },
+    | { code: 'thread.restart.give-up' }
+    | { code: 'thread.restart.error'; error: Error }
+    // Propagated skips from the phases the restart chain runs through.
+    | ExecSkipData<ReadyResult | SetupResult | StartResult | ShutdownResult>
+  >;
 }
 
 /**
@@ -264,7 +305,11 @@ function startHeartbeat(w: ManagedThread): void {
     if (since > HEARTBEAT_TIMEOUT_MS) {
       clearInterval(w.heartbeatTimer);
       w.writeLog('warn', 'heartbeat.miss', { since_ms: since });
-      restartThreadApp(w).catch(err => w.eventBus.emit('error', err));
+      restartThreadApp(w).catch(err =>
+        w.writeLog('error', 'thread.restart.uncaught', {
+          message: String((err && err.message) || err),
+        }),
+      );
       return;
     }
     if (w.child.connected) {
@@ -315,12 +360,14 @@ function waitForExit(w: ManagedThread, timeoutMs: number): Promise<void> {
  * Wait for thread ready signal
  * @group Threads
  */
-export function waitForThreadReady(w: ManagedThread): Promise<void> {
+export function waitForThreadReady(
+  w: ManagedThread,
+): Promise<ManagedThread.ReadyResult> {
   if (w.state === 'ready') {
-    return Promise.resolve();
+    return Promise.resolve({ success: true, code: 'thread.ready' });
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const cleanup = () => {
       w.eventBus.off('ready', onReady);
       w.eventBus.off('error', onError);
@@ -328,17 +375,27 @@ export function waitForThreadReady(w: ManagedThread): Promise<void> {
     };
 
     const onReady = () => {
-      resolve();
+      resolve({ success: true, code: 'thread.ready' });
       cleanup();
     };
 
     const onExit = (code: number | null) => {
-      reject(new Error(`Child exited before ready (code=${code ?? 'null'})`));
+      resolve({
+        skip: true,
+        code: 'thread.exit-before-ready',
+        exitCode: code ?? null,
+        reason: `Child exited before ready (code=${code ?? 'null'})`,
+      });
       cleanup();
     };
 
     const onError = (error: Error) => {
-      reject(error);
+      resolve({
+        skip: true,
+        code: 'thread.error',
+        error,
+        reason: error.message,
+      });
       cleanup();
     };
 
@@ -348,19 +405,30 @@ export function waitForThreadReady(w: ManagedThread): Promise<void> {
   });
 }
 
+/**
+ * The `result` payload carried by the `*_done` reply for a given request
+ * message — e.g. a `setup` request resolves to {@link AppInstance.SetupResult}.
+ */
+type ThreadReplyResult<T extends ManagedThread.ThreadMessage> =
+  ManagedThread.ThreadMessageMap[ManagedThread.ThreadMessageDone<
+    T['type']
+  >] extends { result: infer R }
+    ? R
+    : never;
+
+/**
+ * Send a request message and resolve with the child's own `reply.result`, or an
+ * {@link ManagedThread.IpcSkipResult} if the round-trip itself fails (timeout,
+ * child exit, or send error). The reply type is derived from the message, so
+ * there is no separate `replyType` argument.
+ */
 function sendAndWait<T extends ManagedThread.ThreadMessage>(
   w: ManagedThread,
   message: T,
-  replyType: ManagedThread.ThreadMessageDone<T['type']>,
   timeout = 30_000,
-): Promise<
-  ExecResult<{
-    reply: ManagedThread.ThreadMessageMap[ManagedThread.ThreadMessageDone<
-      T['type']
-    >];
-  }>
-> {
+): Promise<ManagedThread.IpcSkipResult | ThreadReplyResult<T>> {
   return new Promise(resolve => {
+    const replyType = `${message.type}_done`;
     const eventName = `msg:${replyType}`;
     const cleanup = () => {
       w.eventBus.off(eventName as any, onReply);
@@ -383,11 +451,7 @@ function sendAndWait<T extends ManagedThread.ThreadMessage>(
 
     const onReply = (reply: ManagedThread.ThreadMessage) => {
       cleanup();
-      resolve({
-        success: true,
-        code: 'parent.ipc.recv',
-        reply: reply as any,
-      });
+      resolve((reply as any).result);
     };
 
     const onExit = () => {
@@ -485,7 +549,11 @@ export function initThread(
     w.pid = 0;
 
     if (prevState === APP_INSTANCE_STATE.RUN && !isShuttingDown()) {
-      restartThreadApp(w).catch(err => w.eventBus.emit('error', err));
+      restartThreadApp(w).catch(err =>
+        w.writeLog('error', 'thread.restart.uncaught', {
+          message: String((err && err.message) || err),
+        }),
+      );
     }
   });
 
@@ -543,115 +611,152 @@ function withLifecycle<T>(
  * Send the setup message; resolves when child replies setup_done.
  * @group Threads
  */
-export function setupThreadApp(w: ManagedThread): Promise<void> {
+export function setupThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.SetupResult> {
   return w.scheduler.queueJobWait(
     () => withLifecycle(w, 'setupThreadApp', () => doSetupThread(w)),
     { jobName: 'setupThreadApp' },
   );
 }
 
-function doSetupThread(w: ManagedThread): Promise<void> {
+function doSetupThread(w: ManagedThread): Promise<ManagedThread.SetupResult> {
   setState(w, APP_INSTANCE_STATE.IN_SETUP);
-  return sendAndWait(
-    w,
-    createThreadMessage('setup', {
-      props: w.threadProps,
-    }),
-    'setup_done',
-  ).then(noop);
+  return sendAndWait(w, createThreadMessage('setup', { props: w.threadProps }));
 }
 
 /**
  * Send the start message; on reply, switch to running and arm heartbeat.
  * @group Threads
  */
-export function startThreadApp(w: ManagedThread): Promise<void> {
+export function startThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.StartResult> {
   return w.scheduler.queueJobWait(
     () => withLifecycle(w, 'startThreadApp', () => doStartThreadApp(w)),
     { jobName: 'startThreadApp' },
   );
 }
 
-function doStartThreadApp(w: ManagedThread): Promise<void> {
+function doStartThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.StartResult> {
   setState(w, APP_INSTANCE_STATE.IN_RUN);
-  return sendAndWait(w, createThreadMessage('start', {}), 'start_done').then(
-    () => {
-      if (w.state === APP_INSTANCE_STATE.RUN) {
-        startHeartbeat(w);
-      }
-    },
-  );
+  return sendAndWait(w, createThreadMessage('start', {})).then(res => {
+    if (w.state === APP_INSTANCE_STATE.RUN) {
+      startHeartbeat(w);
+    }
+    return res;
+  });
 }
 
 /**
  * Send the stop message; child keeps running, app inside is stopped.
  * @group Threads
  */
-export function stopThreadApp(w: ManagedThread): Promise<void> {
+export function stopThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.StopResult> {
   return w.scheduler.queueJobWait(
     () => withLifecycle(w, 'stopThreadApp', () => doStopThreadApp(w)),
     { jobName: 'stopThreadApp' },
   );
 }
 
-function doStopThreadApp(w: ManagedThread): Promise<void> {
+function doStopThreadApp(w: ManagedThread): Promise<ManagedThread.StopResult> {
   setState(w, APP_INSTANCE_STATE.IN_STOP);
   clearInterval(w.heartbeatTimer);
-  return sendAndWait(w, createThreadMessage('stop', {}), 'stop_done').then(
-    noop,
-  );
+  return sendAndWait(w, createThreadMessage('stop', {}));
 }
 
 /**
  * Send shutdown and wait for the OS process to exit (SIGKILL fallback).
  * @group Threads
  */
-export function shutdownThreadApp(w: ManagedThread): Promise<void> {
+export function shutdownThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.ShutdownResult> {
   return w.scheduler.queueJobWait(
     () => withLifecycle(w, 'shutdownThreadApp', () => doShutdownThreadApp(w)),
     { jobName: 'shutdownThreadApp' },
   );
 }
 
-function doShutdownThreadApp(w: ManagedThread): Promise<void> {
+function doShutdownThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.ShutdownResult> {
   setState(w, 'shutdown');
   clearInterval(w.heartbeatTimer);
 
-  return (
-    w.child.connected
-      ? sendAndWait(
-          w,
-          createThreadMessage('shutdown', {}),
-          'shutdown_done',
-          SHUTDOWN_REPLY_TIMEOUT_MS,
-        )
-      : Promise.resolve()
-  ).then(() => waitForExit(w, SHUTDOWN_EXIT_TIMEOUT_MS));
+  const reply: Promise<ManagedThread.ShutdownResult> = w.child.connected
+    ? sendAndWait(
+        w,
+        createThreadMessage('shutdown', {}),
+        SHUTDOWN_REPLY_TIMEOUT_MS,
+      )
+    : Promise.resolve({
+        skip: true,
+        code: 'thread.exit',
+        reason: 'child not connected',
+      });
+
+  return reply.then(result =>
+    waitForExit(w, SHUTDOWN_EXIT_TIMEOUT_MS).then(() => result),
+  );
 }
 
 /**
  * Terminate the child and spawn a fresh one with the same script + props.
  * @group Threads
  */
-export function restartThreadApp(w: ManagedThread): Promise<void> {
+export function restartThreadApp(
+  w: ManagedThread,
+): Promise<ManagedThread.RestartResult> {
   if (w.restartCount >= MAX_RESTARTS) {
-    return Promise.reject(
-      new Error(`Thread ${w.threadId} exceeded max restarts (${MAX_RESTARTS})`),
-    );
+    w.writeLog('error', 'thread.restart.give-up', { max: MAX_RESTARTS });
+    return Promise.resolve({
+      skip: true,
+      code: 'thread.restart.give-up',
+      reason: `Thread ${w.threadId} exceeded max restarts (${MAX_RESTARTS})`,
+    });
   }
 
   return w.scheduler.queueJobWait(
     () =>
-      withLifecycle(w, 'restartThreadApp', () =>
-        doShutdownThreadApp(w)
-          .then(() => {
-            w.restartCount++;
-            spawnChild(w);
-            return waitForThreadReady(w);
-          })
-          .then(() => doSetupThread(w))
-          .then(() => doStartThreadApp(w)),
-      ),
+      withLifecycle(
+        w,
+        'restartThreadApp',
+        (): Promise<ManagedThread.RestartResult> =>
+          doShutdownThreadApp(w)
+            .then(() => {
+              w.restartCount++;
+              spawnChild(w);
+              return waitForThreadReady(w);
+            })
+            .then((ready): Promise<ManagedThread.RestartResult> => {
+              // Short-circuit on the first skip; otherwise advance the chain,
+              // converting each successful sub-result into the next phase.
+              if (isSkip(ready)) return Promise.resolve(ready);
+              return doSetupThread(w).then(
+                (setup): Promise<ManagedThread.RestartResult> => {
+                  if (isSkip(setup)) return Promise.resolve(setup);
+                  return doStartThreadApp(w).then(
+                    (start): ManagedThread.RestartResult =>
+                      isSkip(start)
+                        ? start
+                        : { success: true, code: 'thread.restart' },
+                  );
+                },
+              );
+            }),
+      ).catch((err): ManagedThread.RestartResult => ({
+        // Contain any unexpected throw (e.g. spawnChild) as a typed skip so a
+        // fire-and-forget caller can never turn it into a fatal rejection.
+        skip: true,
+        code: 'thread.restart.error',
+        error: toError(err),
+        reason: String((err && err.message) || err),
+      })),
     { jobName: 'restartThreadApp' },
   );
 }

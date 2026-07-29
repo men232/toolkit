@@ -1,4 +1,5 @@
 import { isSkip, isSuccess } from '@andrew_l/toolkit';
+import assert from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
 import {
   type AppDefinition,
@@ -91,13 +92,11 @@ describe('appHub setup', () => {
       }),
     ]);
     const result = await setupApp(createAppInstance(hub), {});
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'setup_app_error');
     expect(result.error).toBeInstanceOf(Error);
-    expect((result.error as Error).message).toMatch(
-      /Failed to setup 1 app\(s\):/,
-    );
-    expect((result.error as Error).message).toContain('bad');
-    expect((result.error as Error).message).toContain('setup_app');
+    expect(result.error.message).toMatch(/Failed to setup 1 app\(s\):/);
+    expect(result.error.message).toContain('bad');
+    expect(result.error.message).toContain('setup_app');
   });
 });
 
@@ -127,12 +126,10 @@ describe('appHub entry', () => {
     ]);
     const instance = await setupHub(hub);
     const result = await runApp(instance);
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'execute_app_error');
     expect(result.error).toBeInstanceOf(Error);
-    expect((result.error as Error).message).toMatch(
-      /Failed to start 1 app\(s\):/,
-    );
-    expect((result.error as Error).message).toContain('broken');
+    expect(result.error.message).toMatch(/Failed to start 1 app\(s\):/);
+    expect(result.error.message).toContain('broken');
   });
 });
 
@@ -162,12 +159,10 @@ describe('appHub stop', () => {
     ]);
     const instance = await runHub(hub);
     const result = await stopApp(instance);
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'stop_app_error');
     expect(result.error).toBeInstanceOf(Error);
-    expect((result.error as Error).message).toMatch(
-      /Failed to stop 1 app\(s\):/,
-    );
-    expect((result.error as Error).message).toContain('stubborn');
+    expect(result.error.message).toMatch(/Failed to stop 1 app\(s\):/);
+    expect(result.error.message).toContain('stubborn');
   });
 });
 
@@ -197,11 +192,9 @@ describe('appHub shutdown', () => {
     ]);
     const instance = await setupHub(hub);
     const result = await shutdownApp(instance);
-    expect(isSkip(result)).toBe(true);
+    assert(isSkip(result) && result.code === 'shutdown_app_error');
     expect(result.error).toBeInstanceOf(Error);
-    expect((result.error as Error).message).toMatch(
-      /Failed to shutdown 1 app\(s\):/,
-    );
-    expect((result.error as Error).message).toContain('immortal');
+    expect(result.error.message).toMatch(/Failed to shutdown 1 app\(s\):/);
+    expect(result.error.message).toContain('immortal');
   });
 });

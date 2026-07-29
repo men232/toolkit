@@ -1,5 +1,11 @@
 import { onShutdown, processGraceful } from '@andrew_l/graceful';
-import { assert, defer, isSkip, noop } from '@andrew_l/toolkit';
+import {
+  assert,
+  defer,
+  isSkip,
+  noop,
+  stringifyExecResult,
+} from '@andrew_l/toolkit';
 import { Command, Option } from 'commander';
 
 import fs from 'node:fs';
@@ -417,7 +423,20 @@ function launchApp(
     .then(startResult => {
       if (isSkip(startResult)) {
         startDefer.resolve();
-        log.warn('Failed to start %s', startResult, startResult.error);
+
+        switch (startResult.code) {
+          case 'execute_app_error':
+          case 'setup_app_error':
+            log.error(
+              'Failed to start %s',
+              stringifyExecResult(startResult),
+              startResult.error,
+            );
+            break;
+          default:
+            log.warn('Failed to start %s', stringifyExecResult(startResult));
+        }
+
         return;
       }
 

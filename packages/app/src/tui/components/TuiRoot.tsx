@@ -33,6 +33,25 @@ function findNodeAndApp(
   return null;
 }
 
+/**
+ * Fire a lifecycle handler and contain any rejection by logging it to the
+ * target node, so a failed stop/start/restart can never crash the TUI with an
+ * unhandled rejection.
+ */
+function runNodeAction(
+  store: TuiStore,
+  nodeId: string,
+  handler: (id: string) => Promise<void>,
+): void {
+  handler(nodeId).catch(err => {
+    store.pushLog(nodeId, {
+      ts: Date.now(),
+      level: 'error',
+      text: `Action failed: ${String((err && err.message) || err)}`,
+    });
+  });
+}
+
 function InnerTui({ store, onExit }: TuiRootProps): JSX.Element {
   useStoreSnapshot();
   const { stdout } = useStdout();
@@ -103,17 +122,17 @@ function InnerTui({ store, onExit }: TuiRootProps): JSX.Element {
     }
     if (input === 's') {
       const target = findNodeAndApp(store, selected.id);
-      if (target) void store.handlers.stop(target.node.id);
+      if (target) runNodeAction(store, target.node.id, store.handlers.stop);
       return;
     }
     if (input === 'S') {
       const target = findNodeAndApp(store, selected.id);
-      if (target) void store.handlers.start(target.node.id);
+      if (target) runNodeAction(store, target.node.id, store.handlers.start);
       return;
     }
     if (input === 'r') {
       const target = findNodeAndApp(store, selected.id);
-      if (target) void store.handlers.restart(target.node.id);
+      if (target) runNodeAction(store, target.node.id, store.handlers.restart);
       return;
     }
     if (input === 'q' || (key.ctrl && input === 'c')) {

@@ -127,7 +127,7 @@ describe('createAppThreadInstance', () => {
     await vi.waitFor(() => {
       expect(port.sent.find(v => v.type === 'setup_done')?.result).toEqual({
         skip: true,
-        code: 'setup_app',
+        code: 'setup_app_error',
         error: new Error('boom'),
         reason: 'setup function throw error',
       });

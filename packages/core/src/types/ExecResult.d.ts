@@ -1,8 +1,7 @@
 import type { Data } from './types';
 
 export type ExecResult<T extends Data = Data, K extends Data = Data> =
-  | ExecSuccess<T>
-  | ExecSkip<K>;
+  ExecSuccess<T> | ExecSkip<K>;
 
 export type ExecSuccess<T extends Data = Data> = {
   success: true;
@@ -21,3 +20,11 @@ export type ExecResultToSuccess<T> =
 
 export type ExecResultToSkip<T> =
   T extends ExecSkip<infer X> ? ExecSkip<X> : ExecSkip;
+
+export type ExecSkipData<T> = T extends ExecSkip<infer X> ? X : never;
+
+export type ExecSkipExtract<T> = ExecSkip<ExecSkipData<T>>;
+
+export type ExecSuccessData<T> = T extends ExecSuccess<infer X> ? X : never;
+
+export type ExecSuccessExtract<T> = ExecSuccess<ExecSuccessData<T>>;

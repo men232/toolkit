@@ -3,6 +3,7 @@ import {
   type Awaitable,
   type Data,
   type ExecResult,
+  type ExecSkipData,
   type Logger,
   SimpleEventEmitter,
   captureStackTrace,
@@ -42,13 +43,13 @@ export interface AppDefinition<
   P extends ObjectPropsOptions = {},
   S extends Record<string, any> = {},
   M extends Record<string, AnyFunction> = {},
-  RuntimeContext extends
-    AppDefinition.RuntimeContext = AppDefinition.RuntimeContext<S & M>,
+  RuntimeContext extends AppDefinition.RuntimeContext =
+    AppDefinition.RuntimeContext<S & M>,
   EntryContext extends AppDefinition.EntryContext = AppDefinition.EntryContext<
     S & M
   >,
-  SetupContext extends
-    AppDefinition.SetupContext = AppDefinition.SetupContext<M>,
+  SetupContext extends AppDefinition.SetupContext =
+    AppDefinition.SetupContext<M>,
 > {
   /**
    * Name of your awesome application
@@ -129,6 +130,34 @@ export namespace AppInstance {
 
   export type State =
     (typeof APP_INSTANCE_STATE)[keyof typeof APP_INSTANCE_STATE];
+
+  export type SetupResult = ExecResult<
+    { code: 'setup_app' },
+    | { code: 'setup_app_error'; error: Error }
+    | { code: 'setup_app_invalid_state'; state: State }
+  >;
+  export type RunResult = ExecResult<
+    { code: 'execute_app' },
+    | { code: 'execute_app_error'; error: Error }
+    | { code: 'execute_app_invalid_state'; state: State }
+  >;
+  export type StopResult = ExecResult<
+    { code: 'stop_app' },
+    | { code: 'stop_app_error'; error: Error }
+    | { code: 'stop_app_invalid_state'; state: State }
+  >;
+  export type ShutdownResult = ExecResult<
+    { code: 'shutdown_app' },
+    | { code: 'shutdown_app_error'; error: Error }
+    | { code: 'shutdown_app_invalid_state'; state: State }
+  >;
+  export type StartResult<
+    P extends ObjectPropsOptions = ObjectPropsOptions,
+    S extends Record<string, any> = Data,
+  > = ExecResult<
+    { app: AppInstance<P, S> },
+    ExecSkipData<SetupResult | RunResult>
+  >;
 }
 
 /**
@@ -266,7 +295,7 @@ export function startApp<
 >(
   app: AppDefinition<P, S> | AppInstance<P, S>,
   props: ExtractPropTypes<P>,
-): Promise<ExecResult<{ app: AppInstance<P, S> }>> {
+): Promise<AppInstance.StartResult<P, S>> {
   const instance = isAppDefinition(app) ? createAppInstance(app) : app;
 
   return setupApp(instance, props).then(setupResult => {
@@ -302,13 +331,14 @@ export function startApp<
 export function setupApp(
   instance: AppInstance,
   props: Data,
-): Promise<ExecResult> {
+): Promise<AppInstance.SetupResult> {
   return mutexAcquire(instance, 'setup').then(mutexResolve => {
     if (instance.state !== APP_INSTANCE_STATE.INIT) {
       mutexResolve();
       return {
         skip: true,
-        code: 'setup_app',
+        code: 'setup_app_invalid_state',
+        state: instance.state,
         reason: `application in ${instance.state} state`,
       };
     }
@@ -328,23 +358,23 @@ export function setupApp(
     }
 
     return setupPromise
-      .then(() => {
+      .then((): AppInstance.SetupResult => {
         instance.props = props;
         setState(instance, APP_INSTANCE_STATE.SETUP);
 
         return {
           success: true,
           code: 'setup_app',
-        } as ExecResult;
+        };
       })
-      .catch(error => {
+      .catch((error): AppInstance.SetupResult => {
         setState(instance, APP_INSTANCE_STATE.ERROR);
         return {
-          code: 'setup_app',
           skip: true,
+          code: 'setup_app_error',
           reason: 'setup function throw error',
           error: toError(error),
-        } as ExecResult;
+        };
       })
       .finally(() => mutexResolve());
   });
@@ -359,13 +389,14 @@ export function setupApp(
  * await runApp(instance);
  * ```
  */
-export function runApp(instance: AppInstance): Promise<ExecResult> {
+export function runApp(instance: AppInstance): Promise<AppInstance.RunResult> {
   return mutexAcquire(instance, 'run').then(mutexResolve => {
     if (instance.state !== APP_INSTANCE_STATE.SETUP) {
       mutexResolve();
       return {
         skip: true,
-        code: 'execute_app',
+        code: 'execute_app_invalid_state',
+        state: instance.state,
         reason: `application in ${instance.state} state`,
       };
     }
@@ -384,23 +415,23 @@ export function runApp(instance: AppInstance): Promise<ExecResult> {
     }
 
     return entryPromise
-      .then(() => {
+      .then((): AppInstance.RunResult => {
         setState(instance, APP_INSTANCE_STATE.RUN);
         instance.logger.info('Started');
 
         return {
           success: true,
           code: 'execute_app',
-        } as ExecResult;
+        };
       })
-      .catch(error => {
+      .catch((error): AppInstance.RunResult => {
         setState(instance, APP_INSTANCE_STATE.ERROR);
         return {
           skip: true,
-          code: 'execute_app',
+          code: 'execute_app_error',
           reason: 'entry function throw error',
           error: toError(error),
-        } as ExecResult;
+        };
       })
       .finally(() => mutexResolve());
   });
@@ -417,13 +448,16 @@ export function runApp(instance: AppInstance): Promise<ExecResult> {
  * });
  * ```
  */
-export function stopApp(instance: AppInstance): Promise<ExecResult> {
+export function stopApp(
+  instance: AppInstance,
+): Promise<AppInstance.StopResult> {
   return mutexAcquire(instance, 'stop').then(mutexResolve => {
     if (instance.state !== APP_INSTANCE_STATE.RUN) {
       mutexResolve();
       return {
         skip: true,
-        code: 'stop_app',
+        code: 'stop_app_invalid_state',
+        state: instance.state,
         reason: `application in ${instance.state} state`,
       };
     }
@@ -442,24 +476,24 @@ export function stopApp(instance: AppInstance): Promise<ExecResult> {
     }
 
     return stopPromise
-      .then(() => {
+      .then((): AppInstance.StopResult => {
         setState(instance, APP_INSTANCE_STATE.STOP);
         instance.logger.info('Stopped');
 
         return {
           success: true,
           code: 'stop_app',
-        } as ExecResult;
+        };
       })
-      .catch(err => {
+      .catch((err): AppInstance.StopResult => {
         setState(instance, APP_INSTANCE_STATE.ERROR);
 
         return {
           skip: true,
-          code: 'stop_app',
+          code: 'stop_app_error',
           reason: 'stop function throw error',
           error: toError(err),
-        } as ExecResult;
+        };
       })
       .finally(() => mutexResolve());
   });
@@ -475,7 +509,9 @@ export function stopApp(instance: AppInstance): Promise<ExecResult> {
  * // instance can be set up and started again after this
  * ```
  */
-export function shutdownApp(instance: AppInstance): Promise<ExecResult> {
+export function shutdownApp(
+  instance: AppInstance,
+): Promise<AppInstance.ShutdownResult> {
   return stopApp(instance)
     .then(() => mutexAcquire(instance, 'shutdown'))
     .then(mutexResolve => {
@@ -487,7 +523,8 @@ export function shutdownApp(instance: AppInstance): Promise<ExecResult> {
         mutexResolve();
         return {
           skip: true,
-          code: 'shutdown_app',
+          code: 'shutdown_app_invalid_state',
+          state: instance.state,
           reason: `application in ${instance.state} state`,
         };
       }
@@ -506,22 +543,22 @@ export function shutdownApp(instance: AppInstance): Promise<ExecResult> {
       }
 
       return shutdownPromise
-        .then(() => {
+        .then((): AppInstance.ShutdownResult => {
           setState(instance, APP_INSTANCE_STATE.SHUTDOWN);
 
           return {
             success: true,
             code: 'shutdown_app',
-          } as ExecResult;
+          };
         })
-        .catch(shutdownErr => {
+        .catch((shutdownErr): AppInstance.ShutdownResult => {
           setState(instance, APP_INSTANCE_STATE.ERROR);
           return {
             skip: true,
-            code: 'shutdown_app',
+            code: 'shutdown_app_error',
             reason: 'shutdown function throw error',
-            error: shutdownErr,
-          } as ExecResult;
+            error: toError(shutdownErr),
+          };
         })
         .finally(() => {
           instance.props = null;
