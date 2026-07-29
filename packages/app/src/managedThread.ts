@@ -24,6 +24,18 @@ const appModulePath = import.meta.url.endsWith('.ts')
   ? new URL('./index.js', import.meta.url).href
   : import.meta.url;
 
+// Resolve `tsx/esm/api` from this package (where tsx is a dependency) rather
+// than from the child process cwd. Under pnpm in a monorepo, tsx lives only in
+// this package's node_modules and is not hoisted, so a bare specifier inside
+// the `node -e` bootstrap would fail to resolve in a consuming project.
+const tsxApiUrl = (() => {
+  try {
+    return import.meta.resolve('tsx/esm/api');
+  } catch {
+    return 'tsx/esm/api';
+  }
+})();
+
 const bootstrapCode = `
 import { delay } from '@andrew_l/toolkit'
 import { processGraceful, onShutdown, onShutdownError } from '@andrew_l/graceful'
@@ -38,7 +50,7 @@ if (
   appUrl.endsWith('.ts') ||
   appUrl.includes('/src/')
 ) {
-  const { register } = await import('tsx/esm/api');
+  const { register } = await import(${JSON.stringify(tsxApiUrl)});
   register();
 }
 
