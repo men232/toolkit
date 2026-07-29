@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/snowflake",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Another implementation of snowflake id generator.",
   "license": "MIT",
   "type": "module",
