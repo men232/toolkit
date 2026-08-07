@@ -73,6 +73,13 @@ function handleMissingProperty(
     return stack.get(sourceValue);
   }
 
+  if (Array.isArray(sourceValue)) {
+    const newArr: any[] = [];
+    stack.set(sourceValue, newArr);
+    mergeArrays(newArr, sourceValue, stack);
+    return newArr;
+  }
+
   if (isPlainObject(sourceValue)) {
     const newObj = {};
     stack.set(sourceValue, newObj);
@@ -113,6 +120,6 @@ function mergeArrays(
     }
   }
   for (let i = minLength; i < sourceArray.length; i++) {
-    targetArray.push(sourceArray[i]);
+    targetArray.push(handleMissingProperty(sourceArray[i], stack));
   }
 }

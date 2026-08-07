@@ -243,4 +243,100 @@ describe('deepDefaults', () => {
 
     expect(deepDefaults(target, source)).toEqual(expected);
   });
+
+  describe('mutation safety', () => {
+    it('should deep clone a source array so mutating the result leaves the source intact', () => {
+      const source = { list: [{ a: 1 }, { b: 2 }] };
+      const original = structuredClone(source);
+
+      const result = deepDefaults<{ list: any[] }>({}, source);
+      result.list.push({ c: 3 });
+      result.list[0].a = 99;
+
+      expect(source).toStrictEqual(original);
+    });
+
+    it('should not mutate nested arrays inside objects across multiple sources', () => {
+      const source1 = { a: { items: [{ x: 1 }] } };
+      const source2 = { a: { items: [{ y: 2 }, { z: 3 }] } };
+      const original1 = structuredClone(source1);
+      const original2 = structuredClone(source2);
+
+      deepDefaults({}, source1, source2);
+
+      expect(source1).toStrictEqual(original1);
+      expect(source2).toStrictEqual(original2);
+    });
+
+    it('should deep clone arrays of arrays without mutating the source', () => {
+      const source1 = { grid: [[1, 2]] };
+      const source2 = {
+        grid: [
+          [3, 4],
+          [5, 6],
+        ],
+      };
+      const original1 = structuredClone(source1);
+      const original2 = structuredClone(source2);
+
+      const result = deepDefaults<{ grid: number[][] }>({}, source1, source2);
+      result.grid[0].push(999);
+      result.grid[1][0] = -1;
+
+      expect(source1).toStrictEqual(original1);
+      expect(source2).toStrictEqual(original2);
+    });
+
+    it('should clone appended array elements so later mutation does not reach the source', () => {
+      const target = { a: [{ foo: 1 }] };
+      const source = { a: [{ foo: 9 }, { extra: 2 }] };
+      const original = structuredClone(source);
+
+      const result = deepDefaults<{ a: any[] }>(target, source);
+      result.a[1].extra = 777;
+
+      expect(source).toStrictEqual(original);
+    });
+
+    it('should not mutate an object shared across multiple sources', () => {
+      const shared = { a: 1 };
+      const source1 = { x: [shared] };
+      const source2 = { y: shared };
+      const original1 = structuredClone(source1);
+      const original2 = structuredClone(source2);
+
+      const result = deepDefaults<{ x: any[]; y: any }>({}, source1, source2);
+      result.x[0].a = 42;
+      result.y.a = 84;
+
+      expect(source1).toStrictEqual(original1);
+      expect(source2).toStrictEqual(original2);
+    });
+
+    it('should not mutate the target array reference when it is longer than the source', () => {
+      const target = { a: [{ foo: 1 }, { keep: true }] };
+      const source = { a: [{ bar: 2 }] };
+
+      const result = deepDefaults(target, source);
+
+      expect(result.a).toHaveLength(2);
+      expect(result.a[1]).toEqual({ keep: true });
+    });
+
+    it('should clone circular references inside arrays without mutating the source', () => {
+      const source: any = { a: [{}] };
+      source.a[0].self = source.a;
+
+      const result = deepDefaults<{ a: any[] }>({}, source);
+
+      // structure is cloned, not referenced
+      expect(result.a).not.toBe(source.a);
+      expect(result.a[0]).not.toBe(source.a[0]);
+      // circular link is preserved within the clone
+      expect(result.a[0].self).toBe(result.a);
+      // source's own cycle is untouched
+      expect(source.a[0].self).toBe(source.a);
+      expect(source.a).toHaveLength(1);
+    });
+  });
 });
