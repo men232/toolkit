@@ -37,7 +37,7 @@ export function inject<T = any>(
   key: ProvideKey,
   defaultValue?: T | (() => T),
 ): ProvideValue<T> {
-  let currentScope = getCurrentScope();
+  var currentScope = getCurrentScope();
 
   if (!currentScope) {
     console.warn(
@@ -47,15 +47,14 @@ export function inject<T = any>(
     return;
   }
 
-  const handled = new WeakSet();
-
-  let value;
+  var value;
+  var parent: Scope | null = null;
 
   do {
     value = currentScope!.providers.get(key);
-    handled.add(currentScope!);
-    currentScope = currentScope!.parent;
-  } while (currentScope && value === undefined && !handled.has(currentScope));
+    parent = currentScope!.parent;
+    currentScope = parent && parent.id < currentScope!.id ? parent : null;
+  } while (currentScope && value === undefined);
 
   if (value === undefined && defaultValue !== undefined) {
     value = isFunction(defaultValue) ? defaultValue() : defaultValue;
