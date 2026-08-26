@@ -26,11 +26,15 @@ import { getCurrentScope } from '../scope';
 export function onScopeDispose(fn: () => void) {
   const activeScope = getCurrentScope();
 
-  assert.ok(
-    activeScope,
-    'onScopeDispose() is called when there is no active scope to be associated with.' +
-      captureStackTrace(onScopeDispose),
-  );
+  // Build the message (with its expensive stack capture) only on failure —
+  // this runs on hot paths where the assert virtually always passes.
+  if (!activeScope) {
+    assert.ok(
+      false,
+      'onScopeDispose() is called when there is no active scope to be associated with.' +
+        captureStackTrace(onScopeDispose),
+    );
+  }
 
   activeScope.cleanups.push(fn);
 }
