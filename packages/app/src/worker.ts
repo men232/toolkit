@@ -371,9 +371,9 @@ function executeWorkerTask<C extends WorkerStrategy>(
  * @group Main
  */
 export function defineWorker<
-  P extends ObjectPropsOptions,
-  S extends Record<string, any>,
-  M extends Record<string, AnyFunction>,
+  P extends ObjectPropsOptions = {},
+  S extends Record<string, any> = {},
+  M extends Record<string, AnyFunction> = {},
   C extends WorkerStrategy = WorkerStrategy,
 >(definition: WorkerDefinition<P, S, M, C>): WorkerDefinition<P, S, M, C> {
   const result = defineApp({

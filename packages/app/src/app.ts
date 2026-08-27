@@ -210,9 +210,9 @@ const APP_DEF = Symbol('app-definition');
  * ```
  */
 export function defineApp<
-  P extends ObjectPropsOptions,
-  S extends Record<string, any>,
-  M extends Record<string, AnyFunction>,
+  P extends ObjectPropsOptions = {},
+  S extends Record<string, any> = {},
+  M extends Record<string, AnyFunction> = {},
 >(definition: AppDefinition<P, S, M>): AppDefinition<P, S, M> {
   const result: AppDefinition<P, S, M> = {
     filePath: filePathFromStack(captureStackTrace(defineApp)),
@@ -254,7 +254,7 @@ export function defineApp<
 export function createAppInstance<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
-  M extends Record<string, AnyFunction>,
+  M extends Record<string, AnyFunction> = {},
 >(definition: AppDefinition<P, S, M>): AppInstance<P, S, M> {
   const setupState = createSetupState(definition);
 
