@@ -157,6 +157,10 @@ export class Snowflake {
     '_timestamp' | '_workerId' | '_processId' | '_increment'
   >;
 
+  private _packDecimal: BitPack.Fn.Decimal<
+    '_timestamp' | '_workerId' | '_processId' | '_increment'
+  >;
+
   private _unpackBuffer: BitUnpack.Fn.Buffer<
     'timestamp' | 'workerId' | 'processId' | 'increment'
   >;
@@ -207,6 +211,7 @@ export class Snowflake {
     this.__buf = new Uint8Array(8);
     this._packBigInt = packer.bigint;
     this._packBuffer = packer.buffer;
+    this._packDecimal = packer.decimal;
     this._unpackBigInt = unpacker.bigint;
     this._unpackBuffer = unpacker.buffer;
   }
@@ -355,6 +360,26 @@ export class Snowflake {
   }
 
   /**
+   * Generates a Snowflake ID as a decimal string.
+   *
+   * Same digits as `generate().toString()`, produced by the packer's
+   * decimal builder without going through BigInt.
+   */
+  public generateString(timestamp: Date | number = Date.now()): string {
+    if (timestamp instanceof Date) timestamp = timestamp.getTime();
+    if (!isNumber(timestamp)) {
+      throw new Error(
+        `"timestamp" argument must be a number or Date (received ${typeof timestamp})`,
+      );
+    }
+
+    this._timestamp = timestamp - this._epoch;
+    var res = this._packDecimal(this as any);
+    this._increment = (this._increment + 1) & MAX_INCREMENT;
+    return res;
+  }
+
+  /**
    * Generates a Snowflake ID as a `Uint8Array` buffer.
    *
    * ⚠️ Returns a reference to the **same** internal `Uint8Array` instance.
@@ -421,7 +446,7 @@ export class Snowflake {
       id = BigInt(id);
     }
 
-    let result: DeconstructedSnowflake;
+    var result: DeconstructedSnowflake;
 
     if (isBigInt(id)) {
       result = this._unpackBigInt(id) as DeconstructedSnowflake;

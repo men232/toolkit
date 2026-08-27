@@ -31,6 +31,18 @@ describe('buffer', () => {
   });
 });
 
+describe('decimal', () => {
+  bench('sapphire', () => sapphire.generate().toString(), {
+    time: 100,
+    warmupIterations: 1000,
+  });
+
+  bench('generateString', () => snowflake.generateString(), {
+    time: 100,
+    warmupIterations: 1000,
+  });
+});
+
 describe('deconstruct (bigint)', () => {
   bench('sapphire', () => sapphire.deconstruct(254360814063058944n), {
     time: 100,

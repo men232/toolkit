@@ -24,6 +24,7 @@ export namespace BitPack {
     number: Fn.Number<TFields>;
     bigint: Fn.BigInt<TFields>;
     bits: Fn.Bits<TFields>;
+    decimal: Fn.Decimal<TFields>;
     plan?: Plan[];
   };
 
@@ -41,6 +42,10 @@ export namespace BitPack {
     >;
 
     export type Bits<TFields extends string = string> = WithDebug<
+      (data: FieldOptions<TFields>) => string
+    >;
+
+    export type Decimal<TFields extends string = string> = WithDebug<
       (data: FieldOptions<TFields>) => string
     >;
   }
@@ -163,11 +168,25 @@ export function bitPack<
 
   const fnBits = createFunction<BitPack.Fn.Bits>('bits', fnBitsCode, 'data');
 
+  // FN: Decimal
+  const fnDecimalCode = [
+    ...baseCode,
+    '\n// Return result',
+    buildDecimalResult(containersCount),
+  ].join('\n');
+
+  const fnDecimal = createFunction<BitPack.Fn.Decimal>(
+    'decimal',
+    fnDecimalCode,
+    'data',
+  );
+
   if (!options.debug) {
     def(fnBuffer, 'code', undefined);
     def(fnBigInt, 'code', undefined);
     def(fnNumber, 'code', undefined);
     def(fnBits, 'code', undefined);
+    def(fnDecimal, 'code', undefined);
   }
 
   return {
@@ -175,6 +194,7 @@ export function bitPack<
     bigint: fnBigInt,
     number: fnNumber,
     bits: fnBits,
+    decimal: fnDecimal,
     plan: options.debug ? plan : undefined,
     __buf: buf,
   } as BitPack.API<TFieldNames>;
@@ -240,6 +260,15 @@ function buildBigIntResult(containersCount: number): string {
 
 function buildNumberResult(containersCount: number): string {
   return `return c_0;`;
+}
+
+function buildDecimalResult(containersCount: number): string {
+  if (containersCount === 1) {
+    return `return String(c_0 >>> 0);`;
+  }
+
+  // Compose the BigInt and let it stringify
+  return buildBigIntResult(containersCount).replace(/;\s*$/, '.toString();');
 }
 
 function buildBitsResult(containersCount: number, totalBits: number): string {

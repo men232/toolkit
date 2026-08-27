@@ -283,6 +283,79 @@ describe('Snowflake', () => {
     });
   });
 
+  describe('generateString', () => {
+    test('GIVEN timestamp at epoch THEN matches generate() (head === 0 branch)', () => {
+      const snowflake = new Snowflake(sampleEpoch);
+      expect(snowflake.generateString(sampleEpoch)).toBe('4096');
+    });
+
+    test('GIVEN predefined timestamp THEN returns predefined snowflake', () => {
+      const snowflake = new Snowflake(sampleEpoch);
+      expect(snowflake.generateString(2524608000000)).toBe(
+        '3971046231244804096',
+      );
+    });
+
+    test('GIVEN timestamp as Date THEN returns predefined snowflake', () => {
+      const snowflake = new Snowflake(sampleEpoch);
+      expect(snowflake.generateString(new Date(2524608000000))).toBe(
+        '3971046231244804096',
+      );
+    });
+
+    test('GIVEN timestamp as NaN THEN returns error', () => {
+      const snowflake = new Snowflake(sampleEpoch);
+      expect(() => snowflake.generateString(NaN)).toThrowError(
+        '"timestamp" argument must be a number',
+      );
+    });
+
+    test('matches generate().toString() across field combinations', () => {
+      const timestamps = [
+        sampleEpoch,
+        sampleEpoch + 1,
+        sampleEpoch + 999999,
+        sampleEpoch + 1000000,
+        sampleEpoch + 123456789,
+        sampleEpoch + 2 ** 41 - 1,
+        sampleEpoch + 2 ** 42 - 1,
+      ];
+      const increments = [0, 1, 999, 4095];
+      const workerIds = [0, 1, MAX_WORKER_ID];
+      const processIds = [0, 1, MAX_PROCESS_ID];
+
+      for (const workerId of workerIds) {
+        for (const processId of processIds) {
+          for (const increment of increments) {
+            for (const ts of timestamps) {
+              const opts = { epoch: sampleEpoch, workerId, processId };
+              const asBigInt = new Snowflake(opts);
+              const asString = new Snowflake(opts);
+              asBigInt.increment = increment;
+              asString.increment = increment;
+
+              expect(asString.generateString(ts)).toBe(
+                asBigInt.generate(ts).toString(),
+              );
+              // Both advance the internal increment the same way.
+              expect(asString.increment).toBe(asBigInt.increment);
+            }
+          }
+        }
+      }
+    });
+
+    test('advances the shared increment like generate()', () => {
+      const snowflake = new Snowflake(sampleEpoch);
+      const first = snowflake.generateString(2524608000000);
+      const second = snowflake.generateString(2524608000000);
+      const third = snowflake.generate(2524608000000).toString();
+
+      expect(second).toBe((BigInt(first) + 1n).toString());
+      expect(third).toBe((BigInt(first) + 2n).toString());
+    });
+  });
+
   describe('deconstruct', () => {
     test('GIVEN id as string THEN returns data about snowflake', () => {
       const snowflake = new Snowflake(sampleEpoch);

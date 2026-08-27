@@ -721,6 +721,89 @@ describe('BitPack', () => {
     });
   });
 
+  describe('Decimal builder', () => {
+    it('should match bigint().toString() for a single container', () => {
+      const fn = bitPack({
+        totalBits: 32,
+        fields: [{ name: 'value', bits: 32, take: 'low' }],
+      });
+
+      for (const value of [0, 1, 0x1234, 0x7fffffff, 0xffffffff]) {
+        expect(fn.decimal({ value })).toBe(fn.bigint({ value }).toString());
+      }
+    });
+
+    it('should match bigint().toString() for two containers (snowflake layout)', () => {
+      const fn = bitPack({
+        totalBits: 64,
+        fields: [
+          { name: 'timestamp', bits: 42, take: 'low' },
+          { name: 'workerId', bits: 5, take: 'low' },
+          { name: 'processId', bits: 5, take: 'low' },
+          { name: 'increment', bits: 12, take: 'low' },
+        ],
+        optimize: true,
+      });
+
+      const timestamps = [
+        0,
+        1,
+        9999,
+        10000,
+        1781295314562,
+        2 ** 41 - 1,
+        2 ** 42 - 1,
+      ];
+      const increments = [0, 1, 999, 4095];
+
+      for (const timestamp of timestamps) {
+        for (const increment of increments) {
+          for (const workerId of [0, 31]) {
+            for (const processId of [0, 31]) {
+              const data = { timestamp, workerId, processId, increment };
+              expect(fn.decimal(data)).toBe(fn.bigint(data).toString());
+            }
+          }
+        }
+      }
+    });
+
+    it('should pad the low limb with zeros (two containers)', () => {
+      const fn = bitPack({
+        totalBits: 64,
+        fields: [
+          { name: 'high', bits: 32, take: 'low' },
+          { name: 'low', bits: 32, take: 'low' },
+        ],
+      });
+
+      // hi * 2^32 + lo where the low decimal limb is < 1000
+      for (const data of [
+        { high: 1, low: 0 },
+        { high: 1, low: 5 },
+        { high: 0xffffffff, low: 0xffffffff },
+        { high: 2328, low: 0 },
+        { high: 0, low: 0 },
+      ]) {
+        expect(fn.decimal(data)).toBe(fn.bigint(data).toString());
+      }
+    });
+
+    it('should fall back to BigInt for more than two containers', () => {
+      const fn = bitPack({
+        totalBits: 96,
+        fields: [
+          { name: 'timestamp', bits: 32, take: 'low' },
+          { name: 'random', bits: 40, take: 'low' },
+          { name: 'counter', bits: 24, take: 'low' },
+        ],
+      });
+
+      const data = { timestamp: 1781295314, random: 2 ** 40 - 1, counter: 123456 };
+      expect(fn.decimal(data)).toBe(fn.bigint(data).toString());
+    });
+  });
+
   describe('Real-world scenarios', () => {
     it('should handle MongoDB ObjectId-like structure', () => {
       const fn = bitPack({
