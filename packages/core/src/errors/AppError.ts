@@ -1,6 +1,6 @@
 import { isNumber } from '../is.js';
 
-const CODE_TO_MESSAGE: Record<number, string> = Object.freeze({
+var CODE_TO_MESSAGE: Record<number, string> = Object.freeze({
   100: 'Continue',
   101: 'Switching Protocols',
   102: 'Processing',
@@ -92,10 +92,10 @@ export class AppError extends Error {
   constructor(statusCode: number, options?: AppErrorOptions);
 
   constructor(...args: any[]) {
-    let message = 'Unknown error';
-    let statusCode = 500;
-    let code = 'ERR_UNKNOWN';
-    let options: AppErrorOptions | undefined;
+    var message = 'Unknown error';
+    var statusCode = 500;
+    var code = 'ERR_UNKNOWN';
+    var options: AppErrorOptions | undefined;
 
     if (isNumber(args[0])) {
       statusCode = args[0];
@@ -107,14 +107,7 @@ export class AppError extends Error {
       options = args[2];
     }
 
-    // Call base class constructor
     super(message, options);
-
-    if (typeof Error.captureStackTrace !== 'function') {
-      this.stack = new Error().stack;
-    } else {
-      Error.captureStackTrace(this, AppError);
-    }
 
     this.statusCode = statusCode;
     this.code = options?.code ?? code;
