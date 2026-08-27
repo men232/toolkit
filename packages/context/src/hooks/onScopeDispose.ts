@@ -24,7 +24,7 @@ import { getCurrentScope } from '../scope';
  * @group Main
  */
 export function onScopeDispose(fn: () => void) {
-  const activeScope = getCurrentScope();
+  var activeScope = getCurrentScope();
 
   // Build the message (with its expensive stack capture) only on failure —
   // this runs on hot paths where the assert virtually always passes.
@@ -36,5 +36,5 @@ export function onScopeDispose(fn: () => void) {
     );
   }
 
-  activeScope.cleanups.push(fn);
+  (activeScope.cleanups ??= []).push(fn);
 }

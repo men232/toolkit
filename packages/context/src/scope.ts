@@ -1,9 +1,10 @@
-import { type Awaitable, catchError, isPromise, noop } from '@andrew_l/toolkit';
+import { isPromise, noop } from '@andrew_l/toolkit';
 import type { AsyncLocalStorage } from 'node:async_hooks';
+import { log } from './constants';
 
-let idSec = 0;
-let ALS: AsyncLocalStorage<Scope | null> | undefined;
-let currentScope: Scope | null = null;
+var idSec = 0;
+var ALS: AsyncLocalStorage<Scope | null> | undefined;
+var currentScope: Scope | null = null;
 
 import('node:async_hooks')
   .then(r => {
@@ -28,9 +29,11 @@ export class Scope {
   parent: Scope | null = null;
 
   /**
+   * Lazily created on the first onScopeDispose() — most scopes register no
+   * cleanup, so they skip the array allocation entirely.
    * @internal
    */
-  cleanups: (() => void)[] = [];
+  cleanups: (() => void)[] | null = null;
 
   /**
    * @internal
@@ -48,35 +51,90 @@ export class Scope {
   run<T>(fn: () => T): T {
     this._activeRuns++;
 
-    const onComplete = ([err, result]: [Error | undefined, any]): T => {
-      this._activeRuns--;
+    var result: any;
 
-      if (this._activeRuns === 0) {
-        this.stop();
-      }
-
-      if (err) {
+    if (ALS) {
+      try {
+        result = ALS.run(this, fn);
+      } catch (err) {
+        this._finishRun();
         throw err;
       }
 
-      return result;
-    };
-
-    const r = runInScope(this, fn);
-
-    if (isPromise<any>(r)) {
-      return r.then(onComplete) as T;
+      return this._settleRun(result);
     }
 
-    return onComplete(r);
+    var prevScope = getCurrentScope();
+    currentScope = this;
+
+    try {
+      result = fn();
+    } catch (err) {
+      currentScope = prevScope;
+      this._finishRun();
+      throw err;
+    }
+
+    if (isPromise(result)) {
+      return result.then(
+        value => {
+          currentScope = prevScope;
+          this._finishRun();
+          return value;
+        },
+        err => {
+          currentScope = prevScope;
+          this._finishRun();
+          throw err;
+        },
+      ) as T;
+    }
+
+    currentScope = prevScope;
+    this._finishRun();
+    return result;
+  }
+
+  private _settleRun<T>(result: any): T {
+    if (isPromise(result)) {
+      return result.then(
+        value => {
+          this._finishRun();
+          return value;
+        },
+        err => {
+          this._finishRun();
+          throw err;
+        },
+      ) as T;
+    }
+
+    this._finishRun();
+    return result;
+  }
+
+  private _finishRun(): void {
+    this._activeRuns--;
+
+    if (this._activeRuns === 0) {
+      this.stop();
+    }
   }
 
   stop() {
-    for (let i = 0, l = this.cleanups.length; i < l; i++) {
-      this.cleanups[i]();
-    }
+    var cleanups = this.cleanups;
 
-    this.cleanups.length = 0;
+    if (!cleanups) return;
+
+    this.cleanups = null;
+
+    for (var i = 0, l = cleanups.length; i < l; i++) {
+      try {
+        cleanups[i]();
+      } catch (err) {
+        log.error('cleanup execution error', err);
+      }
+    }
   }
 
   get active(): boolean {
@@ -109,43 +167,3 @@ export function setCurrentScope(scope: Scope) {
     currentScope = scope;
   }
 }
-
-function runInScope<T>(
-  scope: Scope,
-  fn: () => T,
-): Awaitable<[Error | undefined, any]> {
-  if (ALS) {
-    return catchError(() => ALS!.run(scope, fn));
-  }
-
-  const prevScope = getCurrentScope();
-
-  const onComplete = ([err, result]: [Error | undefined, any]): [
-    Error | undefined,
-    any,
-  ] => {
-    if (prevScope) {
-      setCurrentScope(prevScope);
-    } else {
-      unsetCurrentScope();
-    }
-
-    return [err, result];
-  };
-
-  const result = catchError(fn);
-
-  if (isPromise<any>(result)) {
-    return result.then(onComplete);
-  }
-
-  return onComplete(result);
-}
-
-const unsetCurrentScope = (): void => {
-  if (ALS) {
-    ALS.enterWith(null);
-  } else {
-    currentScope = null;
-  }
-};

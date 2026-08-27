@@ -27,7 +27,7 @@ export { getCurrentScope } from './scope';
  */
 export function withContext<T extends AnyFunction>(fn: T, detached = false): T {
   return function (this: any, ...args: any[]) {
-    const scope = createScope(detached);
+    var scope = createScope(detached);
     return scope.run(fn.bind(this, ...args));
   } as T;
 }
@@ -58,12 +58,14 @@ export function runWithContext<T = any>(fn: () => T, isolated = false): T {
  * @group Main
  */
 export function bindContext<T>(fn: () => T): () => T {
-  const activeScope = getCurrentScope();
+  var activeScope = getCurrentScope();
 
-  assert.ok(
-    activeScope,
-    'bindContext() is called when there is no active scope to be associated with.',
-  );
+  if (!activeScope) {
+    assert.ok(
+      false,
+      'bindContext() is called when there is no active scope to be associated with.',
+    );
+  }
 
-  return () => activeScope.run(fn);
+  return () => activeScope!.run(fn);
 }

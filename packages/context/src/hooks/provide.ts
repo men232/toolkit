@@ -1,4 +1,5 @@
 import { captureStackTrace, isFunction } from '@andrew_l/toolkit';
+import { log } from '../constants';
 import { Scope, getCurrentScope, setCurrentScope } from '../scope';
 
 export type ProvideKey = symbol | string | number | object;
@@ -11,14 +12,14 @@ export type InjectionKey = symbol | string | number | object;
  * @group Main
  */
 export function provide(key: ProvideKey, value: any, enterWith?: boolean) {
-  let currentScope = getCurrentScope();
+  var currentScope = getCurrentScope();
 
   if (!currentScope) {
     if (enterWith) {
       currentScope = new Scope();
       setCurrentScope(currentScope);
     } else {
-      console.warn(
+      log.warn(
         `provide() is called when there is no active scope to be associated with.\n` +
           captureStackTrace(provide),
       );
@@ -40,7 +41,7 @@ export function inject<T = any>(
   var currentScope = getCurrentScope();
 
   if (!currentScope) {
-    console.warn(
+    log.warn(
       `inject() is called when there is no active scope to be associated with.\n` +
         captureStackTrace(inject),
     );
