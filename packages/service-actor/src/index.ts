@@ -10,16 +10,6 @@ import {
   isFunction,
 } from '@andrew_l/toolkit';
 
-type ServiceActorInternal = {
-  traceId: unknown;
-  actorId: unknown;
-  actorType: unknown;
-  [SYM_API]: Record<PropertyKey, Function>;
-  [SYM_MARKER]: boolean;
-  [SYM_RAW]: any;
-  [SYM_DATA]: Record<PropertyKey, unknown>;
-};
-
 export type AnyServiceActor = {
   traceId: any;
   actorId: any;
@@ -41,11 +31,6 @@ export type ServiceActor<T extends Record<PropertyKey, any> = {}> =
   ServiceActorData<T> & {
     assign(params: Partial<ServiceActorData<T>>): ServiceActor<T>;
   };
-
-var SYM_MARKER = Symbol();
-var SYM_RAW = Symbol();
-var SYM_DATA = Symbol();
-var SYM_API = Symbol();
 
 /**
  * Create service actor hooks
@@ -161,86 +146,59 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
   return { with: withHook, use: useHok as any, inject: injectHook as any };
 }
 
+/**
+ * The actor is a plain object (prototype Object.prototype) whose behavior
+ * lives in non-enumerable own properties. That gives the historic Proxy
+ * facade semantics with zero trap machinery:
+ *
+ * - reserved fields + assigned data are own enumerable props — visible to
+ *   Object.keys / spread / serialization, in the same order as before;
+ * - api functions (assign, anything function-valued passed to assign()) are
+ *   own non-enumerable props — hidden from enumeration and never copied
+ *   into child actors, like the old SYM_API bucket;
+ * - overwriting an api function throws, like the old `set` trap returning
+ *   false in strict mode (non-writable own property behaves the same for
+ *   direct assignment).
+ */
 function createServiceActor(): ServiceActor {
-  var actor: ServiceActorInternal = {
+  var actor = {
     traceId: '',
     actorId: null,
     actorType: 'unknown',
-    [SYM_API]: {
-      assign,
-    },
-    [SYM_DATA]: {},
-    [SYM_RAW]: null,
-    [SYM_MARKER]: true,
   };
 
-  var reservedKeys = new Set(Object.keys(actor));
-
-  actor[SYM_RAW] = actor;
-
-  var newProxy = new Proxy(actor[SYM_DATA], {
-    defineProperty(target, key, value) {
-      if (key in actor) {
-        (actor as any)[key] = value;
-      } else {
-        target[key] = value;
-      }
-
-      return true;
-    },
-    deleteProperty(target, key) {
-      if (key in actor) {
-        delete (actor as any)[key];
-      } else {
-        delete target[key];
-      }
-
-      return true;
-    },
-    has(target, key) {
-      return key in actor || key in target;
-    },
-    ownKeys(target) {
-      return [...reservedKeys, ...Object.keys(target)];
-    },
-    set: function (target, key, value) {
-      if (key in actor[SYM_API]) return false;
-
-      if (key in actor) {
-        Reflect.set(actor, key, value);
-      } else if (isFunction(value)) {
-        Reflect.set(actor[SYM_API], key, value);
-      } else {
-        Reflect.set(target, key, value);
-      }
-
-      return true;
-    },
-    get: (target, key) => {
-      var value: any;
-
-      if (key in actor) {
-        value = Reflect.get(actor, key, value);
-      } else if (key in actor[SYM_API]) {
-        value = Reflect.get(actor[SYM_API], key, value).bind(newProxy);
-      } else {
-        value = Reflect.get(target, key);
-      }
-
-      return value;
-    },
-    getOwnPropertyDescriptor(k) {
-      return {
-        enumerable: true,
-        configurable: true,
-      };
-    },
+  Object.defineProperty(actor, 'assign', {
+    value: assign,
+    enumerable: false,
+    writable: false,
+    configurable: true,
   });
 
-  return newProxy as ServiceActor;
+  return actor as unknown as ServiceActor;
 }
 
 function assign(this: ServiceActor, params: Record<any, any>) {
-  Object.assign(this, params);
+  for (var key of Object.keys(params)) {
+    var value = params[key];
+
+    // Own function props are the api bucket; inherited functions
+    // (toString, constructor, ...) are not guarded — matches the old trap.
+    if (isFunction((this as any)[key]) && Object.hasOwn(this, key)) {
+      // Same outcome as the old `set` trap returning false in strict mode.
+      throw new TypeError(`Cannot assign guarded actor key '${key}'`);
+    }
+
+    if (isFunction(value)) {
+      Object.defineProperty(this, key, {
+        value,
+        enumerable: false,
+        writable: false,
+        configurable: true,
+      });
+    } else {
+      (this as any)[key] = value;
+    }
+  }
+
   return this;
 }
