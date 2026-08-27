@@ -146,38 +146,42 @@ export function serviceActor<T extends Record<PropertyKey, any> = {}>(
   return { with: withHook, use: useHok as any, inject: injectHook as any };
 }
 
-/**
- * The actor is a plain object (prototype Object.prototype) whose behavior
- * lives in non-enumerable own properties. That gives the historic Proxy
- * facade semantics with zero trap machinery:
- *
- * - reserved fields + assigned data are own enumerable props — visible to
- *   Object.keys / spread / serialization, in the same order as before;
- * - api functions (assign, anything function-valued passed to assign()) are
- *   own non-enumerable props — hidden from enumeration and never copied
- *   into child actors, like the old SYM_API bucket;
- * - overwriting an api function throws, like the old `set` trap returning
- *   false in strict mode (non-writable own property behaves the same for
- *   direct assignment).
- */
-function createServiceActor(): ServiceActor {
-  var actor = {
-    traceId: '',
-    actorId: null,
-    actorType: 'unknown',
-  };
+var SYM_ACTOR = Symbol();
 
-  Object.defineProperty(actor, 'assign', {
+var ACTOR_PROTO = Object.create(Object.prototype, {
+  assign: {
     value: assign,
     enumerable: false,
     writable: false,
     configurable: true,
-  });
+  },
+  [SYM_ACTOR]: {
+    value: true,
+    enumerable: false,
+    writable: false,
+    configurable: true,
+  },
+});
 
-  return actor as unknown as ServiceActor;
+function createServiceActor(): ServiceActor {
+  var actor = Object.create(ACTOR_PROTO);
+
+  actor.traceId = '';
+  actor.actorId = null;
+  actor.actorType = 'unknown';
+
+  return actor as ServiceActor;
 }
 
 function assign(this: ServiceActor, params: Record<any, any>) {
+  // Fast path: the source is another actor. Its own enumerable props are
+  // reserved fields + data only (api functions are non-enumerable), so a
+  // native Object.assign is safe.
+  if ((params as any)[SYM_ACTOR] === true) {
+    Object.assign(this, params);
+    return this;
+  }
+
   for (var key of Object.keys(params)) {
     var value = params[key];
 
