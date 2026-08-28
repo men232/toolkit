@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/app",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "Application runner.",
   "license": "MIT",
   "type": "module",
@@ -43,9 +43,9 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@andrew_l/context": "workspace:*",
     "@andrew_l/graceful": "workspace:*",
     "@andrew_l/toolkit": "workspace:*",
-    "@andrew_l/context": "workspace:*",
     "commander": "^13.0.0",
     "consola": "^3.4.2",
     "dotenv": "^17.4.2",
