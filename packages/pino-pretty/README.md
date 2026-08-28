@@ -1,19 +1,19 @@
 # Pino Pretty
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/pino-pretty?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/pino-pretty)
+[![license](https://img.shields.io/npm/l/@andrew_l/pino-pretty?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 A highly customizable [pino](https://www.npmjs.com/package/pino) transport that transforms JSON logs into beautiful, readable output with colors, icons, and intelligent formatting for development.
 
 Inspired by [consola](https://www.npmjs.com/package/consola)
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/pino-pretty/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/pino-pretty/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 ![screenshot](https://raw.githubusercontent.com/men232/toolkit/refs/heads/main/packages/pino-pretty/assets/sample.png?raw=true)
 
 <!-- install placeholder -->
 
-## 📋 Features
+## ✨ Features
 
 - **Highly Customizable:** Configure colors, icons, badges, and formatting options for each log level
 - **Intelligent Formatting:** Smart object inspection with configurable depth and string truncation
@@ -104,9 +104,3 @@ logger.info('Custom pino-pretty setup successful');
 1. **Enhanced Readability:** Transform cryptic JSON logs into human-readable, visually appealing output
 2. **Development Productivity:** Quickly identify issues with color-coded levels and intelligent formatting
 3. **Highly Customizable:** Every aspect of formatting can be tailored to your preferences
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/pino-pretty?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/pino-pretty
-[license-src]: https://img.shields.io/npm/l/@andrew_l/pino-pretty?style=flat

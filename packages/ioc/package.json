@@ -2,8 +2,6 @@
   "name": "@andrew_l/ioc",
   "version": "0.4.6",
   "description": "Pretty simple IOC Container.",
-  "license": "MIT",
-  "type": "module",
   "keywords": [
     "service",
     "container",
@@ -11,11 +9,16 @@
     "injection",
     "ioc"
   ],
+  "author": "Andrew L. <andrew.io.dev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://men232.github.io/toolkit/reference/@andrew_l/ioc/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",
     "directory": "packages/ioc"
   },
+  "bugs": "https://github.com/men232/toolkit/issues",
+  "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "obuild",

@@ -1,12 +1,11 @@
 # Context Toolkit
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
-[![bundle][bundle-src]][bundle-href]
+[![npm](https://img.shields.io/npm/v/@andrew_l/context?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/context)
+[![license](https://img.shields.io/npm/l/@andrew_l/context?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 A lightweight toolkit to bind asynchronous contexts, inspired by Vue's Composition API. Easily provide and inject values across asynchronous scopes with support for scoped disposal.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/context/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/context/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -48,11 +47,3 @@ main();
 1. **Streamlined Context Management:** Provides an elegant solution for managing shared state across asynchronous functions without relying on global variables or complex patterns.
 2. **Scoped Cleanup:** Automatically dispose of resources or listeners when a scope is terminated.
 3. **Vue-Like Syntax:** Offers a familiar and intuitive API for developers with experience in Vue's Composition API.
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/context?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/context
-[bundle-src]: https://img.shields.io/bundlephobia/min/@andrew_l/context?style=flat
-[bundle-href]: https://bundlephobia.com/result?p=@andrew_l/context
-[license-src]: https://img.shields.io/npm/l/@andrew_l/context?style=flat

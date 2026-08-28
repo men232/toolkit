@@ -1,11 +1,11 @@
 # Mongo Pagination Toolkit
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/mongo-pagination?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/mongo-pagination)
+[![license](https://img.shields.io/npm/l/@andrew_l/mongo-pagination?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 This package provides an efficient and customizable way to handle pagination for MongoDB and Mongoose queries. It simplifies working with large datasets by enabling cursor pagination, handling sorting, and managing tokens for navigating between pages.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/mongo-pagination/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/mongo-pagination/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -98,9 +98,3 @@ async function paginateMongoDB() {
 2. **Token-based Pagination:** Ideal for dynamic datasets.
 3. **Flexible & Customizable:** Adaptable to your requirements.
 4. **TypeScript Support:** Minimized errors, better productivity.
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/mongo-pagination?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/mongo-pagination
-[license-src]: https://img.shields.io/npm/l/@andrew_l/mongo-pagination?style=flat

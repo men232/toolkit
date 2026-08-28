@@ -1,0 +1,31 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mark" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffa94d"/>
+      <stop offset="1" stop-color="#f76707"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 90) rotate(130) scale(620)">
+      <stop stop-color="#f76707" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#f76707" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="#17191c"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+  <rect y="632" width="1280" height="8" fill="#f76707"/>
+
+  <g transform="translate(112 232) scale(0.88)">
+    <g stroke="url(#mark)" stroke-width="8" stroke-linejoin="round">
+      <path d="M55 66 89 100 55 134 21 100Z" fill="url(#mark)"/>
+      <path d="M145 66 179 100 145 134 111 100Z" fill="url(#mark)"/>
+      <path d="M100 111 134 145 100 179 66 145Z" fill="url(#mark)"/>
+      <path d="M100 22 133 55 100 88 67 55Z" fill="none" stroke="#b8b0a6" stroke-width="10"/>
+    </g>
+  </g>
+
+  <g font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <text x="348" y="286" fill="#f2f3f5" font-size="92" font-weight="700" letter-spacing="-2">Toolkit</text>
+    <text x="348" y="348" fill="#9aa0a6" font-size="34" font-weight="400">Production-grade TypeScript packages for Node.js</text>
+    <text x="348" y="410" fill="#ff922b" font-size="27" font-weight="600" letter-spacing="1">15 PACKAGES · MIT · @andrew_l</text>
+  </g>
+</svg>

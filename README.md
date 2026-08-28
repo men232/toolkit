@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.svg">
-  <img src="./assets/logo-light.svg" alt="" width="104" height="104">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/public/logo-dark.svg">
+  <img src="./docs/public/logo-light.svg" alt="" width="104" height="104">
 </picture>
 
 # `@andrew_l` · toolkit

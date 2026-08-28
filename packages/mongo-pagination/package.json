@@ -2,8 +2,6 @@
   "name": "@andrew_l/mongo-pagination",
   "version": "0.4.6",
   "description": "Manages pagination without relying on traditional offsets.",
-  "license": "MIT",
-  "type": "module",
   "keywords": [
     "mongo",
     "mongodb",
@@ -11,11 +9,16 @@
     "pagination",
     "cursor"
   ],
+  "author": "Andrew L. <andrew.io.dev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://men232.github.io/toolkit/reference/@andrew_l/mongo-pagination/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",
     "directory": "packages/mongo-pagination"
   },
+  "bugs": "https://github.com/men232/toolkit/issues",
+  "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "obuild",

@@ -6,6 +6,23 @@ const version = readMonorepoPackageJson().version;
 
 console.log('VERSION =', version);
 
+const AUTHOR = 'Andrew L. <andrew.io.dev@gmail.com>';
+const REPOSITORY_URL = 'https://github.com/men232/toolkit';
+const DOCS_URL = 'https://men232.github.io/toolkit';
+
+/** Fields listed first in every package.json, in this order */
+const FIELD_ORDER = [
+  'name',
+  'version',
+  'description',
+  'keywords',
+  'author',
+  'license',
+  'homepage',
+  'repository',
+  'bugs',
+];
+
 /**
  * - Set the version to the monorepo ./package.json version
  * - Update dependencies, devDependencies, and peerDependencies
@@ -13,14 +30,44 @@ console.log('VERSION =', version);
  * @param {PackageMetadata} pkg
  */
 function updatePackage(pkg) {
-  const newPkg = { ...pkg.packageJson };
-  const name = newPkg.name;
-  delete newPkg.version;
-  delete newPkg.name;
+  const newPkg = { ...pkg.packageJson, version };
 
-  pkg.packageJson = { name, version, ...newPkg };
+  updateMetadata(pkg, newPkg);
+
+  // Re-key so FIELD_ORDER leads, with any remaining fields kept in place after
+  pkg.packageJson = {
+    ...Object.fromEntries(
+      FIELD_ORDER.filter(key => newPkg[key] !== undefined).map(key => [
+        key,
+        newPkg[key],
+      ]),
+    ),
+    ...Object.fromEntries(
+      Object.entries(newPkg).filter(([key]) => !FIELD_ORDER.includes(key)),
+    ),
+  };
+
   updateDependencies(pkg);
   pkg.writeSync();
+}
+
+/**
+ * Set the fields npm renders on a package page — without them the published
+ * package has no link back to its documentation or issue tracker.
+ *
+ * @param {PackageMetadata} pkg
+ * @param {Record<string, any>} packageJson the draft being assembled
+ */
+function updateMetadata(pkg, packageJson) {
+  packageJson.author = AUTHOR;
+  packageJson.license ??= 'MIT';
+  packageJson.homepage = `${DOCS_URL}/reference/${pkg.getNpmName()}/`;
+  packageJson.bugs = `${REPOSITORY_URL}/issues`;
+  packageJson.repository = {
+    type: 'git',
+    url: `git+${REPOSITORY_URL}.git`,
+    directory: `packages/${pkg.getDirectoryName()}`,
+  };
 }
 
 /**

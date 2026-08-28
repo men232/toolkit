@@ -1,10 +1,9 @@
-# Snowflake - Generate unique IDs in a distributed environment at scale
+# Snowflake
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
-[![bundle][bundle-src]][bundle-href]
+[![npm](https://img.shields.io/npm/v/@andrew_l/snowflake?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/snowflake)
+[![license](https://img.shields.io/npm/l/@andrew_l/snowflake?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
-There is a bit improved version of [@sapphire/snowflake](https://github.com/sapphiredev/utilities/tree/main/packages/snowflake) package by using javascript numbers and Uint8Array buffer.
+Generate unique IDs in a distributed environment at scale. A slightly improved version of [@sapphire/snowflake](https://github.com/sapphiredev/utilities/tree/main/packages/snowflake) that uses JavaScript numbers and a `Uint8Array` buffer.
 
 ⚡ **Benchmark**
 
@@ -15,6 +14,8 @@ There is a bit improved version of [@sapphire/snowflake](https://github.com/sapp
 · andrew (buffer)         13,808,748.82   ±0.37%  13808749
 · andrew (buffer unsafe)  16,023,413.95   ±0.04%  16023414   fastest
 ```
+
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/snowflake/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -59,11 +60,3 @@ const customerIdNumber = bigIntFromBytes(base62.decode(customerId.slice(4)));
 // e.g. 1941863457523503104n
 console.log('customer id (number) =', customerIdNumber);
 ```
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/snowflake?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/snowflake
-[bundle-src]: https://img.shields.io/bundlephobia/min/@andrew_l/snowflake?style=flat
-[bundle-href]: https://bundlephobia.com/result?p=@andrew_l/snowflake
-[license-src]: https://img.shields.io/npm/l/@andrew_l/snowflake?style=flat

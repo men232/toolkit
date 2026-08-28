@@ -3,7 +3,19 @@ layout: home
 
 hero:
   name: 'Toolkit'
-  text: 'Collection of utility functions'
+  text: 'Small tools, built to last'
+  tagline: Focused, production-grade TypeScript packages for Node.js services, CLI tools, and web applications.
+  image:
+    light: /logo-light.svg
+    dark: /logo-dark.svg
+    alt: Toolkit
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /reference/
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/men232/toolkit
 
 features:
   - title: App

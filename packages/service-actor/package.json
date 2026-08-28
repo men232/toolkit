@@ -2,8 +2,6 @@
   "name": "@andrew_l/service-actor",
   "version": "0.4.6",
   "description": "Forget about passing data like trace IDs between functions.",
-  "license": "MIT",
-  "type": "module",
   "keywords": [
     "trace",
     "id",
@@ -11,11 +9,16 @@
     "inject",
     "hooks"
   ],
+  "author": "Andrew L. <andrew.io.dev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://men232.github.io/toolkit/reference/@andrew_l/service-actor/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",
     "directory": "packages/service-actor"
   },
+  "bugs": "https://github.com/men232/toolkit/issues",
+  "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "obuild",

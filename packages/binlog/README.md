@@ -1,18 +1,20 @@
 # Binlog
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/binlog?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/binlog)
+[![license](https://img.shields.io/npm/l/@andrew_l/binlog?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 A high-performance binary logging system for Node.js applications, inspired by VK's KPHP KDB binlog implementation. This library provides a robust, efficient way to record and replay binary log entries with integrity checking and rotation support.
 
-## 📋 Features
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/binlog/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
+
+<!-- install placeholder -->
+
+## ✨ Features
 
 - **Automatic log rotation** based on file size
 - **TL serialization** integration for complex data types
 - **Data integrity** verification via CRC32 checksums
 - **File system sync control** for durability vs performance tradeoffs
-
-<!-- install placeholder -->
 
 ## 🔧 Usage
 
@@ -165,13 +167,3 @@ await binlog.write(1, {
   },
 });
 ```
-
-## 📝 License
-
-MIT
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/binlog?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/binlog
-[license-src]: https://img.shields.io/npm/l/@andrew_l/binlog?style=flat

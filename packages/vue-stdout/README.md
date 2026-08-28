@@ -1,11 +1,11 @@
 # Vue Stdout Toolkit
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/vue-stdout?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/vue-stdout)
+[![license](https://img.shields.io/npm/l/@andrew_l/vue-stdout?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 A custom Vue.js renderer for outputting content directly to the terminal (stdout), combining the flexibility of Vue with the power of console-based rendering.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/vue-stdout/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/vue-stdout/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -82,9 +82,3 @@ Output
 2. **Vue Ecosystem:** Leverages Vue’s declarative and reactive system for building rich console interfaces.
 3. **Flexibility with Components:** Provides reusable components like Box, Text, and ProgressBar for structured layouts.
 4. **TypeScript Support:** Offers type definitions for better IDE support and error checking.
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/vue-stdout?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/vue-stdout
-[license-src]: https://img.shields.io/npm/l/@andrew_l/vue-stdout?style=flat

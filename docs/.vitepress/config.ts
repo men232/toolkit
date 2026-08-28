@@ -11,12 +11,36 @@ const EXCLUDE_TYPEDOC_GROUPS = new Set([
   'Enumerations',
 ]);
 
+const BASE = '/toolkit/';
+const SITE_URL = `https://men232.github.io${BASE}`;
+const DESCRIPTION =
+  'Focused, production-grade TypeScript packages for Node.js services, CLI tools, and web applications.';
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'Toolkit',
-  description: 'Andrew L. Toolkit',
-  base: '/toolkit/',
+  description: DESCRIPTION,
+  base: BASE,
+
+  // Absolute paths — `base` is not applied to raw head tags
+  head: [
+    [
+      'link',
+      { rel: 'icon', type: 'image/svg+xml', href: `${BASE}favicon.svg` },
+    ],
+    ['meta', { name: 'theme-color', content: '#f76707' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:title', content: 'Andrew L. Toolkit' }],
+    ['meta', { property: 'og:description', content: DESCRIPTION }],
+    ['meta', { property: 'og:url', content: SITE_URL }],
+    ['meta', { property: 'og:image', content: `${SITE_URL}og-image.png` }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:image', content: `${SITE_URL}og-image.png` }],
+  ],
+
   themeConfig: {
+    logo: { light: '/logo-light.svg', dark: '/logo-dark.svg' },
+
     search: {
       provider: 'local',
     },
@@ -49,5 +73,10 @@ export default defineConfig({
         link: 'https://github.com/men232/toolkit',
       },
     ],
+
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2024–present Andrew L.',
+    },
   },
 });

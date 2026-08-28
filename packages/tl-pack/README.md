@@ -1,13 +1,14 @@
-# TL Pack - Binary Serialization Library
+# TL Pack
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
-[![bundle][bundle-src]][bundle-href]
+[![npm](https://img.shields.io/npm/v/@andrew_l/tl-pack?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/tl-pack)
+[![license](https://img.shields.io/npm/l/@andrew_l/tl-pack?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 Binary serialization library, inspired by the TL (Type Language) format, created by the VK team. Unlike official TL, this version does not require a schema for serialization/deserialization. It provides a compact and fast alternative to other binary serialization formats like MessagePack.
 
 ⚡ **Benchmark**: Slightly faster and more compact than **@msgpack/msgpack**  
 ⚠️ **Note**: Benchmark claims may vary.
+
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/tl-pack/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -195,9 +196,7 @@ const APIResponse = defineStructure({
 const response = new APIResponse({
   status: 200,
   data: {
-    users: [
-      /*...*/
-    ],
+    users: [/*...*/],
     total: 1250,
   },
   headers: { 'content-type': 'application/json' },
@@ -234,7 +233,7 @@ decode.on('data', data => console.log('stream', data));
 decode.on('error', console.error);
 ```
 
-## Structure Features
+## 🧩 Structure Features
 
 ### Version Management
 
@@ -286,7 +285,7 @@ const SecureData = defineStructure({
 // and validated during deserialization
 ```
 
-## Supported Types
+## 📐 Supported Types
 
 | Constructor ID | Byte Size          |
 | -------------- | ------------------ |
@@ -313,7 +312,7 @@ const SecureData = defineStructure({
 | GZIP           | 5 + sizeof(object) |
 | Structure      | 4 + sizeof(object) |
 
-## Custom Types
+## 🛠️ Custom Types
 
 You can extend tl-pack to handle custom types. For example, handling ObjectId from Mongoose:
 
@@ -381,21 +380,13 @@ function hex(arrayBuffer: Uint8Array) {
 }
 ```
 
-## Dictionary Support
+## 📖 Dictionary Support
 
 The dictionary helps optimize serialization by replacing strings with numeric indexes, saving buffer space.
 
 - **Static Dictionary:** Pre-defined dictionary initialized when creating the BinaryWriter/BinaryReader.
 - **Dynamic Dictionary:** Grows dynamically during encoding and decoding, especially useful for objects (Maps).
 
-## Production
+## 🏭 Production
 
 No way!
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/tl-pack?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/tl-pack
-[bundle-src]: https://img.shields.io/bundlephobia/min/@andrew_l/tl-pack?style=flat
-[bundle-href]: https://bundlephobia.com/result?p=@andrew_l/tl-pack
-[license-src]: https://img.shields.io/npm/l/@andrew_l/tl-pack?style=flat

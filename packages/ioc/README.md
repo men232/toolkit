@@ -1,11 +1,11 @@
 # Inversion of Control (IoC) Toolkit
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/ioc?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/ioc)
+[![license](https://img.shields.io/npm/l/@andrew_l/ioc?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 A simple and flexible Inversion of Control (IoC) container to help set up and manage services in your application. This toolkit automates the process of importing and registering services, ensuring that dependencies are injected properly before running your application code.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/ioc/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/ioc/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -69,9 +69,3 @@ export function createUser() {
 2. **Auto-import Services:** Automatically imports services from your specified directory, reducing boilerplate and manual imports.
 3. **Flexible and Customizable:** Easily configure paths and types, making it adaptable to various project structures.
 4. **Improved Developer Experience:** Supports TypeScript for type generation.
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/ioc?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/ioc
-[license-src]: https://img.shields.io/npm/l/@andrew_l/ioc?style=flat

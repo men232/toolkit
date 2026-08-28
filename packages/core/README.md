@@ -1,12 +1,11 @@
 # Toolkit
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
-[![bundle][bundle-src]][bundle-href]
+[![npm](https://img.shields.io/npm/v/@andrew_l/toolkit?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/toolkit)
+[![license](https://img.shields.io/npm/l/@andrew_l/toolkit?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 A personal collection of utility JavaScript functions that have been developed and refined over the years. This toolkit contains a variety of helper functions aimed at making everyday JavaScript tasks easier, more efficient, and maintainable.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/toolkit/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/toolkit/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -22,9 +21,3 @@ A personal collection of utility JavaScript functions that have been developed a
 - Telegram Web
 - Me
 - And others
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/toolkit?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/toolkit
-[bundle-src]: https://img.shields.io/bundlephobia/min/@andrew_l/toolkit?style=flat
-[bundle-href]: https://bundlephobia.com/result?p=@andrew_l/toolkit
-[license-src]: https://img.shields.io/npm/l/@andrew_l/toolkit?style=flat

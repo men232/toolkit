@@ -1,11 +1,11 @@
 # Application Toolkit
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/app?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/app)
+[![license](https://img.shields.io/npm/l/@andrew_l/app?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 Define application entry points with typed props, lifecycle hooks, and run them via the `vrun` CLI — no boilerplate config or argument parsing needed.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/app/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/app/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -295,9 +295,3 @@ export default defineWorker({
 - **Structured lifecycle** — clear separation between setup, run, stop, and shutdown
 - **Worker threads** — scale any app to N threads with a single `--threads` flag
 - **Dev mode** — run TypeScript directly with `--dev`; use `--watch` to reload on file changes
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/app?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/app
-[license-src]: https://img.shields.io/npm/l/@andrew_l/app?style=flat

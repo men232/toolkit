@@ -2,18 +2,21 @@
   "name": "@andrew_l/pino-pretty",
   "version": "0.4.6",
   "description": "Pino transport for beautiful log output",
-  "license": "MIT",
-  "type": "module",
   "keywords": [
     "pino",
     "pretty",
     "pino-pretty"
   ],
+  "author": "Andrew L. <andrew.io.dev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://men232.github.io/toolkit/reference/@andrew_l/pino-pretty/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/men232/toolkit.git",
     "directory": "packages/pino-pretty"
   },
+  "bugs": "https://github.com/men232/toolkit/issues",
+  "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "obuild",

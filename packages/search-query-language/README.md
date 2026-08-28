@@ -1,11 +1,11 @@
 # Search Query Language
 
-[![npm version][npm-version-src]][npm-version-href]
-![license][license-src]
+[![npm](https://img.shields.io/npm/v/@andrew_l/search-query-language?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/search-query-language)
+[![license](https://img.shields.io/npm/l/@andrew_l/search-query-language?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
 Search Query Language is a lightweight utility that converts human-readable query strings into structured representations. It supports parsing expressions into an abstract syntax tree (AST) and transforming them into queries.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/search-query-language/)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/search-query-language/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
@@ -91,9 +91,3 @@ app.get('/clients', async (req, res) => {
   res.json(items);
 });
 ```
-
-<!-- Badges -->
-
-[npm-version-src]: https://img.shields.io/npm/v/@andrew_l/search-query-language?style=flat
-[npm-version-href]: https://npmjs.com/package/@andrew_l/search-query-language
-[license-src]: https://img.shields.io/npm/l/@andrew_l/search-query-language?style=flat
