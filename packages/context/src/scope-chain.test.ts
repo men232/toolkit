@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { inject, provide, withContext } from '.';
-import { Scope, createScope, getCurrentScope } from './scope';
+import { type Scope, createScope, getCurrentScope } from './scope';
 
 /**
  * inject() walks the parent chain without a visited set — that is only

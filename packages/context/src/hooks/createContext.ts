@@ -1,5 +1,11 @@
 import { type InjectionKey, inject, provide } from './provide';
 
+export type InjectContextFn<T> = <D extends T | null = T>(
+  fallback?: D | (() => D),
+) => D extends null ? T | null : T;
+
+export type ProvideContextFn<T> = (value: T) => T;
+
 /**
  * Wrapper around `provide/inject` function to simple usage.
  *
@@ -26,16 +32,16 @@ import { type InjectionKey, inject, provide } from './provide';
  *
  * @group Main
  */
-export function createContext<ContextValue>(
+export function createContext<T, J = Exclude<T, undefined | null>>(
   providerName: string | string[],
   contextName?: string,
-) {
-  const symbolDescription =
+): [InjectContextFn<J>, ProvideContextFn<J>] {
+  var symbolDescription =
     typeof providerName === 'string' && !contextName
       ? `${providerName}Context`
       : contextName;
 
-  const injectionKey: InjectionKey = Symbol(symbolDescription);
+  var injectionKey: InjectionKey = Symbol(symbolDescription);
 
   /**
    * @param fallback The context value to return if the injection fails.
@@ -43,15 +49,12 @@ export function createContext<ContextValue>(
    * @throws When context injection failed and no fallback is specified.
    * This happens when the scope injecting the context is not a child of the root scope providing the context.
    */
-  const injectContext = <
-    T extends ContextValue | null | undefined = ContextValue,
-  >(
-    fallback?: T | (() => T),
-  ): T extends null ? ContextValue | null : ContextValue => {
+  const injectContext: InjectContextFn<J> = fallback => {
     const context = inject(injectionKey, fallback);
-    if (context) return context;
 
-    if (context === null) return context as any;
+    if (context !== undefined) {
+      return context as J;
+    }
 
     throw new Error(
       `Injection \`${injectionKey.toString()}\` not found. Must be used within ${
@@ -62,10 +65,10 @@ export function createContext<ContextValue>(
     );
   };
 
-  const provideContext = (contextValue: ContextValue) => {
+  const provideContext: ProvideContextFn<J> = contextValue => {
     provide(injectionKey, contextValue);
     return contextValue;
   };
 
-  return [injectContext, provideContext] as const;
+  return [injectContext, provideContext];
 }

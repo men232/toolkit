@@ -2,8 +2,6 @@ import { captureStackTrace, isFunction } from '@andrew_l/toolkit';
 import { log } from '../constants';
 import { Scope, getCurrentScope, setCurrentScope } from '../scope';
 
-export type ProvideKey = symbol | string | number | object;
-export type ProvideValue<T = unknown> = T | undefined;
 export type InjectionKey = symbol | string | number | object;
 
 /**
@@ -11,7 +9,11 @@ export type InjectionKey = symbol | string | number | object;
  * @param enterWith Enter into injection context (Experimental)
  * @group Main
  */
-export function provide(key: ProvideKey, value: any, enterWith?: boolean) {
+export function provide(
+  key: InjectionKey,
+  value: any,
+  enterWith?: boolean,
+): void {
   var currentScope = getCurrentScope();
 
   if (!currentScope) {
@@ -30,14 +32,27 @@ export function provide(key: ProvideKey, value: any, enterWith?: boolean) {
   currentScope.providers.set(key, value);
 }
 
+export function inject<T>(key: InjectionKey): T | undefined;
+export function inject<T>(
+  key: InjectionKey,
+  defaultValue: T,
+  treatDefaultAsFactory: false,
+): T | undefined;
+export function inject<T>(
+  key: InjectionKey,
+  defaultValue: T | (() => T),
+  treatDefaultAsFactory?: true,
+): T;
+
 /**
  * Inject previously provided data
  * @group Main
  */
-export function inject<T = any>(
-  key: ProvideKey,
-  defaultValue?: T | (() => T),
-): ProvideValue<T> {
+export function inject(
+  key: InjectionKey,
+  defaultValue?: unknown,
+  treatDefaultAsFactory = true,
+) {
   var currentScope = getCurrentScope();
 
   if (!currentScope) {
@@ -58,7 +73,10 @@ export function inject<T = any>(
   } while (currentScope && value === undefined);
 
   if (value === undefined && defaultValue !== undefined) {
-    value = isFunction(defaultValue) ? defaultValue() : defaultValue;
+    value =
+      treatDefaultAsFactory && isFunction(defaultValue)
+        ? defaultValue()
+        : defaultValue;
   }
 
   return value;
