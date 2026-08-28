@@ -1,0 +1,14 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="toolkit">
+  <defs>
+    <linearGradient id="tk" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff922b"/>
+      <stop offset="1" stop-color="#e8590c"/>
+    </linearGradient>
+  </defs>
+  <g stroke="url(#tk)" stroke-width="8" stroke-linejoin="round">
+    <path d="M55 66 89 100 55 134 21 100Z" fill="url(#tk)"/>
+    <path d="M145 66 179 100 145 134 111 100Z" fill="url(#tk)"/>
+    <path d="M100 111 134 145 100 179 66 145Z" fill="url(#tk)"/>
+    <path d="M100 22 133 55 100 88 67 55Z" fill="none" stroke="#343a40" stroke-width="10"/>
+  </g>
+</svg>
