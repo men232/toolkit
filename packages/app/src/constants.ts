@@ -26,3 +26,9 @@ export const CONFIG = Object.freeze({
    */
   WORKER_DISABLED: new Set(env.list('WORKER_DISABLE', 'string')),
 } as const);
+
+export const APP_DEF = Symbol('app-definition');
+
+export const APP_IS_AUTORUN = Symbol('app-auto-run');
+
+export const WORKER_DEF = Symbol('worker-definition');

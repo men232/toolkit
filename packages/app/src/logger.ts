@@ -1,4 +1,4 @@
-import { type Logger, getLoggerLevel, noop } from '@andrew_l/toolkit';
+import { type Logger, getLoggerLevel } from '@andrew_l/toolkit';
 import { type ConsolaInstance, LogLevels, createConsola } from 'consola';
 
 export const createLogger = (tagName?: string): ConsolaInstance & Logger => {
@@ -17,12 +17,3 @@ export const createLogger = (tagName?: string): ConsolaInstance & Logger => {
 };
 
 export const log: ConsolaInstance & Logger = createLogger();
-
-export const noopLogger: Logger = {
-  debug: noop,
-  error: noop,
-  extend: () => noopLogger,
-  info: noop,
-  log: noop,
-  warn: noop,
-};

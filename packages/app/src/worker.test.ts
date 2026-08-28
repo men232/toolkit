@@ -1,8 +1,10 @@
+import { getCurrentScope, inject, provide } from '@andrew_l/context';
 import { type Data, type Logger, isSkip } from '@andrew_l/toolkit';
 import { describe, expect, it, vi } from 'vitest';
 import {
   type AppDefinition,
   type AppInstance,
+  appWaitShutdown,
   shutdownApp,
   startApp,
   stopApp,
@@ -389,6 +391,31 @@ describe('worker lifecycle', () => {
     expect(entry).toHaveBeenCalled();
     await stopApp(app);
     await shutdownApp(app);
+  });
+
+  it('entry has own disposable scope', async () => {
+    const values: number[] = [];
+    const scopes: number[] = [];
+    const def = defineWorker({
+      name: 'test',
+      logger: false,
+      executeStrategy: makeStrategy(),
+      async entry() {
+        const scope = getCurrentScope();
+        const seq = inject<number>('seq', 0);
+        provide('seq', seq + 1);
+        scopes.push(scope?.id ?? -1);
+        values.push(seq);
+      },
+    });
+    const app = await launchApp(def, {});
+    const worker = (app.setupState as any).worker as WorkerInstance;
+    worker.addTask({});
+    worker.addTask({});
+    await shutdownApp(app);
+    await appWaitShutdown(app);
+    expect(scopes.reduce((a, b) => b - a, 0)).toBe(1);
+    expect(values).toStrictEqual([0, 0]);
   });
 
   it('calls handleEntryError when entry throws', async () => {

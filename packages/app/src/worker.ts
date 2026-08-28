@@ -1,3 +1,4 @@
+import { withContext } from '@andrew_l/context';
 import {
   type AnyFunction,
   AsyncIterableQueue,
@@ -16,9 +17,10 @@ import {
   noop,
   toError,
 } from '@andrew_l/toolkit';
-import type { AppDefinition } from './app.js';
-import { defineApp } from './app.js';
-import { CONFIG } from './config.js';
+import { type AppDefinition, isAppAutorun } from './app.js';
+
+import { APP_DEF, CONFIG, WORKER_DEF } from './constants.ts';
+import { extractOptionsArgs } from './utils/args.ts';
 import { filePathFromStack } from './utils/filePathFromStack.ts';
 import type { ExtractPropTypes, ObjectPropsOptions } from './utils/props.js';
 
@@ -43,9 +45,7 @@ export namespace WorkerStrategy {
  * Pluggable trigger source. Drives when tasks are enqueued.
  * @group Types
  */
-export interface WorkerStrategy<
-  C extends WorkerStrategy.Context = WorkerStrategy.Context,
-> {
+export interface WorkerStrategy<C extends WorkerStrategy.Context = {}> {
   doSetup(opts: { worker: WorkerInstance }): Awaitable<void>;
   startSignal(): void;
   stopSignal(done: () => void): void;
@@ -84,11 +84,11 @@ export namespace WorkerDefinition {
       } & TaskContext<T>
     >;
 
-  export type SetupContext<T extends Data = Data> = AppDefinition.SetupContext<
+  export type SetupContext<T extends Data = {}> = AppDefinition.SetupContext<
     T & { worker: WorkerInstance }
   >;
 
-  export type RuntimeContext<T extends Data = Data> =
+  export type RuntimeContext<T extends Data = {}> =
     AppDefinition.RuntimeContext<
       T & {
         worker: WorkerInstance;
@@ -189,8 +189,6 @@ export interface WorkerInstance<C extends WorkerStrategy = WorkerStrategy> {
   addTask(ctx: WorkerDefinition.TaskContext<C>): void;
 }
 
-const WORKER_DEF = Symbol('worker-definition');
-
 function createWorkerPool(size: number): ResourcePool<symbol> {
   return new ResourcePool<symbol>({
     poolSize: size,
@@ -249,7 +247,7 @@ export function addWorkerTask<C extends WorkerStrategy>(
 
 var NOOP_EXECUTE_SIGNAL = () => ({ success: true, code: 'ok' }) as ExecResult;
 
-function executeWorkerTask<C extends WorkerStrategy>(
+var executeWorkerTask = withContext(function <C extends WorkerStrategy>(
   instance: WorkerInstance<C>,
   entryContext: WorkerDefinition.EntryContext<C>,
   props: Data,
@@ -344,7 +342,7 @@ function executeWorkerTask<C extends WorkerStrategy>(
           }
         });
     });
-}
+});
 
 /**
  * Define a background worker with a pluggable execution strategy.
@@ -371,13 +369,12 @@ function executeWorkerTask<C extends WorkerStrategy>(
  * @group Main
  */
 export function defineWorker<
-  P extends ObjectPropsOptions = {},
+  P extends ObjectPropsOptions = ObjectPropsOptions,
   S extends Record<string, any> = {},
   M extends Record<string, AnyFunction> = {},
   C extends WorkerStrategy = WorkerStrategy,
 >(definition: WorkerDefinition<P, S, M, C>): WorkerDefinition<P, S, M, C> {
-  const result = defineApp({
-    filePath: filePathFromStack(captureStackTrace(defineWorker)),
+  const result: WorkerDefinition<P, S, M, C> = {
     ...definition,
     setup(props) {
       return setupWorker(this, definition, props);
@@ -391,28 +388,37 @@ export function defineWorker<
     shutdown(props) {
       return shutdownWorker(this, props);
     },
-  }) as WorkerDefinition<P, S, M, C>;
+    disabled:
+      !!definition.disabled || CONFIG.WORKER_DISABLED.has(definition.name),
+  };
 
-  result.disabled = result.disabled || CONFIG.WORKER_DISABLED.has(result.name);
+  if (!('filePath' in result)) {
+    result.filePath = filePathFromStack(captureStackTrace(defineWorker));
+  }
+
+  def(result, APP_DEF, true);
   def(result, WORKER_DEF, true);
+
+  if (isAppAutorun(result)) {
+    import('./cli/index.js').then(m => {
+      m.cli.runApp({
+        cliName: 'app',
+        scriptFile: result.filePath!,
+        argv: extractOptionsArgs(process.argv.slice(1)),
+      });
+    });
+  }
 
   return result;
 }
 
 function setupWorker<
-  P extends ObjectPropsOptions,
-  S extends Data,
-  M extends Record<string, AnyFunction>,
+  P extends ObjectPropsOptions = {},
+  S extends Data = {},
+  M extends Record<string, AnyFunction> = {},
 >(
   setupContext: AppDefinition.SetupContext<M>,
-  definition: WorkerDefinition<
-    P,
-    S,
-    M,
-    WorkerStrategy,
-    WorkerDefinition.RuntimeContext,
-    WorkerDefinition.SetupContext<M>
-  >,
+  definition: WorkerDefinition<P, S, M, WorkerStrategy>,
   props: ExtractPropTypes<P>,
 ): Promise<WorkerDefinition.SetupContext<S & M>> {
   const setupFn = definition.setup;
@@ -429,11 +435,11 @@ function setupWorker<
 
   return Promise.resolve()
     .then(() => ctx.worker.executeStrategy!.doSetup(ctx))
-    .then(() => (setupFn ? setupFn.call(ctx, props) : undefined))
+    .then(() => (setupFn ? setupFn.call(ctx, props) : ({} as S)))
     .then(setupResult => {
       return {
         ...ctx,
-        ...(setupResult || ({} as S)),
+        ...setupResult,
       };
     });
 }

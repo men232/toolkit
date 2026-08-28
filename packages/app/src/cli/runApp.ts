@@ -20,7 +20,7 @@ import {
 } from '../app.js';
 import { createAppHub } from '../appHub.js';
 import { createAppThread } from '../appThread.ts';
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../constants.ts';
 import { log } from '../logger.js';
 import {
   type Project,
@@ -34,7 +34,6 @@ import { launchAppsTui } from '../tui/launchAppsTui.tsx';
 import { isHelpArgument } from '../utils/args.js';
 import { db } from '../utils/db.js';
 import { propsToOptions } from '../utils/props.js';
-
 export interface RunAppOptions {
   scriptFile?: string;
   cliName?: string;

@@ -45,6 +45,7 @@
   "dependencies": {
     "@andrew_l/graceful": "workspace:*",
     "@andrew_l/toolkit": "workspace:*",
+    "@andrew_l/context": "workspace:*",
     "commander": "^13.0.0",
     "consola": "^3.4.2",
     "dotenv": "^17.4.2",

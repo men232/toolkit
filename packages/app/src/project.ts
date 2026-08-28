@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { getColor } from 'consola/utils';
-import { CONFIG } from './config.js';
+import { CONFIG } from './constants.ts';
 import { log } from './logger.js';
 
 const TYPESCRIPT_EXTENSIONS = ['mts', 'cts', 'ts'];

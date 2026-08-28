@@ -15,23 +15,26 @@ import {
 } from '@andrew_l/toolkit';
 import type { ExtractPropTypes, ObjectPropsOptions } from './utils/props.js';
 
-import { CONFIG } from './config.js';
-import { extractOptionsArgs } from './utils/args.js';
+import { withContext } from '@andrew_l/context';
+import { APP_DEF, CONFIG } from './constants.ts';
+import { extractOptionsArgs, isMainFile } from './utils/args.js';
 import { filePathFromStack } from './utils/filePathFromStack.js';
-import { isMainFile } from './utils/isMainFile.js';
 import { createAppLogger } from './utils/log.ts';
 
 export namespace AppDefinition {
-  export type EntryContext<T extends Data = Data> = T & {
+  export type EntryContext<T extends Data = {}> = T & {
     log: Logger;
+    app: AppInstance;
   };
 
-  export type SetupContext<T extends Data = Data> = T & {
+  export type SetupContext<T extends Data = {}> = T & {
     log: Logger;
+    app: AppInstance;
   };
 
-  export type RuntimeContext<T extends Data = Data> = T & {
+  export type RuntimeContext<T extends Data = {}> = T & {
     log: Logger;
+    app: AppInstance;
   };
 }
 
@@ -181,8 +184,6 @@ export interface AppInstance<
   logger: Logger;
 }
 
-const APP_DEF = Symbol('app-definition');
-
 /**
  * Define an application with typed props and lifecycle hooks.
  *
@@ -210,32 +211,33 @@ const APP_DEF = Symbol('app-definition');
  * ```
  */
 export function defineApp<
-  P extends ObjectPropsOptions = {},
+  P extends ObjectPropsOptions = ObjectPropsOptions,
   S extends Record<string, any> = {},
   M extends Record<string, AnyFunction> = {},
 >(definition: AppDefinition<P, S, M>): AppDefinition<P, S, M> {
-  const result: AppDefinition<P, S, M> = {
-    filePath: filePathFromStack(captureStackTrace(defineApp)),
+  const result = {
     ...definition,
   };
 
   def(result, APP_DEF, true);
 
-  if (!CONFIG.IS_VRUN) {
-    if (result.filePath) {
-      if (isMainFile(result.filePath)) {
-        // TODO: make sure that filePath export default this definition
-        import('./cli/index.js').then(m => {
-          m.cli.runApp({
-            cliName: 'app',
-            scriptFile: result.filePath!,
-            argv: extractOptionsArgs(process.argv.slice(1)),
-          });
-        });
-      }
-    } else {
-      // log.warn('Failed to detect script file from execution stack: %s', stack);
-    }
+  // Wrap entry function with context
+  if (definition.entry) {
+    result.entry = withContext(definition.entry);
+  }
+
+  if (!('filePath' in result)) {
+    result.filePath = filePathFromStack(captureStackTrace(defineApp));
+  }
+
+  if (isAppAutorun(result)) {
+    import('./cli/index.js').then(m => {
+      m.cli.runApp({
+        cliName: 'app',
+        scriptFile: result.filePath!,
+        argv: extractOptionsArgs(process.argv.slice(1)),
+      });
+    });
   }
 
   return result;
@@ -254,20 +256,37 @@ export function defineApp<
 export function createAppInstance<
   P extends ObjectPropsOptions,
   S extends Record<string, any>,
-  M extends Record<string, AnyFunction> = {},
+  M extends Record<string, AnyFunction>,
 >(definition: AppDefinition<P, S, M>): AppInstance<P, S, M> {
-  const setupState = createSetupState(definition);
-
-  return {
+  const instance: AppInstance<P, S, M> = {
     definition,
     props: null,
-    setupState,
+    setupState: null as any,
     eventBus: new SimpleEventEmitter(),
     mutexName: null,
     mutexQueue: Promise.resolve(),
     state: APP_INSTANCE_STATE.INIT,
-    logger: setupState.log,
+    logger: createAppLogger(definition),
   };
+
+  const setupState: AppDefinition.SetupContext = {
+    log: instance.logger,
+    app: instance,
+  };
+
+  const reservedKeys = Object.keys(setupState);
+
+  if (definition.methods) {
+    for (const [key, fn] of Object.entries(definition.methods)) {
+      if (!reservedKeys.includes(key)) {
+        (setupState as any)[key] = fn.bind(setupState);
+      }
+    }
+  }
+
+  instance.setupState = setupState;
+
+  return instance;
 }
 
 /**
@@ -401,7 +420,7 @@ export function runApp(instance: AppInstance): Promise<AppInstance.RunResult> {
       };
     }
 
-    const { entry } = instance.definition;
+    let { entry } = instance.definition;
 
     setState(instance, APP_INSTANCE_STATE.IN_RUN);
     instance.logger.info('Starting...');
@@ -562,7 +581,7 @@ export function shutdownApp(
         })
         .finally(() => {
           instance.props = null;
-          instance.setupState = createSetupState(instance.definition);
+          instance.setupState = null as any;
           mutexResolve();
         });
     });
@@ -594,20 +613,14 @@ export function appWaitShutdown(instance: AppInstance): Promise<void> {
   });
 }
 
-function createSetupState(
-  definition: AppDefinition,
-): AppDefinition.SetupContext {
-  const setupState: AppDefinition.SetupContext = {
-    log: createAppLogger(definition),
-  };
-
-  if (definition.methods) {
-    for (const [key, fn] of Object.entries(definition.methods)) {
-      setupState[key] = fn.bind(setupState);
-    }
-  }
-
-  return setupState;
+/**
+ * Returns true when app should be automatically started
+ * @group Utils
+ */
+export function isAppAutorun(definition: AppDefinition): boolean {
+  return (
+    !CONFIG.IS_VRUN && !!definition.filePath && isMainFile(definition.filePath)
+  );
 }
 
 function mutexAcquire(

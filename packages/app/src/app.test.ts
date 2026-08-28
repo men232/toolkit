@@ -1,3 +1,4 @@
+import { onScopeDispose } from '@andrew_l/context';
 import { isSkip, isSuccess } from '@andrew_l/toolkit';
 import assert from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
@@ -142,6 +143,22 @@ describe('runApp', () => {
     assert(isSkip(result) && result.code === 'execute_app_error');
     expect(result.error).toBeInstanceOf(Error);
     expect(instance.state).toBe(APP_INSTANCE_STATE.ERROR);
+  });
+
+  it('entry has disposable scope', async () => {
+    const disposeFn = vi.fn().mockResolvedValue(undefined);
+    const instance = createAppInstance(
+      defineApp({
+        name: 'test',
+        logger: false,
+        entry() {
+          onScopeDispose(disposeFn);
+        },
+      }),
+    );
+    await setupApp(instance, {});
+    await runApp(instance);
+    expect(disposeFn).toHaveBeenCalledTimes(1);
   });
 });
 

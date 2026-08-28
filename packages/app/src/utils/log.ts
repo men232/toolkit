@@ -1,6 +1,12 @@
-import { EJSON, type Logger, isFunction, typeOf } from '@andrew_l/toolkit';
+import {
+  EJSON,
+  type Logger,
+  isFunction,
+  noopLogger,
+  typeOf,
+} from '@andrew_l/toolkit';
 import type { AppDefinition } from '../app.ts';
-import { createLogger, noopLogger } from '../logger.ts';
+import { createLogger } from '../logger.ts';
 
 export type LogEventFields = Record<string, any>;
 
