@@ -1,6 +1,6 @@
 import { assert } from './assert';
 import { env } from './env';
-import { isString } from './is';
+import { isString, noop } from './is';
 import { sprintf } from './str/sprintf';
 import type { Logger } from './types';
 
@@ -111,4 +111,16 @@ export const logger = (...baseArgs: any[]): Logger => {
   };
 
   return instance;
+};
+
+/**
+ * Logger that does nothing
+ */
+export const noopLogger: Logger = {
+  debug: noop,
+  error: noop,
+  extend: () => noopLogger,
+  info: noop,
+  log: noop,
+  warn: noop,
 };
