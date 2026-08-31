@@ -1,8 +1,6 @@
 import { EventEmitter } from 'node:events';
 
-/**
- * Basic node tree implementation
- */
+/** Basic node tree implementation */
 export class NodeTree<T extends NodeTree<T>> extends EventEmitter {
   readonly nodeName: string = 'NodeTree';
 
@@ -106,7 +104,7 @@ export class NodeTree<T extends NodeTree<T>> extends EventEmitter {
   destroy() {
     this.remove();
 
-    this.childNodes.forEach(c => c.destroy());
+    [...this.childNodes].forEach(c => c.destroy());
     this.childNodes = [];
   }
 }

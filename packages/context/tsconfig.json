@@ -2,6 +2,14 @@
   "compilerOptions": {
     "target": "es2024",
     "lib": ["ES2024"],
+
+    // `src/scope.ts` imports `node:async_hooks`, and the suite uses
+    // `setTimeout`/`console`. TypeScript 6 does not auto-include `@types/*`;
+    // until vitest 4 these arrived only because vitest 3 bundled vite as a
+    // regular dependency and `vite/dist/node/index.d.ts` carries
+    // `/// <reference types="node" />`. vitest 4 makes vite a peer, so that
+    // accident is gone and the dependency has to be stated.
+    "types": ["node"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",

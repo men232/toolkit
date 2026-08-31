@@ -71,7 +71,7 @@ function updateMetadata(pkg, packageJson) {
 }
 
 /**
- * Update every package.json in the packages/ and examples/ directories
+ * Update every package.json in the packages/ directory
  *
  * - Set the version to the monorepo ./package.json version
  * - Update the versions of monorepo dependencies, devDependencies, and peerDependencies

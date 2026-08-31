@@ -2,6 +2,14 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
+
+    // This package uses `process`, `Buffer` and `global` in `src/`, so it
+    // needs the node globals named here. TypeScript 6 does not auto-include
+    // `@types/*`; until vitest 4 these arrived only because vitest 3 bundled
+    // vite as a regular dependency and `vite/dist/node/index.d.ts` carries
+    // `/// <reference types="node" />`. vitest 4 makes vite a peer, so that
+    // accident is gone and the dependency has to be stated.
+    "types": ["node"],
     "module": "esnext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",

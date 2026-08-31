@@ -56,6 +56,6 @@
     "react": "^19.2.7"
   },
   "peerDependencies": {
-    "tsx": "^4.22.4"
+    "tsx": "catalog:"
   }
 }

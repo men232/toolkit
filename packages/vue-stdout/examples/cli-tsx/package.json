@@ -1,0 +1,26 @@
+{
+  "name": "example-cli-tsx",
+  "version": "0.0.0",
+  "private": true,
+  "description": "vue-stdout CLI run straight from source, with no build step.",
+  "type": "module",
+  "bin": {
+    "example-cli-tsx": "./bin.mjs"
+  },
+  "scripts": {
+    "check-types": "vue-tsc --noEmit",
+    "start": "node --import tsx --import @andrew_l/vue-stdout/register src/main.ts"
+  },
+  "dependencies": {
+    "@andrew_l/vue-stdout": "workspace:*",
+    "@vue/compiler-sfc": "3.5.13",
+    "esbuild": "^0.28.2",
+    "tsx": "catalog:",
+    "vue": "3.5.13"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vue-tsc": "^2.2.0"
+  }
+}

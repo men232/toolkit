@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parity: flex > flexShrink diverges: bordered boxes overflow a fixed-height column instead of shrinking to fit 1`] = `
+"┌──────────────────┐
+│a                 │
+└──────────────────┘
+┌──────────────────┐
+│b                 │"
+`;

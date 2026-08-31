@@ -1,0 +1,42 @@
+// Type checking for this example. Run it with `pnpm check-types`.
+//
+// The checker is `vue-tsc`, not `tsc`, even though this example has no `.tsx`
+// of its own: `src/App.vue` is a single-file component, and plain `tsc` does
+// not know how to read one — it would resolve `import App from './App.vue'`
+// to nothing and report TS2307.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    // vue-stdout renders to a terminal, not a DOM: `lib` above deliberately
+    // omits `"DOM"`. Everything here is a Node program (`bin.mjs` spawns a
+    // child process; `src/main.ts` is loaded by `tsx`), so `node` is the only
+    // ambient type set needed.
+    "types": ["node"],
+
+    // `<Box>` and `<Text>` inside an SFC template are ordinary imported
+    // components, so nothing here has to teach the checker about them. The
+    // JSX settings are still declared so a reader copying this config into a
+    // project that adds a `.tsx` file gets the right runtime, not React's.
+    "jsx": "react-jsx",
+    "jsxImportSource": "vue",
+
+    // `bin.mjs` is the published `bin` entry — real shipped code, so it is
+    // checked rather than excluded. It is plain JS by design (a `bin` cannot
+    // assume a TypeScript loader is already installed; that is the whole
+    // point of the file), so `allowJs`/`checkJs` are how it gets covered.
+    "allowJs": true,
+    "checkJs": true,
+
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true
+  },
+  "include": ["src", "bin.mjs"]
+}

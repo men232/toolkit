@@ -1,0 +1,42 @@
+// Type checking for this example. Run it with `pnpm check-types`.
+//
+// One config covers both `src/` and `vite.config.ts`. A browser Vue app is
+// normally split into `tsconfig.app.json` (DOM) and `tsconfig.node.json`
+// (build tooling) because the two halves run in different environments — but
+// a CLI's app code runs in Node just like its build config does, so there is
+// nothing to split.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    // vue-stdout renders to a terminal, not a DOM: `lib` above deliberately
+    // omits `"DOM"`, and `node` is the only ambient type set needed —
+    // `vite.config.ts` imports `node:module`.
+    "types": ["node"],
+
+    // The load-bearing pair for the `.tsx` half of this example. `react-jsx`
+    // picks the automatic runtime and `jsxImportSource: "vue"` points it at
+    // `vue/jsx-runtime`, which is what makes `<Box>` and `<Text>` type-check
+    // against Vue's JSX namespace rather than React's.
+    // The `.vue` half needs nothing here; vue-tsc reads SFCs directly.
+    "jsx": "react-jsx",
+    "jsxImportSource": "vue",
+
+    // `vite.config.ts` does `import pkg from './package.json'` to derive the
+    // bundle's externals.
+    "resolveJsonModule": true,
+
+    "allowSyntheticDefaultImports": true,
+    // Vite transpiles each module in isolation, so hold the sources to the
+    // rules that implies rather than letting them rely on type-directed emit.
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true
+  },
+  "include": ["src", "vite.config.ts"]
+}

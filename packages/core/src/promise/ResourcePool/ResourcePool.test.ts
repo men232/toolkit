@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type Mock,
+} from 'vitest';
 import { ResourcePool } from './ResourcePool.js';
 
 vi.mock('@/promise/defer', () => ({
@@ -18,9 +26,16 @@ vi.mock('@/toError', () => ({
 }));
 
 describe('ResourcePool', () => {
-  let createResourceSpy: ReturnType<typeof vi.fn>;
-  let destroyResourceSpy: ReturnType<typeof vi.fn>;
-  let mockResource: { id: number; closed?: boolean };
+  // Each spy names the signature it stands in for, rather than the shorter
+  // `ReturnType<typeof vi.fn>`. That idiom instantiates `vi.fn`'s type
+  // parameter at its *constraint*, which vitest 4 widened from `Procedure` to
+  // `Procedure | Constructable` -- a union with no single call signature, so
+  // the spies stopped being assignable to the `ResourcePool` options they
+  // are passed as.
+  type MockResource = { id: number; closed?: boolean };
+  let createResourceSpy: Mock<() => Promise<MockResource>>;
+  let destroyResourceSpy: Mock<(resource: MockResource) => Promise<void>>;
+  let mockResource: MockResource;
   let resourceCounter: number;
 
   beforeEach(() => {
@@ -29,7 +44,7 @@ describe('ResourcePool', () => {
       mockResource = { id: ++resourceCounter };
       return Promise.resolve(mockResource);
     });
-    destroyResourceSpy = vi.fn((resource: any) => {
+    destroyResourceSpy = vi.fn((resource: MockResource) => {
       resource.closed = true;
       return Promise.resolve();
     });

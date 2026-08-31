@@ -1,5 +1,12 @@
 packages:
   - 'packages/*'
+  # The vue-stdout examples live inside the package they demonstrate. They are
+  # still workspace members -- `packages/*` does not match a nested package, so
+  # without this line `pnpm run -r` would stop visiting them and their
+  # `workspace:*` link to `@andrew_l/vue-stdout` would stop resolving. They are
+  # not published with it: `packages/vue-stdout`'s `files` field lists only
+  # `dist` and `THIRD-PARTY-NOTICES.md`.
+  - 'packages/vue-stdout/examples/*'
 
 allowBuilds:
   esbuild: true
@@ -8,8 +15,15 @@ allowBuilds:
 catalog:
   'typescript': 6.0.3
   'obuild': ^0.4.37
-  '@types/node': 22.10.5
-  'vitest': ^3.2.4
+  '@types/node': 22.12.0
+  'vitest': ^4.1.11
+  # Catalogued because vite declares `tsx` an optional peer dependency (`^4.8.1`
+  # as of vite 8): two tsx versions in the tree fork vite itself into two
+  # nominally distinct instances, and `Plugin`/`PluginOption` stop being
+  # assignable across them ("Two different types with this name exist"). First
+  # hit on vite 6.4.3; still the reason the catalog exists on vite 8. Floor is
+  # 4.22.4 because `packages/app` publishes `tsx` as a `^4.22.4` peer.
+  'tsx': ^4.22.4
 
 peerDependencyRules:
   allowedVersions:

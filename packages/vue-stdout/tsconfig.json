@@ -2,15 +2,14 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2022"],
+    "lib": ["ES2023"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "jsxImportSource": "vue",
-    "jsxFactory": "h",
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -18,6 +17,10 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  // `build.config.ts`, `vite.config.ts` and `vitest.config.ts` are covered by
+  // `tsconfig.node.json`, which `check-types` runs as a separate pass. It is
+  // deliberately not a project `reference`: references require `composite`,
+  // and a composite project may not import files outside its own `include` —
+  // which those configs do, from `./src`.
+  "include": ["src", "test", "playground"]
 }

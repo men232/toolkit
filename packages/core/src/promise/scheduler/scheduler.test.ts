@@ -142,7 +142,7 @@ describe('scheduler', () => {
     });
     job1.id = 1;
 
-    const job2: Scheduler.Job = vi.fn();
+    const job2: Scheduler.Job = vi.fn<() => any>();
     job2.id = 2;
 
     queueJob(job1);
@@ -181,7 +181,7 @@ describe('scheduler', () => {
   });
 
   test('recursive jobs can only be queued once non-recursively', async () => {
-    const job: Scheduler.Job = vi.fn();
+    const job: Scheduler.Job = vi.fn<() => any>();
     job.id = 1;
     job.flags = SCHEDULER_JOB_FLAGS.ALLOW_RECURSE;
 

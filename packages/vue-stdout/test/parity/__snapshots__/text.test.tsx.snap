@@ -1,0 +1,6 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parity: text > sibling texts in a narrow box diverge on purpose 1`] = `
+"aaa
+bbb"
+`;

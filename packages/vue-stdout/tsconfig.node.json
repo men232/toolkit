@@ -1,12 +1,39 @@
+// The package's own build/test tooling: `build.config.ts` (obuild),
+// `vite.config.ts` and `vitest.config.ts`. The playground's own files --
+// `playground/vite.config.ts` and `playground/dev.ts`, which `pnpm dev` runs --
+// are covered by `tsconfig.json` instead, since it already includes
+// `playground`.
+//
+// These are separate from `tsconfig.json` because they run in Node rather
+// than being part of the shipped library, and they cannot be folded into it
+// as a project reference: `vite.config.ts` and `build.config.ts` import from
+// `./src`, and a `composite` project may not pull in files it does not itself
+// list (TS6307). Overlapping programs is the point here, so this is a plain
+// standalone project that `check-types` invokes as a second pass. See the
+// `check-types` script in `package.json`.
 {
   "compilerOptions": {
+    "target": "ES2022",
     "lib": ["ESNext"],
-    "composite": true,
-    "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "resolveJsonModule": true,
+    // These files are transpiled one at a time (jiti for obuild, vite's own
+    // config loader for the vite/vitest configs), never type-directed-emitted
+    // as a program, so hold them to the same rules their real loaders impose.
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    // These configs import each other and `./src` with explicit `.ts`
+    // extensions, because vite 8's native config loader warns on extensionless
+    // relative specifiers and is slated to become the default. Safe here only
+    // because `noEmit` is on: nothing rewrites these specifiers, and every
+    // loader that reads them resolves `.ts` directly.
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noEmit": true
   },
-  "include": ["build.config.ts", "tsup.config.ts"]
+  "include": ["build.config.ts", "vite.config.ts", "vitest.config.ts"]
 }
