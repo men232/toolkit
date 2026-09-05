@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Console } from 'node:console';
 import { PassThrough } from 'node:stream';
 
@@ -27,7 +28,8 @@ type PatchedMethod = (typeof patchedMethods)[number];
 // uninstall; writers in between just push/remove themselves. Dispatch always
 // goes to the topmost writer still on the stack, so an instance tearing down
 // out of order simply drops out from underneath the ones still alive.
-let originalMethods: Record<PatchedMethod, (typeof console)[PatchedMethod]> | undefined;
+let originalMethods:
+  Record<PatchedMethod, (typeof console)[PatchedMethod]> | undefined;
 const writers: ConsoleWriter[] = [];
 
 function dispatch(stream: ConsoleStream, data: string): void {
@@ -59,7 +61,10 @@ function install(): void {
   // dispatch to whichever writer is topmost.
   if (originalMethods) return;
 
-  originalMethods = {} as Record<PatchedMethod, (typeof console)[PatchedMethod]>;
+  originalMethods = {} as Record<
+    PatchedMethod,
+    (typeof console)[PatchedMethod]
+  >;
 
   for (const method of patchedMethods) {
     originalMethods[method] = console[method];

@@ -7,8 +7,6 @@
 import { onBeforeUnmount, ref } from 'vue';
 import { Box, ProgressBar, Text } from '../../src';
 
-defineOptions({ name: 'ProgressDemo' });
-
 const progress = ref(0);
 
 const timer = setInterval(() => {

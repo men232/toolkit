@@ -1,5 +1,5 @@
 import ansiEscapes from 'ansi-escapes';
-import { buildCursorSuffix, type CursorPosition } from './cursorHelpers';
+import { type CursorPosition, buildCursorSuffix } from './cursorHelpers';
 
 /**
  * The second of `Container`'s two rendering strategies: repaint only the

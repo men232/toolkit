@@ -30,7 +30,7 @@ import {
   projectLoadEnv,
   projectPrintInfo,
 } from '../project.js';
-import { launchAppsTui } from '../tui/launchAppsTui.tsx';
+import { launchAppsTui } from '../tui/launchAppsTui.ts';
 import { isHelpArgument } from '../utils/args.js';
 import { db } from '../utils/db.js';
 import { propsToOptions } from '../utils/props.js';

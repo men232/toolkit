@@ -1,5 +1,5 @@
 import EventEmitter from 'node:events';
-import { vi, type Mock } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 // Each mock names the signature it stands in for, rather than the shorter
 // `ReturnType<typeof vi.fn>`. That idiom instantiates `vi.fn`'s type parameter

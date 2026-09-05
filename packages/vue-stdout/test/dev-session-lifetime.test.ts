@@ -14,10 +14,10 @@ import { defineComponent, h } from 'vue';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/createApp';
 import {
+  type DevHotContext,
   connectDevtools,
   disconnectDevtools,
   isDevConnected,
-  type DevHotContext,
 } from '../src/dev/bridge';
 import { createStdin } from './helpers/create-stdin';
 import { createStdout } from './helpers/create-stdout';

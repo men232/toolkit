@@ -1,291 +1,214 @@
-import type { LogLevel } from '@andrew_l/toolkit';
-import { EventEmitter } from 'node:events';
-import type { ManagedThread } from '../managedThread.ts';
-
-export interface LogEntry {
-  ts: number;
-  level: LogLevel;
-  text: string;
-}
-
-export interface ThreadNode {
-  kind: 'thread';
-  id: string;
-  name: string;
-  parentId: string;
-  threadId: number;
-  pid: number;
-  state: ManagedThread.State;
-}
-
-export interface AppNode {
-  kind: 'app';
-  id: string;
-  name: string;
-  state: ManagedThread.State;
-  expanded: boolean;
-  threads: ThreadNode[] | null;
-}
-
-export type TreeNode = AppNode | ThreadNode;
-
-export type LevelFilter = 'all' | 'info' | 'warn' | 'error';
-
-export interface LifecycleHandlers {
-  stop(id: string): Promise<void>;
-  start(id: string): Promise<void>;
-  restart(id: string): Promise<void>;
-}
+import { type ComputedRef, type Ref, computed, reactive, ref, shallowRef, watch } from 'vue';
+import { type LevelFilter, passesFilter } from './logFilter.ts';
+import type {
+  AppNode,
+  LifecycleHandlers,
+  LogEntry,
+  SelectionInfo,
+  ThreadNode,
+  TreeNode,
+} from './types.ts';
 
 const LOG_BUFFER_CAP = 2000;
 
-class RingBuffer<T> {
-  private buf: T[] = [];
-  private start = 0;
-  constructor(private cap: number) {}
-  push(item: T): void {
-    if (this.buf.length < this.cap) {
-      this.buf.push(item);
-    } else {
-      this.buf[this.start] = item;
-      this.start = (this.start + 1) % this.cap;
-    }
-  }
-  size(): number {
-    return this.buf.length;
-  }
-  toArray(): T[] {
-    if (this.start === 0) return this.buf.slice();
-    return this.buf.slice(this.start).concat(this.buf.slice(0, this.start));
-  }
-  clear(): void {
-    this.buf = [];
-    this.start = 0;
-  }
-}
-
+/**
+ * The TUI's shared state, as reactive properties rather than a state bag with
+ * setters.
+ *
+ * The member's *type* is its contract, checked rather than documented:
+ *
+ * - A `Ref` is state anyone may write -- `store.filter.value = 'warn'`. These
+ *   had `setX()` wrappers that only assigned, which is a React reducer's shape.
+ *   `logScroll` is a writable computed, so its "never negative" invariant lives
+ *   on the property instead of at each call site.
+ * - A `ComputedRef` is derived and has no setter at all, so a write is a
+ *   compile error rather than a silently ignored one. These used to be free
+ *   functions taking the store, re-run at every call site on every frame.
+ * - `addApp` and `pushLog` are the only two members that do more than assign,
+ *   and both exist because a non-Vue caller -- the child-process event bridge
+ *   in `launchAppsTui.ts` -- drives them.
+ *
+ * Node state (`state`, `pid`, `threads`) has no member at all: `addApp` hands
+ * back the reactive proxy and the bridge mutates that object directly.
+ */
 export interface TuiStore {
-  apps: AppNode[];
-  logs: Map<string, RingBuffer<LogEntry>>;
-  system: LogEntry | null;
-  selectedId: string | null;
-  filter: LevelFilter;
-  logScroll: number;
-  handlers: LifecycleHandlers;
+  /** The one-line message the status bar shows. */
+  readonly system: Ref<LogEntry | null>;
+  readonly selectedId: Ref<string | null>;
+  readonly filter: Ref<LevelFilter>;
+  /** Lines scrolled back from the live tail; `0` follows new output. */
+  readonly logScroll: Ref<number>;
+  /** Apps plus the threads of expanded apps, in display order. */
+  readonly visibleNodes: ComputedRef<TreeNode[]>;
+  /** What the selection is, or `null` when nothing is selected. */
+  readonly selection: ComputedRef<SelectionInfo | null>;
+  /** The selected node's log feed, already merged and level-filtered. */
+  readonly filteredEntries: ComputedRef<LogEntry[]>;
+  /** Start/stop/restart, supplied by whoever owns the threads. */
+  readonly handlers: LifecycleHandlers;
+  /**
+   * Add an app and return its reactive proxy -- mutating that object (its
+   * `state`, its `threads`, a thread's `pid`) is what makes the UI update, so
+   * a caller must keep the returned value rather than the object it passed in.
+   */
+  addApp(node: AppNode): AppNode;
   pushLog(nodeId: string, entry: LogEntry): void;
-  setState(nodeId: string, state: ManagedThread.State): void;
-  setSelected(nodeId: string | null): void;
-  setFilter(filter: LevelFilter): void;
-  setSystem(entry: LogEntry): void;
-  toggleExpand(appId: string): void;
-  addApp(node: AppNode): void;
-  setThreads(appId: string, threads: ThreadNode[]): void;
-  setPid(nodeId: string, pid: number): void;
-  getLogs(nodeId: string): LogEntry[];
-  clearLogs(nodeId: string): void;
-  setLogScroll(offset: number): void;
-  subscribe(fn: () => void): () => void;
 }
 
-const noopHandlers: LifecycleHandlers = {
-  stop: () => Promise.resolve(),
-  start: () => Promise.resolve(),
-  restart: () => Promise.resolve(),
-};
+export function createTuiStore(handlers: LifecycleHandlers): TuiStore {
+  const apps = reactive<AppNode[]>([]);
+  // Keyed by node id. A reactive Map of plain arrays, so `arr.push(entry)` is a
+  // tracked write and the computeds below re-run because they *read* what
+  // changed -- no version counter standing in for that dependency.
+  const logs = reactive(new Map<string, LogEntry[]>());
 
-export function createTuiStore(): TuiStore {
-  const emitter = new EventEmitter();
-  emitter.setMaxListeners(0);
-  const logs = new Map<string, RingBuffer<LogEntry>>();
-  const apps: AppNode[] = [];
+  const system = shallowRef<LogEntry | null>(null);
+  const selectedId = ref<string | null>(null);
+  const filter = ref<LevelFilter>('info');
 
-  const bufferOf = (id: string): RingBuffer<LogEntry> => {
-    let buf = logs.get(id);
-    if (!buf) {
-      buf = new RingBuffer<LogEntry>(LOG_BUFFER_CAP);
-      logs.set(id, buf);
-    }
-    return buf;
-  };
+  const scrolledBack = ref(0);
+  const logScroll = computed({
+    get: () => scrolledBack.value,
+    set: (offset: number) => {
+      scrolledBack.value = Math.max(0, offset);
+    },
+  });
 
-  const notify = (): void => {
-    emitter.emit('change');
-  };
-
-  const isSelectedFeed = (nodeId: string): boolean => {
-    if (!store.selectedId) return false;
-    if (store.selectedId === nodeId) return true;
+  const visibleNodes = computed<TreeNode[]>(() => {
+    const out: TreeNode[] = [];
     for (const app of apps) {
-      if (app.id !== store.selectedId) continue;
-      return !!app.threads?.some(t => t.id === nodeId);
+      out.push(app);
+      if (app.expanded && app.threads) out.push(...app.threads);
     }
-    return false;
-  };
+    return out;
+  });
 
-  const store: TuiStore = {
-    apps,
-    logs,
-    system: null,
-    selectedId: null,
-    filter: 'info',
-    logScroll: 0,
-    handlers: noopHandlers,
-    pushLog(nodeId, entry) {
-      bufferOf(nodeId).push(entry);
-      if (
-        store.logScroll > 0 &&
-        isSelectedFeed(nodeId) &&
-        passesFilter(entry, store.filter)
-      ) {
-        store.logScroll += 1;
+  /** The app that owns the selection -- selected itself, or the thread's parent. */
+  const selectedApp = computed<AppNode | null>(
+    () =>
+      apps.find(
+        app =>
+          app.id === selectedId.value ||
+          !!app.threads?.some(thread => thread.id === selectedId.value),
+      ) ?? null,
+  );
+
+  /** Set only when the selection is a thread rather than a whole app. */
+  const selectedThread = computed<ThreadNode | null>(
+    () =>
+      selectedApp.value?.threads?.find(
+        thread => thread.id === selectedId.value,
+      ) ?? null,
+  );
+
+  const selection = computed<SelectionInfo | null>(() => {
+    const app = selectedApp.value;
+    if (!app) return null;
+
+    const thread = selectedThread.value;
+    if (thread) {
+      return {
+        appName: app.name,
+        pid: thread.pid,
+        pids: thread.pid > 0 ? [thread.pid] : [],
+        state: thread.state,
+        states: [thread.state],
+        processCount: app.threads?.length ?? 0,
+        showProcessTag: false,
+      };
+    }
+
+    const threads = app.threads ?? [];
+    return {
+      appName: app.name,
+      pids: Array.from(new Set(threads.map(t => t.pid).filter(pid => pid > 0))),
+      states: threads.map(t => t.state),
+      processCount: threads.length,
+      showProcessTag: threads.length > 1,
+    };
+  });
+
+  /**
+   * A thread shows its own lines; an app shows every thread's, merged in
+   * timestamp order and pid-tagged when there is more than one to tell apart.
+   */
+  const selectedEntries = computed<LogEntry[]>(() => {
+    const app = selectedApp.value;
+    if (!app) return [];
+
+    const thread = selectedThread.value;
+    if (thread) return logs.get(thread.id) ?? [];
+
+    const threads = app.threads ?? [];
+    if (threads.length === 0) return logs.get(app.id) ?? [];
+
+    const tagged = threads.length > 1;
+    const merged: LogEntry[] = [];
+    for (const t of threads) {
+      for (const entry of logs.get(t.id) ?? []) {
+        merged.push(
+          tagged ? { ...entry, text: `[${t.pid}] ${entry.text}` } : entry,
+        );
       }
-      notify();
-    },
-    setState(nodeId, state) {
-      for (const app of apps) {
-        if (app.id === nodeId) {
-          app.state = state;
-          notify();
-          return;
-        }
-        if (app.threads) {
-          for (const t of app.threads) {
-            if (t.id === nodeId) {
-              t.state = state;
-              notify();
-              return;
-            }
-          }
-        }
+    }
+    return merged.sort((a, b) => a.ts - b.ts);
+  });
+
+  const filteredEntries = computed<LogEntry[]>(() =>
+    selectedEntries.value.filter(entry => passesFilter(entry, filter.value)),
+  );
+
+  /** Identifies the feed on screen; a change means a different set of lines. */
+  const feedKey = computed(() => `${selectedId.value} ${filter.value}`);
+
+  // One watcher owns every automatic move of `logScroll`, so nothing that
+  // appends a log has to know scrolling exists:
+  //
+  //   * a different feed drops the view back to the live tail;
+  //   * the same feed growing while scrolled back keeps the view anchored on
+  //     the lines the user is reading, instead of letting them slide away.
+  //
+  // Both cases in one watcher rather than two, because two would race: the
+  // reset and the anchor both fire on a selection change, and whichever ran
+  // second would win.
+  watch(
+    [feedKey, () => filteredEntries.value.length],
+    ([key, length], [previousKey, previousLength]) => {
+      if (key !== previousKey) {
+        logScroll.value = 0;
+        return;
+      }
+      if (logScroll.value > 0 && length > previousLength) {
+        logScroll.value += length - previousLength;
       }
     },
-    setSelected(nodeId) {
-      store.selectedId = nodeId;
-      store.logScroll = 0;
-      notify();
-    },
-    setFilter(filter) {
-      store.filter = filter;
-      store.logScroll = 0;
-      notify();
-    },
-    setLogScroll(offset) {
-      store.logScroll = Math.max(0, offset);
-      notify();
-    },
-    setSystem(entry) {
-      store.system = entry;
-      notify();
-    },
-    toggleExpand(appId) {
-      for (const app of apps) {
-        if (app.id === appId) {
-          app.expanded = !app.expanded;
-          notify();
-          return;
-        }
-      }
-    },
-    addApp(node) {
+  );
+
+  return {
+    system,
+    selectedId,
+    filter,
+    logScroll,
+    visibleNodes,
+    selection,
+    filteredEntries,
+    handlers,
+    addApp(node: AppNode): AppNode {
       apps.push(node);
-      if (!store.selectedId) store.selectedId = node.id;
-      notify();
+      const added = apps[apps.length - 1];
+      if (!selectedId.value) selectedId.value = added.id;
+      return added;
     },
-    setThreads(appId, threads) {
-      for (const app of apps) {
-        if (app.id === appId) {
-          app.threads = threads;
-          notify();
-          return;
-        }
+    pushLog(nodeId: string, entry: LogEntry): void {
+      let entries = logs.get(nodeId);
+      if (!entries) {
+        entries = [];
+        logs.set(nodeId, entries);
       }
-    },
-    setPid(nodeId, pid) {
-      for (const app of apps) {
-        if (app.threads) {
-          for (const t of app.threads) {
-            if (t.id === nodeId) {
-              t.pid = pid;
-              notify();
-              return;
-            }
-          }
-        }
+      entries.push(entry);
+      if (entries.length > LOG_BUFFER_CAP) {
+        entries.splice(0, entries.length - LOG_BUFFER_CAP);
       }
-    },
-    getLogs(nodeId) {
-      const buf = logs.get(nodeId);
-      return buf ? buf.toArray() : [];
-    },
-    clearLogs(nodeId) {
-      logs.get(nodeId)?.clear();
-      notify();
-    },
-    subscribe(fn) {
-      emitter.on('change', fn);
-      return () => emitter.off('change', fn);
     },
   };
-
-  return store;
-}
-
-const LEVEL_RANK: Record<LogLevel, number> = {
-  debug: 0,
-  log: 1,
-  info: 2,
-  warn: 3,
-  error: 4,
-};
-
-const FILTER_THRESHOLD: Record<LevelFilter, number> = {
-  all: 0,
-  info: LEVEL_RANK.info,
-  warn: LEVEL_RANK.warn,
-  error: LEVEL_RANK.error,
-};
-
-export function passesFilter(entry: LogEntry, filter: LevelFilter): boolean {
-  return LEVEL_RANK[entry.level] >= FILTER_THRESHOLD[filter];
-}
-
-export function getSelectedFilteredCount(store: TuiStore): number {
-  if (!store.selectedId) return 0;
-  const passes = (e: LogEntry): boolean => passesFilter(e, store.filter);
-  for (const app of store.apps) {
-    if (app.id !== store.selectedId) continue;
-    if (!app.threads || app.threads.length === 0) {
-      return store.getLogs(app.id).filter(passes).length;
-    }
-    let count = 0;
-    for (const t of app.threads) {
-      for (const e of store.getLogs(t.id)) if (passes(e)) count += 1;
-    }
-    return count;
-  }
-  return store.getLogs(store.selectedId).filter(passes).length;
-}
-
-export function nextFilter(filter: LevelFilter): LevelFilter {
-  switch (filter) {
-    case 'all':
-      return 'info';
-    case 'info':
-      return 'warn';
-    case 'warn':
-      return 'error';
-    case 'error':
-      return 'all';
-  }
-}
-
-export function flattenVisibleTree(apps: AppNode[]): TreeNode[] {
-  const out: TreeNode[] = [];
-  for (const app of apps) {
-    out.push(app);
-    if (app.expanded && app.threads) {
-      for (const t of app.threads) out.push(t);
-    }
-  }
-  return out;
 }

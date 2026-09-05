@@ -17,11 +17,11 @@ import { createVueApp } from './vueRenderer';
 import { provideStreamContexts } from './context';
 import { createDevRoot } from './dev/DevRoot';
 import {
+  type DevAppLifecycle,
   isDevConnected,
   notifyDevExit,
   registerDevApp,
   unregisterDevApp,
-  type DevAppLifecycle,
 } from './dev/bridge';
 import { FocusManager } from './focus';
 import type { DOMDocument, DOMElement } from './tree/DOMTree';

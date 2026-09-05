@@ -1,4 +1,4 @@
-import { isRunnableDevEnvironment, type Plugin } from 'vite';
+import { type Plugin, isRunnableDevEnvironment } from 'vite';
 import {
   DEV_EXIT_EVENT,
   disconnectDevtools,

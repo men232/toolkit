@@ -1,10 +1,10 @@
-import { h, type ShallowRef } from 'vue';
+import { type ShallowRef, h } from 'vue';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/createApp';
 import { Box, Text } from '../src/components';
 import { useDOMElement } from '../src/hooks/useDOMElement';
 import { renderToString } from '../src/renderToString';
-import { DOMNodeType, type DOMElement, type DOMNode } from '../src/tree';
+import { type DOMElement, type DOMNode, DOMNodeType } from '../src/tree';
 import { createStdout } from './helpers/create-stdout';
 
 const flush = () => new Promise<void>(resolve => process.nextTick(resolve));

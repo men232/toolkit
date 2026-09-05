@@ -1,5 +1,5 @@
 import type { Component } from 'vue';
-import { catalog, type DemoInfo, type DemoName } from './catalog';
+import { type DemoInfo, type DemoName, catalog } from './catalog';
 import CounterDemo from './demos/Counter.vue';
 import FocusDemo from './demos/Focus.vue';
 import LayoutDemo from './demos/layout';

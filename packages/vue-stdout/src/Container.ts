@@ -2,16 +2,16 @@ import ansiEscapes from 'ansi-escapes';
 // From `@vue/runtime-core` rather than `vue` for the reason `src/focus.ts`
 // gives: that is this package's own hard `dependency`, while `vue` is a peer
 // the consumer supplies, and this file runs outside the consumer's tree.
-import { shallowRef, type ShallowRef } from '@vue/runtime-core';
+import { type ShallowRef, shallowRef } from '@vue/runtime-core';
 import {
+  type CursorPosition,
   buildCursorSuffix,
   buildCursorTeardownSequence,
   buildReturnToBottomPrefix,
-  type CursorPosition,
 } from './cursorHelpers';
 import { buildIncrementalFrameWrite } from './incrementalRender';
 import { InputSource } from './input/InputSource';
-import { patchConsole, type ConsoleStream } from './patchConsole';
+import { type ConsoleStream, patchConsole } from './patchConsole';
 import type { RenderMetrics } from './createApp';
 import { DOMDocument } from './tree/DOMTree/DOMDocument';
 import {
@@ -329,6 +329,16 @@ export class Container extends DOMDocument {
   private lastCommitTime = 0;
 
   /**
+   * Set from {@link onResize} until the app has had its chance to lay out at
+   * the size just published, and read by {@link canComputeFrame} to hold every
+   * frame back until then. See {@link deferUntilResizedLayout} for why a frame
+   * computed inside that window is not merely early but *wrong*.
+   *
+   * @internal
+   */
+  private awaitingResizedLayout = false;
+
+  /**
    * Un-registers this instance's `writeConsoleOutput` from `patchConsole`'s
    * shared, ref-counted installation. Despite the name this does NOT
    * necessarily restore the real `console` methods by itself -- `patchConsole`
@@ -477,6 +487,13 @@ export class Container extends DOMDocument {
    * `onImmediateRender`.
    */
   private canComputeFrame(): boolean {
+    // Ahead of every bypass below, including `<Static>`'s: those three modes
+    // are exempt from *throttling*, which withholds a frame that would have
+    // been correct. This one withholds a frame that would be **wrong** -- laid
+    // out at a terminal size the app has not seen yet -- and no mode wants
+    // that. See {@link deferUntilResizedLayout}.
+    if (this.awaitingResizedLayout) return false;
+
     if (this.debug || !this.interactive || this.renderThrottleMs === 0) {
       return true;
     }
@@ -589,6 +606,59 @@ export class Container extends DOMDocument {
     }
 
     this.syncWindowSize();
+    this.deferUntilResizedLayout();
+  }
+
+  /**
+   * Hold frames back until the app has laid out at the size {@link
+   * syncWindowSize} has just published.
+   *
+   * Without this, a resize paints the *previous* size's frame. `renderer.width`
+   * changes synchronously here, but the tree does not: a component sizing
+   * itself from `useWindowSize()` re-renders on its framework's own scheduler,
+   * which for Vue is a promise microtask. `Renderer#schedule` uses
+   * `process.nextTick`, and **Node drains the nextTick queue before the
+   * microtask queue**, so the pass computes the old tree -- explicit `width`
+   * and `height` props still holding the old terminal's numbers -- and writes
+   * it at the new terminal.
+   *
+   * The damage is not cosmetic and does not end with that frame. Every line of
+   * a too-wide frame wraps, so it occupies more physical rows than the logical
+   * lines `screenLines` counted; the next repaint's `eraseLines` is measured in
+   * those logical lines, cannot reach the top of what is actually on screen,
+   * and leaves the remnant stranded above the app until something clears the
+   * terminal outright. A too-tall frame strands rows the same way, by scrolling
+   * them into scrollback. Both were observed in a real terminal against
+   * `packages/app`'s TUI: 34 rows wider than the terminal after one resize.
+   *
+   * The microtask is the whole mechanism, and its ordering is the guarantee:
+   * `windowSize.value` was assigned *before* this runs, so the consumer's
+   * re-render job is already queued ahead of ours and runs first. By the time
+   * this callback executes the tree is laid out at the new size, and the frame
+   * `flush()` computes is the correct one.
+   *
+   * Idempotent within a burst: a second resize arriving before the settle rides
+   * on the pending microtask, which will see both.
+   *
+   * @internal
+   */
+  private deferUntilResizedLayout(): void {
+    if (this.awaitingResizedLayout) return;
+
+    this.awaitingResizedLayout = true;
+
+    queueMicrotask(() => {
+      this.awaitingResizedLayout = false;
+      // `schedule()`, not `flush()`, and the difference is one full repaint.
+      // The consumer's re-render has just mutated the tree, which schedules a
+      // pass of its own; `flush()` would compute the deferred frame *and* let
+      // that pass compute the identical one right after, erasing and rewriting
+      // the whole screen twice. `schedule()` coalesces with it -- and still
+      // discharges what `canComputeFrame` owes, because the pass it guarantees
+      // ends in the same `computeFrame()` a flush would have run, whether or
+      // not the consumer scheduled one first.
+      this.renderer.schedule();
+    });
   }
 
   /**

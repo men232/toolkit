@@ -9,11 +9,11 @@ import type { DOMElement } from './DOMTree/DOMElement';
 import { type DOMNode, DOMNodeType } from './DOMTree/DOMNode';
 import Layer from './Layer';
 import {
+  type LayoutRoot,
   computeLayout,
   getComputedRect,
   getContentRect,
   getTextWrapStyle,
-  type LayoutRoot,
   measuresOwnText,
 } from './layout';
 import { squashTextNodes } from './squashText';

@@ -1,4 +1,4 @@
-import { h, nextTick, ref, type ShallowRef } from 'vue';
+import { type ShallowRef, h, nextTick, ref } from 'vue';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/createApp';
 import { measureElement } from '../src/measureElement';

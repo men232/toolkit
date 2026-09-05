@@ -34,7 +34,7 @@ function setupOnExit(stream: SonicBoom) {
   /* istanbul ignore next */
   if (global.WeakRef && global.WeakMap && global.FinalizationRegistry) {
     // This is leak free, it does not leave event handlers
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+     
     // @ts-expect-error
     import('on-exit-leak-free').then((onExit) => {
       onExit.register(stream, autoEnd);

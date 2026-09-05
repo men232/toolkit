@@ -12,8 +12,8 @@
 // alternate buffer do is checked by hand and *called an observation* -- this
 // project has twice caught reports where reasoning was presented as
 // verification.
-import { h, nextTick, onScopeDispose, ref } from 'vue';
 import { describe, expect, it, vi } from 'vitest';
+import { h, nextTick, onScopeDispose, ref } from 'vue';
 import { Container } from '../src/Container';
 import { createApp } from '../src/createApp';
 import { useApp } from '../src/hooks/useApp';
@@ -204,17 +204,15 @@ describe('alternateScreen', () => {
 
       const first = make();
       const writesAfterFirst = stdout.getWrites().join('');
-      expect(
-        writesAfterFirst.split(enterAlternativeScreen).length - 1,
-      ).toBe(1);
+      expect(writesAfterFirst.split(enterAlternativeScreen).length - 1).toBe(1);
 
       const second = make();
       const writesAfterSecond = stdout.getWrites().join('');
       // The second app joining an already-switched buffer must not
       // write the escape sequence again.
-      expect(
-        writesAfterSecond.split(enterAlternativeScreen).length - 1,
-      ).toBe(1);
+      expect(writesAfterSecond.split(enterAlternativeScreen).length - 1).toBe(
+        1,
+      );
 
       // The first to leave must NOT flip the buffer back -- the second
       // app is still alive and still expects to be drawing into the
@@ -262,7 +260,9 @@ describe('alternateScreen', () => {
       b.destroy();
 
       const writesAfterBDestroy = stdout.getWrites().join('');
-      expect(writesAfterBDestroy.split(exitAlternativeScreen).length - 1).toBe(2);
+      expect(writesAfterBDestroy.split(exitAlternativeScreen).length - 1).toBe(
+        2,
+      );
     });
   });
 
@@ -373,7 +373,10 @@ describe('debug mode', () => {
   });
 
   it('is independent of interactive -- writes on every frame even on a real TTY', () => {
-    const { container, stdout } = makeContainer({ debug: true, interactive: true });
+    const { container, stdout } = makeContainer({
+      debug: true,
+      interactive: true,
+    });
 
     container.onFrame('a');
     container.onFrame('b');
@@ -450,10 +453,13 @@ describe('debug mode', () => {
   });
 
   it('passes patched console output straight through, with no erase/repaint dance', () => {
-    const { container, stdout } = makeContainer({ debug: true, patchConsole: true });
+    const { container, stdout } = makeContainer({
+      debug: true,
+      patchConsole: true,
+    });
 
     container.onFrame('frame-one');
-    console.log('MARKER');
+    console.info('MARKER');
 
     const written = stdout.getWrites().join('');
     expect(written).toContain('frame-one');
@@ -463,7 +469,7 @@ describe('debug mode', () => {
     container.destroy();
   });
 
-  it('clear() is a no-op -- an explicit erase would violate debug mode\'s own contract', () => {
+  it("clear() is a no-op -- an explicit erase would violate debug mode's own contract", () => {
     const { container, stdout } = makeContainer({ debug: true });
 
     container.onFrame('one');

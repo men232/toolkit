@@ -1,5 +1,6 @@
-import { h, nextTick, ref } from 'vue';
+/* eslint-disable no-console */
 import { describe, expect, it, vi } from 'vitest';
+import { h, nextTick, ref } from 'vue';
 import { Container } from '../src/Container';
 import { Static } from '../src/components/Static';
 import { createApp } from '../src/createApp';
@@ -123,21 +124,30 @@ describe('full repaint vs incremental rendering: the same frames leave the same 
   it('the frame grows', () => {
     expectEquivalent(
       [frame('a\nb'), frame('a\nb\nc')],
-      [['a', 'b'], ['a', 'b', 'c']],
+      [
+        ['a', 'b'],
+        ['a', 'b', 'c'],
+      ],
     );
   });
 
   it('the frame grows past the previous frame with every existing line changed too', () => {
     expectEquivalent(
       [frame('a\nb'), frame('x\ny\nz\nw')],
-      [['a', 'b'], ['x', 'y', 'z', 'w']],
+      [
+        ['a', 'b'],
+        ['x', 'y', 'z', 'w'],
+      ],
     );
   });
 
   it('the frame shrinks', () => {
     expectEquivalent(
       [frame('a\nb\nc'), frame('a\nb')],
-      [['a', 'b', 'c'], ['a', 'b']],
+      [
+        ['a', 'b', 'c'],
+        ['a', 'b'],
+      ],
     );
   });
 
@@ -151,28 +161,40 @@ describe('full repaint vs incremental rendering: the same frames leave the same 
   it('a line in the middle changes', () => {
     expectEquivalent(
       [frame('a\nb\nc'), frame('a\nMIDDLE\nc')],
-      [['a', 'b', 'c'], ['a', 'MIDDLE', 'c']],
+      [
+        ['a', 'b', 'c'],
+        ['a', 'MIDDLE', 'c'],
+      ],
     );
   });
 
   it('the first line changes', () => {
     expectEquivalent(
       [frame('a\nb\nc'), frame('FIRST\nb\nc')],
-      [['a', 'b', 'c'], ['FIRST', 'b', 'c']],
+      [
+        ['a', 'b', 'c'],
+        ['FIRST', 'b', 'c'],
+      ],
     );
   });
 
   it('the last line changes', () => {
     expectEquivalent(
       [frame('a\nb\nc'), frame('a\nb\nLAST')],
-      [['a', 'b', 'c'], ['a', 'b', 'LAST']],
+      [
+        ['a', 'b', 'c'],
+        ['a', 'b', 'LAST'],
+      ],
     );
   });
 
   it('nothing changes at all', () => {
     expectEquivalent(
       [frame('a\nb\nc'), frame('a\nb\nc')],
-      [['a', 'b', 'c'], ['a', 'b', 'c']],
+      [
+        ['a', 'b', 'c'],
+        ['a', 'b', 'c'],
+      ],
     );
   });
 
@@ -207,7 +229,10 @@ describe('full repaint vs incremental rendering: the same frames leave the same 
   it('a changed line becomes empty while the lines around it stay', () => {
     expectEquivalent(
       [frame('a\nbbbb\nc'), frame('a\n\nc')],
-      [['a', 'bbbb', 'c'], ['a', '', 'c']],
+      [
+        ['a', 'bbbb', 'c'],
+        ['a', '', 'c'],
+      ],
     );
   });
 
@@ -220,21 +245,37 @@ describe('full repaint vs incremental rendering: the same frames leave the same 
   // only thing that exercises the surplus-erase's extra slot.
   describe('frames with a trailing newline', () => {
     it('keeps its height', () => {
-      expectEquivalent([frame('a\nb\n'), frame('a\nc\n')], [['a', 'b'], ['a', 'c']]);
+      expectEquivalent(
+        [frame('a\nb\n'), frame('a\nc\n')],
+        [
+          ['a', 'b'],
+          ['a', 'c'],
+        ],
+      );
     });
 
     it('shrinks', () => {
-      expectEquivalent([frame('a\nb\nc\n'), frame('a\n')], [['a', 'b', 'c'], ['a']]);
+      expectEquivalent(
+        [frame('a\nb\nc\n'), frame('a\n')],
+        [['a', 'b', 'c'], ['a']],
+      );
     });
 
     it('grows', () => {
-      expectEquivalent([frame('a\n'), frame('a\nb\nc\n')], [['a'], ['a', 'b', 'c']]);
+      expectEquivalent(
+        [frame('a\n'), frame('a\nb\nc\n')],
+        [['a'], ['a', 'b', 'c']],
+      );
     });
 
     it('gains and loses its trailing newline between frames', () => {
       expectEquivalent(
         [frame('a\nb\nc'), frame('a\nb\n'), frame('a\nb\nc')],
-        [['a', 'b', 'c'], ['a', 'b'], ['a', 'b', 'c']],
+        [
+          ['a', 'b', 'c'],
+          ['a', 'b'],
+          ['a', 'b', 'c'],
+        ],
       );
     });
   });
@@ -341,7 +382,10 @@ describe('full repaint vs incremental rendering: the same frames leave the same 
       // the console output with a hole where the frame should be.
       expectEquivalent(
         [frame('a\nb\nc'), log('MARKER')],
-        [['a', 'b', 'c'], ['MARKER', 'a', 'b', 'c']],
+        [
+          ['a', 'b', 'c'],
+          ['MARKER', 'a', 'b', 'c'],
+        ],
       );
     });
 
@@ -402,7 +446,10 @@ describe('full repaint vs incremental rendering: through the real render() stack
   async function runApp(
     incrementalRendering: boolean,
     maxFps: number,
-    drive: (label: { value: string }, items: { value: string[] }) => Promise<void>,
+    drive: (
+      label: { value: string },
+      items: { value: string[] },
+    ) => Promise<void>,
   ): Promise<string[]> {
     const stdout = createStdout(40);
     const label = ref('0');
@@ -415,7 +462,10 @@ describe('full repaint vs incremental rendering: through the real render() stack
           h(
             Static,
             { items: items.value },
-            { default: ({ item }: { item: string }) => span({ key: item }, item) },
+            {
+              default: ({ item }: { item: string }) =>
+                span({ key: item }, item),
+            },
           ),
           span({}, label.value),
         ),

@@ -1,5 +1,6 @@
-import { h, nextTick, onScopeDispose, ref } from 'vue';
+/* eslint-disable no-console */
 import { describe, expect, it, vi } from 'vitest';
+import { h, nextTick, onScopeDispose, ref } from 'vue';
 import { createApp } from '../src/createApp';
 import { createStdin } from './helpers/create-stdin';
 import { createStdout } from './helpers/create-stdout';
@@ -35,7 +36,9 @@ describe('patchConsole (render() integration)', () => {
     // The console line landed as its own write, containing neither an ANSI
     // erase sequence nor the frame's own text mixed into the same write --
     // proof it was not spliced into the middle of the frame.
-    const logWriteIndex = newWrites.findIndex(text => text.includes('MARKER_LOG'));
+    const logWriteIndex = newWrites.findIndex(text =>
+      text.includes('MARKER_LOG'),
+    );
     expect(logWriteIndex).toBeGreaterThanOrEqual(0);
     const logWrite = newWrites[logWriteIndex]!;
     expect(logWrite).not.toContain('MARKER_FRAME');
@@ -66,8 +69,12 @@ describe('patchConsole (render() integration)', () => {
     await flush();
     console.error('MARKER_ERR');
 
-    expect(stderr.getWrites().some(text => text.includes('MARKER_ERR'))).toBe(true);
-    expect(stdout.getWrites().some(text => text.includes('MARKER_ERR'))).toBe(false);
+    expect(stderr.getWrites().some(text => text.includes('MARKER_ERR'))).toBe(
+      true,
+    );
+    expect(stdout.getWrites().some(text => text.includes('MARKER_ERR'))).toBe(
+      false,
+    );
     // The frame is still on `stdout`, repainted after the erase this
     // triggered there.
     expect(stdout.get()).toContain('MARKER_FRAME');
@@ -155,14 +162,16 @@ describe('patchConsole (render() integration)', () => {
     // The real (spied) console.log ran -- it was never replaced by
     // `Container`'s own patch.
     expect(logSpy).toHaveBeenCalledWith('MARKER_LOG');
-    expect(stdout.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(false);
+    expect(stdout.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(
+      false,
+    );
 
     app.unmount();
     logSpy.mockRestore();
     expect(console.log).toBe(originalLog);
   });
 
-  it('is on by default (render()\'s own default, distinct from Container\'s) -- no explicit option needed', async () => {
+  it("is on by default (render()'s own default, distinct from Container's) -- no explicit option needed", async () => {
     const stdout = createStdout(40);
     const app = createApp({ render: () => box({}, span({}, 'MARKER_FRAME')) });
     app.mount({ stdin: createStdin(), stdout });
@@ -170,7 +179,9 @@ describe('patchConsole (render() integration)', () => {
     await flush();
     console.log('MARKER_LOG');
 
-    expect(stdout.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(true);
+    expect(stdout.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(
+      true,
+    );
 
     app.unmount();
   });
@@ -247,7 +258,9 @@ describe('patchConsole (render() integration)', () => {
       // the console line lands, and B's frame is repainted below it --
       // same shape as the single-app test above, just proving B
       // specifically, after A is gone.
-      expect(stdoutB.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(true);
+      expect(
+        stdoutB.getWrites().some(text => text.includes('MARKER_LOG')),
+      ).toBe(true);
       expect(stdoutB.get()).toContain('MARKER_B');
       expect(stdoutB.get()).not.toContain('MARKER_LOG');
 
@@ -312,10 +325,14 @@ describe('patchConsole (render() integration)', () => {
 
       // A -- installed first, still alive underneath B -- must resume
       // receiving output now that B is gone.
-      expect(stdoutA.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(true);
+      expect(
+        stdoutA.getWrites().some(text => text.includes('MARKER_LOG')),
+      ).toBe(true);
       expect(stdoutA.get()).toContain('MARKER_A');
       expect(stdoutA.get()).not.toContain('MARKER_LOG');
-      expect(stdoutB.getWrites().some(text => text.includes('MARKER_LOG'))).toBe(false);
+      expect(
+        stdoutB.getWrites().some(text => text.includes('MARKER_LOG')),
+      ).toBe(false);
 
       appA.unmount();
 

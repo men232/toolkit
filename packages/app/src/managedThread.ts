@@ -38,6 +38,24 @@ const tsxApiUrl = (() => {
   }
 })();
 
+// Same reasoning as `tsxApiUrl`, resolved eagerly here rather than as a bare
+// specifier in the child. Needed whenever the child loads this package from
+// `/src/`: `appModulePath`'s `./index.js` re-exports `./cli/index.js`, whose
+// module graph reaches `tui/launchAppsTui.ts` -> `TuiRoot.vue` -- a raw `.vue`
+// file `tsx` alone cannot parse (`ERR_UNKNOWN_FILE_EXTENSION`). The built
+// `dist/index.mjs` a production child loads has that component precompiled to
+// plain JS already, so this loader is a no-op there.
+const vueStdoutRegisterUrl = (() => {
+  try {
+    return import.meta.resolve('@andrew_l/vue-stdout/register');
+  } catch {
+    return '@andrew_l/vue-stdout/register';
+  }
+})();
+
+const isVitest =
+  typeof process !== 'undefined' && process.env.VITEST === 'true';
+
 const bootstrapCode = `
 import { delay } from '@andrew_l/toolkit'
 import { processGraceful, onShutdown, onShutdownError } from '@andrew_l/graceful'
@@ -54,6 +72,7 @@ if (
 ) {
   const { register } = await import(${JSON.stringify(tsxApiUrl)});
   register();
+  ${isVitest ? `await import(${JSON.stringify(vueStdoutRegisterUrl)});` : ''}
 }
 
 const { isAppDefinition, createAppThreadInstance, shutdownApp } = await import(appUrl);

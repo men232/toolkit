@@ -1,4 +1,4 @@
-import { h, type FunctionalComponent, type VNodeChild } from 'vue';
+import { type FunctionalComponent, type VNodeChild, h } from 'vue';
 import type { Styles } from '../tree/utils/applyStyles';
 import { castBooleanProps } from './booleanProps';
 import { camelizeProps } from './kebabProps';

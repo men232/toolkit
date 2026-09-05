@@ -2,8 +2,6 @@
 import { Box, Text, useFocusManager, useInput } from '../../src';
 import SelectList from './SelectList.vue';
 
-defineOptions({ name: 'FocusDemo' });
-
 const { focus } = useFocusManager();
 
 // `f`/`c` jump focus by id, which is the half of the focus API Tab alone
@@ -20,7 +18,10 @@ const COLORS = ['Red', 'Green', 'Blue', 'Yellow'];
 <template>
   <Box flexDirection="column">
     <!-- One line on purpose; see the note in `Text.vue`. -->
-    <Text :dimColor="true">↑↓ move the selection · Tab/Shift+Tab switch focus · f/c focus a list by id</Text>
+    <Text :dimColor="true"
+      >↑↓ move the selection · Tab/Shift+Tab switch focus · f/c focus a list by
+      id</Text
+    >
 
     <Box :marginTop="1">
       <SelectList

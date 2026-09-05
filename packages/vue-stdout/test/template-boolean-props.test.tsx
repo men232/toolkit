@@ -5,8 +5,8 @@ import * as catalog from '../src/components';
 import { Box, Static, Text, Transform } from '../src/components';
 import {
   BOOLEAN_PROP_KEYS,
-  castBooleanProps,
   type BooleanPropKey,
+  castBooleanProps,
 } from '../src/components/booleanProps';
 import { renderToString } from '../src/renderToString';
 import BareBold from './fixtures/BareBold.vue';

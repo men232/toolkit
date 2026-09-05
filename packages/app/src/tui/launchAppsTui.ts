@@ -3,13 +3,8 @@ import {
   onShutdownError,
   processGraceful,
 } from '@andrew_l/graceful';
-import {
-  type Data,
-  defer,
-  isNumber,
-  noop
-} from '@andrew_l/toolkit';
-import { render } from 'ink';
+import { type Data, isNumber, noop } from '@andrew_l/toolkit';
+import { createApp } from '@andrew_l/vue-stdout';
 import { APP_INSTANCE_STATE, type AppDefinition } from '../app.ts';
 import { getPrefixedProps } from '../appHub.ts';
 import {
@@ -22,8 +17,9 @@ import {
   stopThreadApp,
   waitForThreadReady,
 } from '../managedThread.ts';
-import { TuiRoot } from './components/TuiRoot.tsx';
-import { type AppNode, type ThreadNode, createTuiStore } from './store.ts';
+import TuiRoot from './components/TuiRoot.vue';
+import { createTuiStore } from './store.ts';
+import type { AppNode, LifecycleHandlers, ThreadNode } from './types.ts';
 
 interface AppRecord {
   appId: string;
@@ -79,81 +75,8 @@ export function launchAppsTui(
   definitions: AppDefinition[],
   props: Record<string, any>,
 ): Promise<void> {
-  const store = createTuiStore();
   const records: AppRecord[] = [];
   const isSingle = definitions.length === 1;
-
-  if (props.watch) {
-    store.setSystem({
-      ts: Date.now(),
-      level: 'warn',
-      text: 'TUI does not yet support --watch mode;',
-    });
-  }
-
-  for (let i = 0; i < definitions.length; i++) {
-    const def = definitions[i];
-    const appId = appIdFor(def, i);
-    const appProps = getAppProps(def, props, isSingle);
-    const threadCount = resolveThreadCount(appProps);
-    appProps.__inheritIO = false;
-    delete appProps.threads;
-
-    const appNode: AppNode = {
-      kind: 'app',
-      id: appId,
-      name: def.name,
-      state: APP_INSTANCE_STATE.INIT,
-      expanded: false,
-      threads: [],
-    };
-    store.addApp(appNode);
-
-    const threads: ManagedThread[] = [];
-    const threadNodes: ThreadNode[] = [];
-
-    for (let threadId = 1; threadId <= threadCount; threadId++) {
-      const nodeId = `${appId}:${threadId}`;
-      const threadNode: ThreadNode = {
-        id: `${appId}:${threadId}`,
-        kind: 'thread',
-        name: `${appNode.name}.${threadId}`,
-        parentId: appId,
-        threadId: threadId,
-        pid: 0,
-        state: APP_INSTANCE_STATE.INIT,
-      };
-      threadNodes.push(threadNode);
-
-      const w = initThread(threadId, def.filePath!, appProps);
-      w.eventBus.on('log', (entry: ManagedThread.LogEntry) => {
-        store.pushLog(nodeId, {
-          ts: entry.ts,
-          level: entry.level,
-          text: entry.text,
-        });
-      });
-      w.eventBus.on('state', (newState: ManagedThread.State) => {
-        store.setState(nodeId, newState);
-        store.setState(appId, aggregateAppState(threads));
-      });
-      w.eventBus.on('pid', (pid: number) => {
-        store.setPid(nodeId, pid);
-      });
-      w.eventBus.on('error', err => {
-        store.pushLog(nodeId, {
-          ts: Date.now(),
-          level: 'error',
-          text: `Thread error: ${err.message}`,
-        });
-      });
-      threads.push(w);
-    }
-
-    store.setThreads(appId, threadNodes);
-
-    records.push({ appId, node: appNode, threads: threads });
-  }
 
   const findRecordByAppId = (id: string): AppRecord | undefined =>
     records.find(r => r.appId === id);
@@ -169,11 +92,6 @@ export function launchAppsTui(
     return undefined;
   };
 
-  const clearAppLogs = (r: AppRecord): void => {
-    store.clearLogs(r.appId);
-    for (const t of r.node.threads ?? []) store.clearLogs(t.id);
-  };
-
   const startSingleThread = (w: ManagedThread): Promise<void> => {
     if (w.state === APP_INSTANCE_STATE.IN_RUN || APP_INSTANCE_STATE.RUN) {
       return Promise.resolve();
@@ -186,7 +104,10 @@ export function launchAppsTui(
       .then(noop);
   };
 
-  store.handlers = {
+  // Built before the store because the store takes them as a dependency. They
+  // close over `records`, which the loop below fills in, and nothing calls them
+  // until a keypress -- long after that loop has run.
+  const handlers: LifecycleHandlers = {
     stop(id) {
       const r = findRecordByAppId(id);
       if (r)
@@ -223,6 +144,87 @@ export function launchAppsTui(
     },
   };
 
+  const store = createTuiStore(handlers);
+
+  if (props.watch) {
+    store.system.value = {
+      ts: Date.now(),
+      level: 'warn',
+      text: 'TUI does not yet support --watch mode;',
+    };
+  }
+
+  for (let i = 0; i < definitions.length; i++) {
+    const def = definitions[i];
+    const appId = appIdFor(def, i);
+    const appProps = getAppProps(def, props, isSingle);
+    const threadCount = resolveThreadCount(appProps);
+    appProps.__inheritIO = false;
+    delete appProps.threads;
+
+    // `addApp` hands back the reactive proxy, and every mutation below goes
+    // through it -- writing to the object literal instead would update nothing
+    // on screen.
+    const appNode = store.addApp({
+      kind: 'app',
+      id: appId,
+      name: def.name,
+      state: APP_INSTANCE_STATE.INIT,
+      expanded: false,
+      threads: [],
+    });
+
+    const threads: ManagedThread[] = [];
+    const threadNodes: ThreadNode[] = [];
+
+    for (let threadId = 1; threadId <= threadCount; threadId++) {
+      threadNodes.push({
+        id: `${appId}:${threadId}`,
+        kind: 'thread',
+        name: `${appNode.name}.${threadId}`,
+        parentId: appId,
+        threadId: threadId,
+        pid: 0,
+        state: APP_INSTANCE_STATE.INIT,
+      });
+    }
+
+    appNode.threads = threadNodes;
+    // Read back through the proxy, for the same reason as `appNode` above.
+    const threadNodeProxies = appNode.threads!;
+
+    for (let threadId = 1; threadId <= threadCount; threadId++) {
+      const threadNode = threadNodeProxies[threadId - 1];
+      const nodeId = threadNode.id;
+
+      const w = initThread(threadId, def.filePath!, appProps);
+      w.eventBus.on('log', (entry: ManagedThread.LogEntry) => {
+        store.pushLog(nodeId, {
+          ts: entry.ts,
+          level: entry.level,
+          text: entry.text,
+        });
+      });
+      w.eventBus.on('state', (newState: ManagedThread.State) => {
+        threadNode.state = newState;
+        appNode.state = aggregateAppState(threads);
+      });
+      w.eventBus.on('pid', (pid: number) => {
+        threadNode.pid = pid;
+      });
+      w.eventBus.on('error', err => {
+        store.pushLog(nodeId, {
+          ts: Date.now(),
+          level: 'error',
+          text: `Thread error: ${err.message}`,
+        });
+      });
+      threads.push(w);
+    }
+
+    records.push({ appId, node: appNode, threads: threads });
+  }
+
   const startRecord = (r: AppRecord): Promise<void> =>
     Promise.all(
       r.threads.map(w =>
@@ -236,38 +238,41 @@ export function launchAppsTui(
     console.error('[Graceful Shutdown] error:', error);
   });
 
-  const q = defer<void>();
+  const onExit = () => {
+    return Promise.resolve().then(() => processGraceful());
+  };
+
+  const tuiApp = createApp(TuiRoot, { store, onExit });
 
   onShutdown('app', () => {
-    store.setSystem({
+    store.system.value = {
       ts: Date.now(),
       level: 'warn',
       text: 'shutdown initiated',
-    });
+    };
 
     return Promise.all(
       records.map(r => Promise.all(r.threads.map(w => shutdownThreadApp(w)))),
     )
       .then(() => {
-        store.setSystem({
+        store.system.value = {
           ts: Date.now(),
           level: 'info',
           text: 'shutdown complete',
-        });
+        };
       })
-      .then(() => inkInstance.waitUntilRenderFlush())
-      .then(() => inkInstance.unmount())
-      .then(() => q.resolve())
+      .then(() => tuiApp.unmount())
       .catch(console.error);
   });
 
-  const onExit = () => {
-    return Promise.resolve().then(() => processGraceful());
-  };
+  // `maxFps: 0` disables the write throttle: vue-stdout has no equivalent of
+  // ink's `waitUntilRenderFlush()` (deliberately out of scope, see
+  // `@andrew_l/vue-stdout`'s `useApp.ts`), so the "shutdown complete" message
+  // above must land on an uncapped write instead of risking a throttled frame
+  // that never gets to fire before `unmount()` tears the container down.
+  tuiApp.mount({ exitOnCtrlC: false, maxFps: 0 });
 
-  const inkInstance = render(<TuiRoot store={store} onExit={onExit} />, {
-    exitOnCtrlC: false,
-  });
-
-  return Promise.all(records.map(startRecord)).then(() => q.promise);
+  return Promise.all(records.map(startRecord)).then(() =>
+    tuiApp.waitUntilExit(),
+  );
 }

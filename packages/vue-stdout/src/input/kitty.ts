@@ -29,7 +29,7 @@ export type KittyFlagName = keyof typeof kittyFlags;
 export function resolveFlags(flags: KittyFlagName[]): number {
   let result = 0;
   for (const flag of flags) {
-    // eslint-disable-next-line no-bitwise
+     
     result |= kittyFlags[flag];
   }
 

@@ -6,6 +6,7 @@
     "Customizer",
     "ejson",
     "obuild",
+    "pids",
     "Randomizer",
     "sprintf",
     "timespan",

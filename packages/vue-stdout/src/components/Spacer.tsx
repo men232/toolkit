@@ -1,4 +1,4 @@
-import { h, type FunctionalComponent } from 'vue';
+import { type FunctionalComponent, h } from 'vue';
 import { Box } from './Box';
 
 /**

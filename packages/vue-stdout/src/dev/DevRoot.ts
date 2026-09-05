@@ -1,4 +1,4 @@
-import { defineComponent, h, type Component } from '@vue/runtime-core';
+import { type Component, defineComponent, h } from '@vue/runtime-core';
 
 /**
  * Wraps the user's root component in one dev-only parent.

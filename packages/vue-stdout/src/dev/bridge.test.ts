@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  type DevAppLifecycle,
+  type DevHotContext,
+  DevSessionConflictError,
   connectDevtools,
   disconnectDevtools,
-  DevSessionConflictError,
   getDevSessionId,
   isDevConnected,
   notifyDevExit,
   registerDevApp,
   unregisterDevApp,
-  type DevAppLifecycle,
-  type DevHotContext,
 } from './bridge';
 
 /**

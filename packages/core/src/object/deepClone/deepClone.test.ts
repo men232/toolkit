@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { describe, expect, it } from 'vitest';
 import { deepClone } from './deepClone';
 

@@ -8,8 +8,6 @@
 import { computed, ref } from 'vue';
 import { Box, Text, useInput } from '../../src';
 
-defineOptions({ name: 'CounterDemo' });
-
 const count = ref(0);
 const rows = computed(() => Array.from({ length: 5 }, (_, i) => i + 1));
 

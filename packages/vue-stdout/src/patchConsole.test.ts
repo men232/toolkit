@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { describe, expect, it } from 'vitest';
 import { patchConsole } from './patchConsole';
 
@@ -52,7 +53,10 @@ describe('patchConsole', () => {
     // would have, and `patch-console` itself inherits the same quirk since
     // it is built the same way (a real `console.Console`). Not something
     // this module's own formatting introduces.
-    const ansiPattern = new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g');
+    const ansiPattern = new RegExp(
+      String.fromCharCode(27) + '\\[[0-9;]*m',
+      'g',
+    );
     const stripAnsi = (text: string) => text.replace(ansiPattern, '');
 
     expect(calls[0]).toBe('count: 3\n');

@@ -14,8 +14,6 @@
 import { onBeforeUnmount, ref } from 'vue';
 import { Box, Static, Text } from '../../src';
 
-defineOptions({ name: 'StaticDemo' });
-
 const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 interface Done {

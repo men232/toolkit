@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin, type PluginOption } from 'vite';
+import { type Plugin, type PluginOption, defineConfig } from 'vite';
 import vue from 'unplugin-vue/vite';
 import vueJsx from 'unplugin-vue-jsx/vite';
 import { compilerOptions } from './src/sfc/compiler-options.ts';

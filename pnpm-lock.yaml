@@ -81,6 +81,9 @@ importers:
       '@andrew_l/toolkit':
         specifier: workspace:*
         version: link:../core
+      '@andrew_l/vue-stdout':
+        specifier: workspace:*
+        version: link:../vue-stdout
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -90,31 +93,34 @@ importers:
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
-      ink:
-        specifier: ^7.0.6
-        version: 7.0.6(@types/react@19.2.17)(react@19.2.7)
-      react:
-        specifier: ^19.2.7
-        version: 19.2.7
       tsx:
         specifier: 'catalog:'
         version: 4.22.4
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@6.0.3)
+      wrap-ansi:
+        specifier: ^10.0.0
+        version: 10.0.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 22.12.0
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
       obuild:
         specifier: 'catalog:'
         version: 0.4.37(dotenv@17.4.2)(jiti@2.7.0)(typescript@6.0.3)(vue-tsc@2.2.12(typescript@6.0.3))
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      unplugin-vue:
+        specifier: ^7.2.0
+        version: 7.2.0(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(rolldown@1.1.5)(rollup@4.62.2)(tsx@4.22.4)(vue@3.5.13(typescript@6.0.3))(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@types/node@22.12.0)(vite@8.2.2(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
+      vue-tsc:
+        specifier: ^2.2.0
+        version: 2.2.12(typescript@6.0.3)
 
   packages/binlog:
     dependencies:
@@ -520,7 +526,7 @@ importers:
         version: 6.0.3
       unplugin-vue:
         specifier: ^7.2.0
-        version: 7.2.0(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(rolldown@1.1.5)(rollup@4.62.2)(tsx@4.22.4)(vue@3.5.13(typescript@6.0.3))(yaml@2.9.0)
+        version: 7.2.0(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(rolldown@1.2.6)(rollup@4.62.2)(tsx@4.22.4)(vue@3.5.13(typescript@6.0.3))(yaml@2.9.0)
       unplugin-vue-jsx:
         specifier: ^0.4.0
         version: 0.4.0(rollup@4.62.2)(vue@3.5.13(typescript@6.0.3))
@@ -2798,19 +2804,6 @@ packages:
     resolution: {integrity: sha512-m6FAo/spmsW2Ab2fU35JTYwtOKa2yAwXSwgjSv1TJzh4Mh7mC3lzAOVLBprb72XsTrgkEIsl7YrFNAiDiRhIGg==}
     engines: {node: '>=12'}
 
-  ink@7.0.6:
-    resolution: {integrity: sha512-/KG651f+LHln9gumb5ltieFqzNGJdhX1b/WwsCUd2Py7Htuk9KUzyFrk25ugmzjXyDneXSoXD3cm4ql4dWFGsQ==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      '@types/react': '>=19.2.0'
-      react: '>=19.2.0'
-      react-devtools-core: '>=6.1.2'
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      react-devtools-core:
-        optional: true
-
   ink@7.1.1:
     resolution: {integrity: sha512-Y43xxa1ZSPvpmfLHcN5o+OdP8Rf8ykkNJEuKYOUNZKT8wXVNLFTtEm1nSDMQkfBH+YANF4Xuu0hhZ4ejqAtN2w==}
     engines: {node: '>=22'}
@@ -4131,7 +4124,7 @@ snapshots:
 
   '@babel/generator@7.26.2':
     dependencies:
-      '@babel/parser': 7.26.2
+      '@babel/parser': 7.29.8
       '@babel/types': 7.26.0
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
@@ -4322,7 +4315,7 @@ snapshots:
   '@babel/template@7.25.9':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/parser': 7.26.2
+      '@babel/parser': 7.29.8
       '@babel/types': 7.26.0
 
   '@babel/template@7.29.7':
@@ -4335,7 +4328,7 @@ snapshots:
     dependencies:
       '@babel/code-frame': 7.29.7
       '@babel/generator': 7.26.2
-      '@babel/parser': 7.26.2
+      '@babel/parser': 7.29.8
       '@babel/template': 7.25.9
       '@babel/types': 7.26.0
       debug: 4.4.3
@@ -5301,7 +5294,7 @@ snapshots:
       '@babel/core': 7.26.0
       '@babel/helper-module-imports': 7.25.9
       '@babel/helper-plugin-utils': 7.25.9
-      '@babel/parser': 7.26.2
+      '@babel/parser': 7.29.8
       '@vue/compiler-sfc': 3.5.13
     transitivePeerDependencies:
       - supports-color
@@ -5388,7 +5381,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.13':
     dependencies:
-      '@babel/parser': 7.26.2
+      '@babel/parser': 7.29.8
       '@vue/shared': 3.5.13
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -5414,7 +5407,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.13':
     dependencies:
-      '@babel/parser': 7.26.2
+      '@babel/parser': 7.29.8
       '@vue/compiler-core': 3.5.13
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-ssr': 3.5.13
@@ -5472,9 +5465,9 @@ snapshots:
   '@vue/language-core@2.2.12(typescript@6.0.3)':
     dependencies:
       '@volar/language-core': 2.4.15
-      '@vue/compiler-dom': 3.5.13
+      '@vue/compiler-dom': 3.5.42
       '@vue/compiler-vue2': 2.7.16
-      '@vue/shared': 3.5.39
+      '@vue/shared': 3.5.42
       alien-signals: 1.0.13
       minimatch: 9.0.5
       muggle-string: 0.4.1
@@ -6067,40 +6060,6 @@ snapshots:
   imurmurhash@0.1.4: {}
 
   indent-string@5.0.0: {}
-
-  ink@7.0.6(@types/react@19.2.17)(react@19.2.7):
-    dependencies:
-      '@alcalzone/ansi-tokenize': 0.3.0
-      ansi-escapes: 7.3.0
-      ansi-styles: 6.2.3
-      auto-bind: 5.0.1
-      chalk: 5.6.2
-      cli-boxes: 4.0.1
-      cli-cursor: 4.0.0
-      cli-truncate: 6.0.0
-      code-excerpt: 4.0.0
-      es-toolkit: 1.47.1
-      indent-string: 5.0.0
-      is-in-ci: 2.0.0
-      patch-console: 2.0.0
-      react: 19.2.7
-      react-reconciler: 0.33.0(react@19.2.7)
-      scheduler: 0.27.0
-      signal-exit: 3.0.7
-      slice-ansi: 9.0.0
-      stack-utils: 2.0.6
-      string-width: 8.2.1
-      terminal-size: 4.0.1
-      type-fest: 5.7.0
-      widest-line: 6.0.0
-      wrap-ansi: 10.0.0
-      ws: 8.21.0
-      yoga-layout: 3.2.1
-    optionalDependencies:
-      '@types/react': 19.2.17
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
 
   ink@7.1.1(@types/react@19.2.17)(react@19.2.7):
     dependencies:
@@ -7027,6 +6986,36 @@ snapshots:
       - webpack
       - yaml
 
+  unplugin-vue@7.2.0(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(rolldown@1.2.6)(rollup@4.62.2)(tsx@4.22.4)(vue@3.5.13(typescript@6.0.3))(yaml@2.9.0):
+    dependencies:
+      '@jridgewell/gen-mapping': 0.3.13
+      '@jridgewell/trace-mapping': 0.3.31
+      '@vue/reactivity': 3.5.42
+      obug: 2.1.3
+      unplugin: 3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.62.2)(vite@8.2.2(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
+      vite: 8.2.2(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
+      vue: 3.5.13(typescript@6.0.3)
+    transitivePeerDependencies:
+      - '@farmfe/core'
+      - '@rspack/core'
+      - '@types/node'
+      - '@vitejs/devtools'
+      - bun-types-no-globals
+      - esbuild
+      - jiti
+      - less
+      - rolldown
+      - rollup
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - unloader
+      - webpack
+      - yaml
+
   unplugin@1.16.0:
     dependencies:
       acorn: 8.14.0
@@ -7040,6 +7029,17 @@ snapshots:
     optionalDependencies:
       esbuild: 0.28.2
       rolldown: 1.1.5
+      rollup: 4.62.2
+      vite: 8.2.2(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
+
+  unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.62.2)(vite@8.2.2(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)):
+    dependencies:
+      '@jridgewell/remapping': 2.3.5
+      picomatch: 4.0.5
+      webpack-virtual-modules: 0.6.2
+    optionalDependencies:
+      esbuild: 0.28.2
+      rolldown: 1.2.6
       rollup: 4.62.2
       vite: 8.2.2(@types/node@22.12.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)
 

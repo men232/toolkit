@@ -8,8 +8,6 @@
 import { ref } from 'vue';
 import { Box, Text, useFocus, useInput } from '../../src';
 
-defineOptions({ name: 'SelectList' });
-
 const props = defineProps<{
   id: string;
   title: string;

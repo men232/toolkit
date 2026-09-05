@@ -5,9 +5,9 @@ import { describe, expect, it } from 'vitest';
 import * as catalog from '../src/components';
 import { Box, ProgressBar, Text } from '../src/components';
 import {
-  camelizeProps,
   KEBAB_PROP_KEYS,
   type KebabPropKey,
+  camelizeProps,
 } from '../src/components/kebabProps';
 import { renderToString } from '../src/renderToString';
 import BareKebabBooleanProps from './fixtures/BareKebabBooleanProps.vue';

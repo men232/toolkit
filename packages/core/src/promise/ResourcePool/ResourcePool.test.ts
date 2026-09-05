@@ -1,11 +1,11 @@
 import {
+  type Mock,
   afterEach,
   beforeEach,
   describe,
   expect,
   it,
   vi,
-  type Mock,
 } from 'vitest';
 import { ResourcePool } from './ResourcePool.js';
 

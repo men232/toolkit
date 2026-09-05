@@ -1,4 +1,4 @@
-import { defineComponent, h, onErrorCaptured, ref, type VNodeChild } from 'vue';
+import { type VNodeChild, defineComponent, h, onErrorCaptured, ref } from 'vue';
 import { Box } from './Box';
 import { Text } from './Text';
 

@@ -1,17 +1,17 @@
 import { withCache } from '@andrew_l/toolkit';
 import widestLine from 'widest-line';
 import type { DOMDocument } from './DOMTree/DOMDocument';
-import { DOMElement, resetYogaStyles } from './DOMTree/DOMElement';
+import { type DOMElement, resetYogaStyles } from './DOMTree/DOMElement';
 import {
-  beginRectFrame,
   type DOMNode,
   DOMNodeType,
   type DOMRect,
+  beginRectFrame,
 } from './DOMTree/DOMNode';
 import { beginSquashFrame, squashTextNodes } from './squashText';
 import { readClampedFlushedCount } from './staticFlush';
 import { isInlineElement, isStaticElement } from './tags';
-import { applyStyles, type Styles } from './utils/applyStyles';
+import { type Styles, applyStyles } from './utils/applyStyles';
 import { wrapText } from './utils/wrapText';
 import { Yoga, type YogaNode } from './yoga';
 

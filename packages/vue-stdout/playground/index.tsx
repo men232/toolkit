@@ -7,9 +7,9 @@
 // `process.stdin` -- the test suite forbids it (`test/setup/no-real-raw-mode.ts`),
 // which is exactly why interactive behaviour has to be checked here by hand.
 import process from 'node:process';
-import { defineComponent, h, ref, shallowRef, type Component } from 'vue';
+import { type Component, defineComponent, h, ref, shallowRef } from 'vue';
 import { Box, Text, createApp, useApp, useInput } from '../src';
-import { demos, findDemo, type Demo } from './demos';
+import { type Demo, demos, findDemo } from './demos';
 
 // Every screen here binds the keyboard, and `useInput` refuses to attach when
 // raw mode is unsupported. Without this the failure surfaces as an unhandled

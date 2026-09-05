@@ -2,8 +2,6 @@
 import { ref } from 'vue';
 import { Box, Text, Transform, useInput } from '../../src';
 
-defineOptions({ name: 'TextDemo' });
-
 const SENTENCE =
   'The quick brown fox jumps over the lazy dog and keeps on running.';
 
@@ -25,7 +23,8 @@ const selected = ref(0);
 
 useInput((_input, key) => {
   if (key.upArrow) {
-    selected.value = (selected.value - 1 + WRAP_MODES.length) % WRAP_MODES.length;
+    selected.value =
+      (selected.value - 1 + WRAP_MODES.length) % WRAP_MODES.length;
   } else if (key.downArrow) {
     selected.value = (selected.value + 1) % WRAP_MODES.length;
   }
@@ -63,7 +62,9 @@ const shout = (line: string) => line.toUpperCase();
         the same style; the mode is chosen per row here so the six are directly
         comparable at one width.
       -->
-      <Text :bold="true">wrap modes in a 28-column box · ↑↓ to highlight one</Text>
+      <Text :bold="true"
+        >wrap modes in a 28-column box · ↑↓ to highlight one</Text
+      >
       <Box
         v-for="(mode, index) in WRAP_MODES"
         :key="mode"

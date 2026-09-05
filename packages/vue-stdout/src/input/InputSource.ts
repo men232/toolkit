@@ -10,7 +10,7 @@
 // header) out of reach -- nothing here ever hands it a `Uint8Array`.
 import { EventEmitter } from 'node:events';
 import process from 'node:process';
-import { createInputParser, type InputParser } from './inputParser';
+import { type InputParser, createInputParser } from './inputParser';
 
 /**
  * A stdin-like stream. Matches `NodeJS.ReadStream`'s relevant surface, but
@@ -150,7 +150,7 @@ export class InputSource extends EventEmitter {
     this.clearPendingFlush();
 
     let chunk: string | null;
-    // eslint-disable-next-line no-cond-assign
+     
     while ((chunk = this.stdin.read() as string | null) !== null) {
       const events = this.parser.push(chunk);
 
