@@ -20,6 +20,8 @@ import {
 export type EJSONType = {
   /**
    * The string placeholder (must start with `$`) that represents the custom type.
+   *
+   * The leading `$` is replaced with `EJSON.placeholderPrefix` when the type is added.
    */
   placeholder: string;
 
@@ -74,6 +76,9 @@ export class EJSON {
    */
   public mimetype: string = 'application/json';
 
+  /** @internal */
+  protected _placeholderPrefix: string = '$';
+
   public readonly Type = {
     Date: DateType,
     Map: MapType,
@@ -118,23 +123,84 @@ export class EJSON {
   }
 
   /**
+   * The prefix every type placeholder is namespaced with, `$` by default.
+   *
+   * Type definitions declare their placeholder with the canonical `$` marker
+   * ({@link EJSON.Type.Date} is `$date`), {@link EJSON.addType} substitutes this
+   * prefix for it, so built-in types can be used with any prefix. Useful when
+   * `$` keys are not allowed by the storage, e.g. MongoDB documents.
+   *
+   * Must be set before the first {@link EJSON.addType} call, otherwise already
+   * added types would keep the previous prefix.
+   *
+   * @example
+   * const ejson = createEJSON();
+   *
+   * ejson.placeholderPrefix = '_';
+   * ejson.addType(EJSON.Type.Date);
+   *
+   * ejson.stringify({ at: new Date(0) }); // {"at":{"_date":0}}
+   */
+  get placeholderPrefix(): string {
+    return this._placeholderPrefix;
+  }
+
+  set placeholderPrefix(value: string) {
+    if (value === this._placeholderPrefix) return;
+
+    assert.ok(
+      typeof value === 'string' && value.length > 0,
+      'placeholderPrefix must be a non-empty string.',
+    );
+
+    assert.ok(
+      this.typeHandlers.size === 0,
+      'placeholderPrefix cannot be changed after types were added.',
+    );
+
+    this._placeholderPrefix = value;
+  }
+
+  /**
    * Adds a custom type handler for encoding/decoding logic.
    * Ensures type placeholders are unique and adhere to conventions.
    */
   addType(type: Readonly<EJSONType>): this {
+    const placeholder = this._resolvePlaceholder(type.placeholder);
+
     assert.ok(
-      !this.typeHandlers.has(type.placeholder),
-      `type with ${type.placeholder} already taken.`,
+      placeholder.startsWith(this._placeholderPrefix) &&
+        placeholder.length > this._placeholderPrefix.length,
+      `type placeholder must starts with "${this._placeholderPrefix}"`,
     );
 
     assert.ok(
-      type.placeholder.startsWith('$'),
-      'type placeholder must starts with $ symbol.',
+      !this.typeHandlers.has(placeholder),
+      `type with ${placeholder} already taken.`,
     );
 
     this.pure = false;
-    this.typeHandlers.set(type.placeholder, type);
+    this.typeHandlers.set(
+      placeholder,
+      placeholder === type.placeholder ? type : { ...type, placeholder },
+    );
     return this;
+  }
+
+  /**
+   * Substitutes the canonical `$` marker of a type definition with the
+   * configured prefix. Placeholders already using the prefix are left as is.
+   *
+   * @internal
+   */
+  protected _resolvePlaceholder(placeholder: string): string {
+    if (placeholder.startsWith(this._placeholderPrefix)) return placeholder;
+
+    if (placeholder.startsWith('$')) {
+      return this._placeholderPrefix + placeholder.slice(1);
+    }
+
+    return placeholder;
   }
 
   /**
@@ -190,7 +256,7 @@ export class EJSON {
   protected _reviewer(_: string, value: any) {
     const key = firstKey(value);
 
-    if (!key || key[0] !== '$') return value;
+    if (!key) return value;
 
     const type = this.typeHandlers.get(key);
 

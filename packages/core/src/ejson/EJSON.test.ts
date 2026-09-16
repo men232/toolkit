@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EJSON, createEJSON } from './index';
+import { EJSON, type EJSONType, createEJSON } from './index';
 
 function makeStringifyTest(value: any, expected: any) {
   it('should stringify single value', () => {
@@ -23,6 +23,15 @@ function makeParseTest(value: any, expected: any) {
       value: [expected],
     });
   });
+}
+
+function bufferType(placeholder: string): EJSONType {
+  return {
+    placeholder,
+    encode: value =>
+      value instanceof Uint8Array ? Array.from(value) : undefined,
+    decode: value => new Uint8Array(value),
+  };
 }
 
 describe('EJSON', () => {
@@ -162,6 +171,167 @@ describe('EJSON', () => {
           ['key_3', 0n],
         ]),
       );
+    });
+  });
+
+  describe('addType', () => {
+    it('should reject already taken placeholder', () => {
+      const ejson = createEJSON();
+      ejson.addType(bufferType('$buffer'));
+
+      expect(() => ejson.addType(bufferType('$buffer'))).toThrow(
+        'type with $buffer already taken.',
+      );
+    });
+
+    it('should stringify custom type', () => {
+      const ejson = createEJSON();
+      ejson.addType(bufferType('$buffer'));
+
+      expect(ejson.stringify({ value: new Uint8Array([1, 2]) })).toBe(
+        '{"value":{"$buffer":[1,2]}}',
+      );
+    });
+
+    it('should parse custom type', () => {
+      const ejson = createEJSON();
+      ejson.addType(bufferType('$buffer'));
+
+      expect(ejson.parse('{"value":{"$buffer":[1,2]}}')).toStrictEqual({
+        value: new Uint8Array([1, 2]),
+      });
+    });
+
+    it('should keep unknown placeholders untouched', () => {
+      const ejson = createEJSON();
+      ejson.addType(bufferType('$buffer'));
+
+      expect(ejson.parse('{"value":{"$unknown":[1,2]}}')).toStrictEqual({
+        value: { $unknown: [1, 2] },
+      });
+    });
+  });
+
+  describe('placeholderPrefix', () => {
+    it('should default to "$"', () => {
+      expect(createEJSON().placeholderPrefix).toBe('$');
+    });
+
+    it('should reject placeholder without any known prefix', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '@';
+
+      expect(() => ejson.addType(bufferType('buffer'))).toThrow(
+        'type placeholder must starts with "@"',
+      );
+    });
+
+    it('should re-prefix a $ placeholder', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '@';
+      ejson.addType(bufferType('$buffer'));
+
+      expect(ejson.stringify({ value: new Uint8Array([1, 2]) })).toBe(
+        '{"value":{"@buffer":[1,2]}}',
+      );
+      expect(ejson.parse('{"value":{"@buffer":[1,2]}}')).toStrictEqual({
+        value: new Uint8Array([1, 2]),
+      });
+    });
+
+    it('should re-prefix built-in types', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '_';
+      ejson.addType(EJSON.Type.Date);
+
+      expect(ejson.stringify({ at: new Date(0) })).toBe('{"at":{"_date":0}}');
+      expect(ejson.parse('{"at":{"_date":0}}')).toStrictEqual({
+        at: new Date(0),
+      });
+    });
+
+    it('should report the resolved placeholder as taken', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '@';
+      ejson.addType(bufferType('$buffer'));
+
+      expect(() => ejson.addType(bufferType('@buffer'))).toThrow(
+        'type with @buffer already taken.',
+      );
+    });
+
+    it('should reject placeholder equal to the prefix', () => {
+      const ejson = createEJSON();
+
+      expect(() => ejson.addType(bufferType('$'))).toThrow(
+        'type placeholder must starts with "$"',
+      );
+    });
+
+    it('should accept multi char prefix', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '__';
+
+      expect(() => ejson.addType(bufferType('__buffer'))).not.toThrow();
+      expect(() => ejson.addType(bufferType('_buffer'))).toThrow(
+        'type placeholder must starts with "__"',
+      );
+    });
+
+    it('should stringify with custom prefix', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '@';
+      ejson.addType(bufferType('@buffer'));
+
+      expect(ejson.stringify({ value: new Uint8Array([1, 2]) })).toBe(
+        '{"value":{"@buffer":[1,2]}}',
+      );
+    });
+
+    it('should parse with custom prefix', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '@';
+      ejson.addType(bufferType('@buffer'));
+
+      expect(ejson.parse('{"value":{"@buffer":[1,2]}}')).toStrictEqual({
+        value: new Uint8Array([1, 2]),
+      });
+    });
+
+    it('should keep objects with a foreign prefix untouched', () => {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '@';
+      ejson.addType(bufferType('@buffer'));
+
+      expect(ejson.parse('{"value":{"$buffer":[1,2]}}')).toStrictEqual({
+        value: { $buffer: [1, 2] },
+      });
+    });
+
+    it('should reject prefix change after types were added', () => {
+      const ejson = createEJSON();
+      ejson.addType(bufferType('$buffer'));
+
+      expect(() => {
+        ejson.placeholderPrefix = '@';
+      }).toThrow('placeholderPrefix cannot be changed after types were added.');
+    });
+
+    it('should allow assigning the same prefix after types were added', () => {
+      const ejson = createEJSON();
+      ejson.addType(bufferType('$buffer'));
+
+      expect(() => {
+        ejson.placeholderPrefix = '$';
+      }).not.toThrow();
+    });
+
+    it('should reject an empty prefix', () => {
+      const ejson = createEJSON();
+
+      expect(() => {
+        ejson.placeholderPrefix = '';
+      }).toThrow('placeholderPrefix must be a non-empty string.');
     });
   });
 });
