@@ -334,4 +334,413 @@ describe('EJSON', () => {
       }).toThrow('placeholderPrefix must be a non-empty string.');
     });
   });
+
+  describe('encode / decode', () => {
+    class ObjectIdLike {
+      constructor(public readonly hex: string) {}
+      toHexString() {
+        return this.hex;
+      }
+    }
+
+    function createMongoLike() {
+      const ejson = createEJSON();
+      ejson.placeholderPrefix = '__@';
+      ejson.addType(EJSON.Type.Error);
+      ejson.addType(EJSON.Type.Map);
+      ejson.addType(EJSON.Type.Set);
+      return ejson;
+    }
+
+    it('should keep unregistered instances as the same references', () => {
+      const ejson = createEJSON();
+      ejson.addType(EJSON.Type.Error);
+
+      const at = new Date(0);
+      const id = new ObjectIdLike('0123456789abcdef01234567');
+      const buf = Buffer.from('x');
+      const big = 10n;
+
+      const encoded = ejson.encode({ at, id, buf, big }) as any;
+
+      expect(encoded.at).toBe(at);
+      expect(encoded.id).toBe(id);
+      expect(encoded.buf).toBe(buf);
+      expect(encoded.big).toBe(big);
+    });
+
+    it('should keep unregistered instances as the same references on decode', () => {
+      const ejson = createEJSON();
+      ejson.addType(EJSON.Type.Error);
+
+      const at = new Date(0);
+      const id = new ObjectIdLike('0123456789abcdef01234567');
+      const buf = Buffer.from('x');
+
+      const decoded = ejson.decode<any>({ nested: [{ at, id, buf }] });
+
+      expect(decoded.nested[0].at).toBe(at);
+      expect(decoded.nested[0].id).toBe(id);
+      expect(decoded.nested[0].buf).toBe(buf);
+    });
+
+    it('should not touch the input object', () => {
+      const ejson = createEJSON(true);
+      const input = { list: [new Date(0)], nested: { set: new Set([1]) } };
+      const encoded = ejson.encode(input) as any;
+
+      expect(encoded).not.toBe(input);
+      expect(encoded.list).not.toBe(input.list);
+      expect(input.list[0]).toBeInstanceOf(Date);
+      expect(input.nested.set).toBeInstanceOf(Set);
+    });
+
+    describe('error', () => {
+      it('should encode error to a placeholder without stack', () => {
+        const ejson = createEJSON();
+        ejson.addType(EJSON.Type.Error);
+
+        expect(ejson.encode(new TypeError('boom'))).toStrictEqual({
+          $error: { name: 'TypeError', message: 'boom' },
+        });
+      });
+
+      it('should encode cause recursively', () => {
+        const ejson = createEJSON(true);
+        ejson.addType(EJSON.Type.Error);
+
+        const err = new Error('outer', {
+          cause: new Error('inner', { cause: { at: new Date(0) } }),
+        });
+
+        expect(ejson.encode(err)).toStrictEqual({
+          $error: {
+            name: 'Error',
+            message: 'outer',
+            cause: {
+              $error: {
+                name: 'Error',
+                message: 'inner',
+                cause: { at: { $date: 0 } },
+              },
+            },
+          },
+        });
+      });
+
+      it('should restore error nested in objects and arrays', () => {
+        const ejson = createEJSON();
+        ejson.addType(EJSON.Type.Error);
+
+        class MyError extends Error {
+          name = 'MyError';
+        }
+
+        const input = {
+          failed: new MyError('nested'),
+          list: [new RangeError('in list'), 1, null],
+        };
+
+        const decoded = ejson.decode<typeof input>(ejson.encode(input));
+
+        expect(decoded.failed).toBeInstanceOf(Error);
+        expect(decoded.failed.name).toBe('MyError');
+        expect(decoded.failed.message).toBe('nested');
+        expect(decoded.failed.stack).not.toBe(input.failed.stack);
+        expect(decoded.list[0]).toBeInstanceOf(Error);
+        expect((decoded.list[0] as Error).name).toBe('RangeError');
+        expect((decoded.list[0] as Error).message).toBe('in list');
+        expect(decoded.list[1]).toBe(1);
+        expect(decoded.list[2]).toBe(null);
+      });
+
+      it('should restore cause recursively', () => {
+        const ejson = createEJSON();
+        ejson.addType(EJSON.Type.Error);
+
+        const decoded = ejson.decode<Error>(
+          ejson.encode(new Error('outer', { cause: new Error('inner') })),
+        );
+
+        expect(decoded.cause).toBeInstanceOf(Error);
+        expect((decoded.cause as Error).message).toBe('inner');
+      });
+
+      it('should not add cause property when cause is undefined', () => {
+        const ejson = createEJSON();
+        ejson.addType(EJSON.Type.Error);
+
+        const decoded = ejson.decode<Error>(ejson.encode(new Error('plain')));
+
+        expect(Object.hasOwn(decoded, 'cause')).toBe(false);
+      });
+
+      it('should stringify and parse errors', () => {
+        const ejson = createEJSON();
+        ejson.addType(EJSON.Type.Error);
+
+        const json = ejson.stringify({ err: new Error('boom') });
+
+        expect(json).toBe(
+          '{"err":{"$error":{"name":"Error","message":"boom"}}}',
+        );
+
+        const parsed = ejson.parse<{ err: Error }>(json);
+
+        expect(parsed.err).toBeInstanceOf(Error);
+        expect(parsed.err.message).toBe('boom');
+      });
+    });
+
+    describe('map / set', () => {
+      it('should encode map with object keys', () => {
+        const ejson = createEJSON(true);
+        const key = { id: 1, at: new Date(0) };
+
+        expect(ejson.encode(new Map([[key, new Set([1n])]]))).toStrictEqual({
+          $map: [[{ id: 1, at: { $date: 0 } }, { $set: [{ $bigint: 'AQ' }] }]],
+        });
+      });
+
+      it('should round trip map with object keys', () => {
+        const ejson = createEJSON(true);
+        const input = new Map<any, any>([
+          [{ id: 1 }, new Set([new Date(0)])],
+          ['plain', 2],
+        ]);
+
+        const decoded = ejson.decode<Map<any, any>>(ejson.encode(input));
+
+        expect(decoded).toBeInstanceOf(Map);
+        expect(decoded).toStrictEqual(input);
+        expect([...decoded.values()][0]).toBeInstanceOf(Set);
+      });
+    });
+
+    describe('placeholder collision', () => {
+      it('should unwrap a plain object with exactly one placeholder key', () => {
+        const ejson = createEJSON(true);
+
+        expect(ejson.decode({ $date: 0 })).toStrictEqual(new Date(0));
+      });
+
+      it('should keep a plain object with placeholder key among other keys', () => {
+        const ejson = createEJSON(true);
+        const input = { $date: 0, other: 1 };
+
+        expect(ejson.decode(input)).toStrictEqual({ $date: 0, other: 1 });
+      });
+
+      it('should keep a plain object with placeholder key among other keys on parse', () => {
+        const ejson = createEJSON(true);
+
+        expect(ejson.parse('{"$date":0,"other":1}')).toStrictEqual({
+          $date: 0,
+          other: 1,
+        });
+      });
+    });
+
+    describe('edge values', () => {
+      it('should pass through null, undefined, empty containers', () => {
+        const ejson = createEJSON(true);
+        const input = {
+          n: null,
+          u: undefined,
+          emptyObj: {},
+          emptyArr: [],
+          str: '',
+          zero: 0,
+          f: false,
+        };
+
+        expect(ejson.encode(input)).toStrictEqual(input);
+        expect(ejson.decode(input)).toStrictEqual(input);
+        expect(ejson.encode(null)).toBe(null);
+        expect(ejson.encode(undefined)).toBe(undefined);
+        expect(ejson.decode(null)).toBe(null);
+        expect(ejson.decode(undefined)).toBe(undefined);
+      });
+
+      it('should handle deep nesting', () => {
+        const ejson = createEJSON(true);
+        const input = {
+          l1: {
+            l2: { l3: { l4: [{ at: new Date(5), set: new Set([/x/g]) }] } },
+          },
+        };
+
+        const encoded = ejson.encode(input) as any;
+
+        expect(encoded.l1.l2.l3.l4[0].at).toStrictEqual({ $date: 5 });
+        expect(encoded.l1.l2.l3.l4[0].set).toStrictEqual({
+          $set: [{ $regex: { pattern: 'x', flags: 'g' } }],
+        });
+        expect(ejson.decode(encoded)).toStrictEqual(input);
+      });
+
+      it('should keep null-prototype objects as plain objects', () => {
+        const ejson = createEJSON(true);
+        const input = Object.create(null);
+        input.at = new Date(0);
+
+        expect(ejson.encode(input)).toStrictEqual({ at: { $date: 0 } });
+      });
+
+      it('should throw on circular structures', () => {
+        const ejson = createEJSON(true);
+        const obj: any = { list: [] };
+        obj.list.push(obj);
+
+        expect(() => ejson.encode(obj)).toThrow(/circular/i);
+        expect(() => ejson.stringify(obj)).toThrow(/circular/i);
+      });
+
+      it('should return untouched subtrees as the same reference', () => {
+        const ejson = createEJSON(true);
+        const plain = { a: 1, list: [1, 2, { b: 'x' }] };
+        const input = { plain, at: new Date(0) };
+
+        const encoded = ejson.encode(input) as any;
+
+        expect(encoded).not.toBe(input);
+        expect(encoded.plain).toBe(plain);
+        expect(ejson.encode(plain)).toBe(plain);
+        expect(ejson.decode(plain)).toBe(plain);
+      });
+
+      it('should keep "__proto__" as an own key when copying', () => {
+        const ejson = createEJSON(true);
+        const parsed = ejson.parse<any>(
+          '{"__proto__":{"admin":true},"at":{"$date":0}}',
+        );
+
+        expect(Object.getPrototypeOf(parsed)).toBe(Object.prototype);
+        expect(Object.hasOwn(parsed, '__proto__')).toBe(true);
+        expect(parsed.__proto__).toStrictEqual({ admin: true });
+        expect(parsed.admin).toBeUndefined();
+        expect(parsed.at).toStrictEqual(new Date(0));
+
+        const input = JSON.parse('{"__proto__":{"admin":true},"at":0}');
+        input.at = new Date(0);
+        const encoded = ejson.encode(input) as any;
+
+        expect(Object.getPrototypeOf(encoded)).toBe(Object.prototype);
+        expect(Object.hasOwn(encoded, '__proto__')).toBe(true);
+        expect(encoded.admin).toBeUndefined();
+      });
+
+      it('should allow the same reference in several places', () => {
+        const ejson = createEJSON(true);
+        const shared = { at: new Date(0) };
+        const encoded = ejson.encode({ a: shared, b: [shared] }) as any;
+
+        expect(encoded.a).toStrictEqual({ at: { $date: 0 } });
+        expect(encoded.b[0]).toStrictEqual({ at: { $date: 0 } });
+      });
+    });
+
+    describe('idempotency', () => {
+      const ejson = createEJSON(true);
+      ejson.addType(EJSON.Type.Error);
+
+      const input = {
+        at: new Date(0),
+        map: new Map([['k', new Set([1, 2])]]),
+        regex: /a/i,
+        inf: Infinity,
+        big: 123n,
+        bin: new Uint8Array([1, 2]),
+        err: new Error('x', { cause: 'why' }),
+        list: [1, 'two', null, { nested: -Infinity }],
+      };
+
+      it('decode(encode(x)) should be structurally equal to x', () => {
+        const decoded = ejson.decode<typeof input>(ejson.encode(input));
+
+        expect(decoded).toStrictEqual(input);
+        expect(decoded.err).toBeInstanceOf(Error);
+        expect(decoded.err.cause).toBe('why');
+      });
+
+      it('encode(encode(x)) should not double wrap', () => {
+        const once = ejson.encode(input);
+
+        expect(ejson.encode(once)).toStrictEqual(once);
+      });
+
+      it('decode(decode(x)) should be stable', () => {
+        const once = ejson.decode(ejson.encode(input));
+
+        expect(ejson.decode(once)).toStrictEqual(once);
+      });
+    });
+
+    describe('type order', () => {
+      it('type added earlier should win on conflict', () => {
+        const first = createEJSON();
+        first.addType(EJSON.Type.Binary);
+        first.addType(bufferType('$buffer'));
+
+        expect(first.encode(new Uint8Array([0]))).toStrictEqual({
+          $binary: 'AA==',
+        });
+
+        const second = createEJSON();
+        second.addType(bufferType('$buffer'));
+        second.addType(EJSON.Type.Binary);
+
+        expect(second.encode(new Uint8Array([0]))).toStrictEqual({
+          $buffer: [0],
+        });
+      });
+    });
+
+    describe('multi char prefix', () => {
+      it('should encode and decode with "__@" prefix', () => {
+        const ejson = createMongoLike();
+        const outcome = {
+          error: new Error('failed'),
+          seen: new Set(['a']),
+          meta: new Map([['k', 1]]),
+          at: new Date(0),
+        };
+
+        const encoded = ejson.encode(outcome) as any;
+
+        expect(encoded).toStrictEqual({
+          error: { '__@error': { name: 'Error', message: 'failed' } },
+          seen: { '__@set': ['a'] },
+          meta: { '__@map': [['k', 1]] },
+          at: outcome.at,
+        });
+        expect(encoded.at).toBe(outcome.at);
+
+        const decoded = ejson.decode<typeof outcome>(encoded);
+
+        expect(decoded).toStrictEqual(outcome);
+        expect(decoded.error).toBeInstanceOf(Error);
+      });
+
+      it('should keep "$" placeholders untouched with "__@" prefix', () => {
+        const ejson = createMongoLike();
+
+        expect(
+          ejson.decode({ $error: { name: 'Error', message: 'x' } }),
+        ).toStrictEqual({
+          $error: { name: 'Error', message: 'x' },
+        });
+      });
+
+      it('should reject prefix change after addType', () => {
+        const ejson = createMongoLike();
+
+        expect(() => {
+          ejson.placeholderPrefix = '$';
+        }).toThrow(
+          'placeholderPrefix cannot be changed after types were added.',
+        );
+      });
+    });
+  });
 });

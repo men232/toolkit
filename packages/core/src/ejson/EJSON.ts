@@ -1,16 +1,10 @@
 import { assert } from '@/assert';
-import {
-  isBigInt,
-  isInfinity,
-  isObject,
-  isPlainObject,
-  isPrimitive,
-} from '@/is';
-import { deepCloneWith } from '@/object/deepCloneWith';
+import { isObject } from '@/is';
 import {
   BigIntType,
   BinaryType,
   DateType,
+  ErrorType,
   InfinityType,
   MapType,
   RegexType,
@@ -57,14 +51,16 @@ export class EJSON {
   /** @internal */
   protected typeHandlers: Map<string, Readonly<EJSONType>> = new Map();
 
-  /** @internal */
-  protected replacerReady: (value: any, key: PropertyKey | undefined) => any;
+  /**
+   * Same handlers as {@link typeHandlers} in insertion order, kept as an
+   * array so the hot encode loop does not allocate a Map iterator per value.
+   *
+   * @internal
+   */
+  protected typeList: Readonly<EJSONType>[] = [];
 
   /** @internal */
-  protected encode: (value: any) => any;
-
-  /** @internal */
-  protected reviewerReady: (_: string, value: any) => any;
+  protected decodeReady: (value: any) => any;
 
   /** @internal */
   protected pure: boolean = true;
@@ -87,14 +83,11 @@ export class EJSON {
     Infinity: InfinityType,
     BigInt: BigIntType,
     Binary: BinaryType,
+    Error: ErrorType,
   } as const;
 
   constructor() {
-    this.replacerReady = this._replacer.bind(this);
-    this.reviewerReady = this._reviewer.bind(this);
-    this.encode = (value: any) => {
-      return deepCloneWith(value, this.replacerReady);
-    };
+    this.decodeReady = this._decodeValue.bind(this);
   }
 
   /**
@@ -179,11 +172,12 @@ export class EJSON {
       `type with ${placeholder} already taken.`,
     );
 
+    const resolved =
+      placeholder === type.placeholder ? type : { ...type, placeholder };
+
     this.pure = false;
-    this.typeHandlers.set(
-      placeholder,
-      placeholder === type.placeholder ? type : { ...type, placeholder },
-    );
+    this.typeHandlers.set(placeholder, resolved);
+    this.typeList.push(resolved);
     return this;
   }
 
@@ -204,6 +198,65 @@ export class EJSON {
   }
 
   /**
+   * Encodes a value on the object level, without going through a JSON string.
+   *
+   * Arrays and plain objects (prototype is `Object.prototype` or `null`) are
+   * walked recursively, the input is never mutated. Containers that hold an
+   * encoded value somewhere below are shallow copied on the way up, subtrees
+   * without any registered type are returned as the same reference. Every other
+   * value is offered to the registered types in the order they were added, the
+   * first `encode` returning something other than `undefined` wins and the
+   * value is replaced with `{ [placeholder]: encoded }` (or inlined when the
+   * type has `encodeInline`). A value no type claims stays the same reference,
+   * class instances are neither unwrapped nor copied field by field.
+   *
+   * That makes the result safe to store where the storage understands some
+   * types natively (e.g. MongoDB `Mixed` with `Date`, `ObjectId`, `Buffer`)
+   * while only the registered ones are turned into placeholders.
+   *
+   * The result of `encode` is itself a valid input: encoding it again returns
+   * a structurally equal value, placeholders are plain objects and are not
+   * wrapped twice.
+   *
+   * Circular structures are not supported and throw a `TypeError`, the same
+   * way `JSON.stringify` does. Repeated (non circular) references are fine and
+   * are encoded once per occurrence.
+   *
+   * @example
+   * const ejson = createEJSON();
+   * ejson.placeholderPrefix = '__@';
+   * ejson.addType(EJSON.Type.Error);
+   *
+   * ejson.encode({ at: new Date(0), err: new Error('boom') });
+   * // { at: Date(0), err: { '__@error': { name: 'Error', message: 'boom' } } }
+   */
+  encode<T = unknown>(value: T): unknown {
+    const seen = new Set<object>();
+    const encode = (value: any): any => this._encodeValue(value, seen, encode);
+
+    return encode(value);
+  }
+
+  /**
+   * Reverse of {@link EJSON.encode}.
+   *
+   * Arrays and plain objects are walked recursively (inner values first). A
+   * plain object with exactly one key equal to a registered placeholder is
+   * replaced with `type.decode(innerValue)`. Containers are copied only when
+   * something below them was decoded, everything else is returned as is, the
+   * same reference.
+   *
+   * Note that a plain object of the shape `{ [placeholder]: ... }` is
+   * indistinguishable from an encoded value and will be unwrapped. That is the
+   * accepted cost of placeholders, pick a `placeholderPrefix` that cannot
+   * collide with real keys when this matters. An object with a placeholder key
+   * among other keys is kept untouched.
+   */
+  decode<T = unknown>(value: unknown): T {
+    return this._decodeValue(value);
+  }
+
+  /**
    * Stringifies a JavaScript value using custom encoding logic.
    * @param {any} value - The value to encode and stringify.
    * @param {string | number} [space] - Optional space for pretty-printing.
@@ -219,6 +272,11 @@ export class EJSON {
 
   /**
    * Parses a JSON string using custom decoding logic.
+   *
+   * Implemented as `JSON.parse` followed by {@link EJSON.decode}, which is
+   * several times faster than a `JSON.parse` reviver and shares the exact
+   * decoding semantics with `decode`.
+   *
    * @param {string} value - The JSON string to parse.
    * @returns {any} - The decoded JavaScript object.
    */
@@ -227,22 +285,65 @@ export class EJSON {
       return JSON.parse(value);
     }
 
-    return JSON.parse(value, this.reviewerReady);
+    return this._decodeValue(JSON.parse(value));
   }
 
   /** @internal */
-  protected _replacer(value: any, key: PropertyKey | undefined) {
-    // deep object check
-    if (isPlainObject(value)) return;
-    // deep array check
-    if (Array.isArray(value)) return;
-    // exclude primitive
-    if (!isInfinity(value) && !isBigInt(value)) {
-      if (isPrimitive(value)) return;
+  protected _encodeValue(
+    value: any,
+    seen: Set<object>,
+    encode: (value: any) => any,
+  ): any {
+    switch (typeof value) {
+      // Only `Infinity` / `-Infinity` can be claimed by a type.
+      case 'number':
+        if (value !== Infinity && value !== -Infinity) return value;
+        break;
+      case 'bigint':
+      case 'object':
+        break;
+      // string, boolean, undefined, symbol, function: nothing to encode.
+      default:
+        return value;
     }
 
-    for (const type of this.typeHandlers.values()) {
-      const res = type.encode(value, this.encode);
+    if (value === null) return value;
+
+    if (Array.isArray(value)) {
+      enter(seen, value);
+
+      let result: any[] | null = null;
+
+      for (let i = 0; i < value.length; i++) {
+        const item = value[i];
+        const encoded = encode(item);
+
+        if (result !== null) {
+          result[i] = encoded;
+        } else if (encoded !== item) {
+          result = value.slice(0, i);
+          result[i] = encoded;
+        }
+      }
+
+      seen.delete(value);
+      return result ?? value;
+    }
+
+    if (isPlainObjectLike(value)) {
+      enter(seen, value);
+
+      const result = copyOnWrite(value, encode);
+
+      seen.delete(value);
+      return result;
+    }
+
+    const types = this.typeList;
+
+    for (let i = 0; i < types.length; i++) {
+      const type = types[i];
+      const res = type.encode(value, encode);
 
       if (res !== undefined) {
         return type.encodeInline ? res : { [type.placeholder]: res };
@@ -253,27 +354,135 @@ export class EJSON {
   }
 
   /** @internal */
-  protected _reviewer(_: string, value: any) {
-    const key = firstKey(value);
+  protected _decodeValue(value: any): any {
+    if (typeof value !== 'object' || value === null) return value;
 
-    if (!key) return value;
+    if (Array.isArray(value)) {
+      let result: any[] | null = null;
 
-    const type = this.typeHandlers.get(key);
+      for (let i = 0; i < value.length; i++) {
+        const item = value[i];
+        const decoded = this._decodeValue(item);
 
-    if (type) {
-      return type.decode(value[key]);
+        if (result !== null) {
+          result[i] = decoded;
+        } else if (decoded !== item) {
+          result = value.slice(0, i);
+          result[i] = decoded;
+        }
+      }
+
+      return result ?? value;
+    }
+
+    if (isPlainObjectLike(value)) {
+      return this._unwrap(copyOnWrite(value, this.decodeReady));
     }
 
     return value;
   }
+
+  /**
+   * Replaces `{ [placeholder]: inner }` with `type.decode(inner)`, `inner` is
+   * expected to be already decoded (the walker decodes inner values first).
+   *
+   * @internal
+   */
+  protected _unwrap(value: any): any {
+    const key = singleKey(value);
+
+    if (key === null) return value;
+
+    const type = this.typeHandlers.get(key);
+
+    return type ? type.decode(value[key]) : value;
+  }
 }
 
-function firstKey(value: unknown): string | null {
+/**
+ * Returns the only own enumerable key of a plain object, `null` when the
+ * object has zero or more than one key or is not an object.
+ */
+function singleKey(value: unknown): string | null {
   if (!isObject(value)) return null;
 
+  let found: string | null = null;
+
   for (const key in value) {
-    return key;
+    if (found !== null) return null;
+    found = key;
   }
 
-  return null;
+  return found;
+}
+
+/**
+ * Plain object check used by the walker: prototype is `Object.prototype` or
+ * `null`. Class instances and exotic objects are left to the type handlers.
+ */
+function isPlainObjectLike(value: unknown): value is Record<string, any> {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const proto = Object.getPrototypeOf(value);
+
+  return proto === Object.prototype || proto === null;
+}
+
+/**
+ * Maps own enumerable values of a plain object with `fn`. Returns the same
+ * object when no value changed, a shallow copy with the mapped values
+ * otherwise, so untouched subtrees are not reallocated.
+ */
+function copyOnWrite(
+  value: Record<string, any>,
+  fn: (value: any) => any,
+): Record<string, any> {
+  const keys = Object.keys(value);
+  let result: Record<string, any> | null = null;
+
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const item = value[key];
+    const mapped = fn(item);
+
+    if (result !== null) {
+      setOwn(result, key, mapped);
+    } else if (mapped !== item) {
+      result = {};
+
+      for (let j = 0; j < i; j++) {
+        setOwn(result, keys[j], value[keys[j]]);
+      }
+
+      setOwn(result, key, mapped);
+    }
+  }
+
+  return result ?? value;
+}
+
+/**
+ * Plain assignment of a `__proto__` key would change the prototype of the
+ * copy instead of creating an own property (JSON.parse does produce such
+ * keys), so that one key goes through `defineProperty`.
+ */
+function setOwn(target: Record<string, any>, key: string, value: any) {
+  if (key === '__proto__') {
+    Object.defineProperty(target, key, {
+      value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  } else {
+    target[key] = value;
+  }
+}
+
+function enter(seen: Set<object>, value: object) {
+  if (seen.has(value)) {
+    throw new TypeError('Converting circular structure to EJSON');
+  }
+
+  seen.add(value);
 }

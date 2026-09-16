@@ -27,6 +27,9 @@ import {
  * | Uint16Array | $binary     | EJSON.Binary   |
  * | Uint32Array | $binary     | EJSON.Binary   |
  *
+ * `EJSON.Type.Error` (`$error`) is available but not part of the basic set,
+ * add it explicitly with `addType`.
+ *
  * @param {boolean} [withBasicTypes=false] - Indicates whether to include basic types like Map, Set, Date, and BigInt.
  * @returns {EJSON} - A new instance of the `EJSON` class configured with optional basic types.
  *

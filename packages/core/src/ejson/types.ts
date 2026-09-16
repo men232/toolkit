@@ -119,3 +119,34 @@ export const InfinityType: EJSONType = {
     throw new Error('Unexpected $inf value: ' + value);
   },
 };
+
+export const ErrorType: EJSONType = {
+  placeholder: '$error',
+  encode: (value, encode) => {
+    if (value instanceof Error) {
+      return {
+        name: value.name,
+        message: value.message,
+        ...(value.cause !== undefined ? { cause: encode(value.cause) } : {}),
+      };
+    }
+  },
+  decode({ name, message, cause }) {
+    // `cause` is already decoded by the walker / reviver (inner values first).
+    const error = new Error(
+      message,
+      cause !== undefined ? { cause } : undefined,
+    );
+
+    // Non enumerable like the prototype `name` of native errors, so the
+    // restored error compares equal to the original one.
+    Object.defineProperty(error, 'name', {
+      value: name,
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    });
+
+    return error;
+  },
+};
