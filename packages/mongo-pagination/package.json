@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-pagination",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Manages pagination without relying on traditional offsets.",
   "keywords": [
     "mongo",
