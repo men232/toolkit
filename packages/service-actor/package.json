@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/service-actor",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Forget about passing data like trace IDs between functions.",
   "keywords": [
     "trace",
