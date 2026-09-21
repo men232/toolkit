@@ -17,3 +17,4 @@ export * from './SimpleEventEmitter';
 export * from './timeout';
 export * from './toPromise';
 export * from './withResolve';
+export * from './withTimeout';

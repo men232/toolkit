@@ -1,6 +1,6 @@
-import { AppError } from '@/errors/AppError';
 import { isFunction, isPromise } from '@/is';
 import type { Awaitable } from '@/types';
+import { createTimeoutError } from './createTimeoutError';
 
 /**
  * Throws an error if the provided promise or callback is not resolved within the specified timeout period.
@@ -39,7 +39,7 @@ import type { Awaitable } from '@/types';
 export function timeout<T = any>(
   ms: number,
   promiseOrCallback: Promise<T> | ((abortSignal: AbortSignal) => Awaitable<T>),
-  timeoutError: any = new AppError(408),
+  timeoutError: unknown,
 ): Promise<T> {
   const abortController = new AbortController();
 
@@ -67,7 +67,7 @@ export function timeout<T = any>(
     new Promise((_, reject) => {
       timer = setTimeout(() => {
         abortController.abort();
-        reject(timeoutError);
+        reject(timeoutError || createTimeoutError());
       }, ms);
     }),
   ]).finally(() => {
