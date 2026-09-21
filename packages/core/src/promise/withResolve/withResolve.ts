@@ -1,8 +1,6 @@
 import { arrayable } from '@/array';
 import { argToKey } from '@/cache/createWithCache/utils';
-import { isString } from '@/is';
 import type { Arrayable } from '@/types';
-import { type Defer, defer } from '../defer';
 
 type ResolverFn<R extends Promise<any>, T = any, A extends any[] = any[]> = (
   this: T,
@@ -21,14 +19,26 @@ type WithResolve<R extends Promise<any>, T = any, A extends any[] = any[]> = (
  * @param computeKey - A helper function to stringify arguments into a cache key
  * @returns A cache key string if a variant should be used, or undefined to skip this variant
  */
-type GetCacheKey = (
-  args: any[],
+type GetCacheKey<T = any, A extends any[] = any[]> = (
+  this: T,
+  args: A,
   computeKey: (...args: any[]) => string,
-) => string | null | undefined;
+) => string | symbol | null | undefined;
 
-const stringifyArgs = (...args: any[]): string => {
-  return args.map(v => argToKey(v, { objectStrategy: 'json' })).join('_');
+var KEY_OPTIONS = { objectStrategy: 'json' } as const;
+
+var computeArgsKey = (args: any[]): string => {
+  var key = '';
+
+  for (var i = 0; i < args.length; i++) {
+    if (i) key += '_';
+    key += argToKey(args[i], KEY_OPTIONS);
+  }
+
+  return key;
 };
+
+var stringifyArgs = (...args: any[]): string => computeArgsKey(args);
 
 /**
  * Wraps an async function to guarantee single execution for identical arguments.
@@ -100,69 +110,52 @@ export function withResolve<
   A extends any[] = any[],
 >(
   fn: ResolverFn<R, T, A>,
-  getCacheKey?: Arrayable<GetCacheKey>,
+  getCacheKey?: Arrayable<GetCacheKey<T, A>>,
 ): WithResolve<R, T, A> {
-  const cache = new Map<string | symbol, Defer[]>();
-  const cacheKeyVariants = arrayable(getCacheKey);
+  var cache = new Map<string | symbol, Promise<any>>();
+  var cacheKeyVariants = arrayable(getCacheKey);
+  var variantsLength = cacheKeyVariants.length;
 
   return function (this: T, ...args: A) {
-    let cacheKey: string | symbol = stringifyArgs(...args);
+    let cacheKey: string | symbol | undefined;
+    let pending: Promise<any> | undefined;
 
-    if (cacheKeyVariants?.length) {
-      for (const getCacheKey of cacheKeyVariants) {
-        const newCacheKey = getCacheKey(args, stringifyArgs);
+    for (var i = 0; i < variantsLength; i++) {
+      var newCacheKey = cacheKeyVariants[i].call(this, args, stringifyArgs);
 
-        if (newCacheKey === null) {
-          cacheKey = Symbol(); // Use random symbol as cache key
-          break;
-        } else if (isString(newCacheKey) && cache.has(newCacheKey)) {
-          cacheKey = newCacheKey;
-          break;
-        }
+      if (newCacheKey === undefined) {
+        continue;
       }
+      if (newCacheKey === null) {
+        return resolver(this, args);
+      }
+
+      cacheKey = newCacheKey;
+      pending = cache.get(cacheKey);
+      if (pending) return pending;
     }
 
-    const defers = cache.get(cacheKey) || [];
-    const size = defers.length;
-
-    const q = defer<unknown>();
-    defers.push(q);
-    cache.set(cacheKey, defers);
-
-    if (size) {
-      return q.promise;
+    if (cacheKey === undefined) {
+      cacheKey = computeArgsKey(args);
+      pending = cache.get(cacheKey);
+      if (pending) return pending;
     }
 
-    resolver(this, cacheKey, args);
+    var key = cacheKey;
+    var promise = resolver(this, args);
+    var clear = () => cache.delete(key);
 
-    return q.promise;
+    cache.set(key, promise);
+    promise.then(clear, clear);
+
+    return promise;
   } as WithResolve<R, T, A>;
 
-  function resolver(self: T, cacheKey: string | symbol, args: A) {
-    const onSuccess = (r: any) => {
-      const defers = cache.get(cacheKey) || [];
-
-      for (const q of defers) {
-        q.resolve(r);
-      }
-
-      cache.delete(cacheKey);
-    };
-
-    const onError = (r: any) => {
-      const defers = cache.get(cacheKey) || [];
-
-      for (const q of defers) {
-        q.reject(r);
-      }
-
-      cache.delete(cacheKey);
-    };
-
+  function resolver(self: T, args: A): Promise<any> {
     try {
-      fn.apply(self, args).then(onSuccess).catch(onError);
+      return fn.apply(self, args);
     } catch (err) {
-      onError(err);
+      return Promise.reject(err);
     }
   }
 }
