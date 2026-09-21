@@ -36,7 +36,7 @@ interface FlattenOptions {
  * - A custom `isObjectCompare` function can be provided to determine whether a value
  *   should be treated as an object.
  *
- * @param {Record<string, unknown>} obj - The object to flatten.
+ * @param {object} obj - The object to flatten.
  * @param {FlattenOptions} options - Optional configuration for flattening behavior.
  * @param {string} [options.separator='_'] - Separator for flattening object keys (default is '_').
  * @param {string} [options.initialPrefix=''] - Prefix to prepend to flattened keys (default is '').
@@ -71,7 +71,7 @@ interface FlattenOptions {
  * @author lukeed
  */
 export function flatten(
-  obj: Record<string, unknown>,
+  obj: object,
   {
     separator = '_',
     initialPrefix = '',
