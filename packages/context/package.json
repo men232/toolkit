@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/context",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Like composition api but for Node.",
   "keywords": [
     "async",

@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/vue-stdout",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Renderer for terminal output with flexible layouts and CLI components.",
   "keywords": [],
   "author": "Andrew L. <andrew.io.dev@gmail.com>",
