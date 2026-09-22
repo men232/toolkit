@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/pino-pretty",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Pino transport for beautiful log output",
   "keywords": [
     "pino",

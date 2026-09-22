@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/snowflake",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Another implementation of snowflake id generator.",
   "keywords": [
     "snowflake",
