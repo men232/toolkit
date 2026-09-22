@@ -194,6 +194,12 @@ export function createEnvParser(
         return defaultValue;
       }
 
+      const rawValue = ((targetObject as any)[key] as string)?.trim();
+
+      if (!rawValue) {
+        return defaultValue;
+      }
+
       const parsers: Record<ListTypeName, (value: unknown) => any> = {
         int: _parseInt,
         bool: parseBoolean,
@@ -201,7 +207,7 @@ export function createEnvParser(
         string: v => v,
       };
 
-      return ((targetObject as any)[key] as string)
+      return rawValue
         .split(',')
         .map((value, idx) => {
           const parsedValue = parsers[type](value.trim());

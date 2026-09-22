@@ -22,6 +22,8 @@ const ENV: Record<string, string> = {
   list_decimal_invalid: '1.25,abc,3.25,4.25',
 
   list_string_correct: 'word1,word2,word3, word4',
+  list_empty: '',
+  list_blank: '   ',
 };
 
 /** Boolean */
@@ -188,4 +190,22 @@ test('env (list = string)', () => {
     'word3',
     'word4',
   ]);
+});
+
+test('env (list = empty value)', () => {
+  const env = createEnvParser(ENV);
+
+  expect(env.list('list_empty', 'string')).toStrictEqual([]);
+});
+
+test('env (list = empty value / default)', () => {
+  const env = createEnvParser(ENV);
+
+  expect(env.list('list_empty', 'string', ['ADMIN'])).toStrictEqual(['ADMIN']);
+});
+
+test('env (list = blank value / default)', () => {
+  const env = createEnvParser(ENV);
+
+  expect(env.list('list_blank', 'string', ['ADMIN'])).toStrictEqual(['ADMIN']);
 });
