@@ -1,4 +1,4 @@
-import { isBuffer, isPrimitive, isTypedArray } from '@/is';
+import { isBuffer, isTypedArray } from '@/is';
 import {
   argumentsTag,
   arrayBufferTag,
@@ -31,34 +31,94 @@ export function deepCloneWithImpl<T>(
   keyToClone: PropertyKey | undefined,
   objectToClone: T,
   stack = new Map<any, any>(),
-  cloneValue: WithCustomizer<T> | undefined = undefined,
+  parent?: WithCustomizer.PathNode,
+  cloneValue?: WithCustomizer<T>,
 ): T {
-  const cloned = cloneValue?.(valueToClone, keyToClone, objectToClone, stack);
+  if (cloneValue !== undefined) {
+    const cloned = cloneValue(
+      valueToClone,
+      keyToClone,
+      objectToClone,
+      stack,
+      parent,
+    );
 
-  if (cloned !== undefined) {
-    return cloned;
+    if (cloned !== undefined) return cloned;
   }
 
-  if (isPrimitive(valueToClone)) {
+  // Primitives and functions are returned as is.
+  if (typeof valueToClone !== 'object' || valueToClone === null) {
     return valueToClone as T;
   }
 
-  if (stack.has(valueToClone)) {
-    return stack.get(valueToClone) as T;
+  return cloneObject(
+    valueToClone,
+    keyToClone,
+    objectToClone,
+    stack,
+    parent,
+    cloneValue,
+  );
+}
+
+/** Clones a non-null object the customizer has already seen and passed on. */
+function cloneObject<T>(
+  valueToClone: any,
+  keyToClone: PropertyKey | undefined,
+  objectToClone: T,
+  stack: Map<any, any>,
+  parent: WithCustomizer.PathNode | undefined,
+  cloneValue: WithCustomizer<T> | undefined,
+): T {
+  const seen = stack.get(valueToClone);
+
+  if (seen !== undefined) return seen as T;
+
+  // The path node exists for the customizer alone.
+  const node: WithCustomizer.PathNode | undefined =
+    cloneValue === undefined
+      ? undefined
+      : { key: keyToClone, parent, state: undefined };
+
+  // Plain objects and arrays are nearly everything a clone sees; they skip
+  // the built-in checks below.
+  const proto = Object.getPrototypeOf(valueToClone);
+
+  if (proto === Object.prototype || proto === null) {
+    const result = proto === null ? Object.create(null) : {};
+
+    stack.set(valueToClone, result);
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      false,
+    );
+
+    return result as T;
   }
 
   if (Array.isArray(valueToClone)) {
     const result: any = new Array(valueToClone.length);
+
     stack.set(valueToClone, result);
 
     for (let i = 0; i < valueToClone.length; i++) {
-      result[i] = deepCloneWithImpl(
-        valueToClone[i],
-        i,
-        objectToClone,
-        stack,
-        cloneValue,
-      );
+      const item = valueToClone[i];
+      const cloned =
+        cloneValue === undefined
+          ? undefined
+          : cloneValue(item, i, objectToClone, stack, node);
+
+      result[i] =
+        cloned !== undefined
+          ? cloned
+          : typeof item !== 'object' || item === null
+            ? item
+            : cloneObject(item, i, objectToClone, stack, node, cloneValue);
     }
 
     // For RegExpArrays
@@ -84,6 +144,18 @@ export function deepCloneWithImpl<T>(
     return result as T;
   }
 
+  if (isBuffer(valueToClone)) {
+    return (valueToClone as any).subarray() as T;
+  }
+
+  if (
+    valueToClone instanceof ArrayBuffer ||
+    (typeof SharedArrayBuffer !== 'undefined' &&
+      valueToClone instanceof SharedArrayBuffer)
+  ) {
+    return valueToClone.slice(0) as T;
+  }
+
   if (valueToClone instanceof Map) {
     const result = new Map();
     stack.set(valueToClone, result);
@@ -91,7 +163,7 @@ export function deepCloneWithImpl<T>(
     for (const [key, value] of valueToClone) {
       result.set(
         key,
-        deepCloneWithImpl(value, key, objectToClone, stack, cloneValue),
+        deepCloneWithImpl(value, key, objectToClone, stack, node, cloneValue),
       );
     }
 
@@ -104,15 +176,18 @@ export function deepCloneWithImpl<T>(
 
     for (const value of valueToClone) {
       result.add(
-        deepCloneWithImpl(value, undefined, objectToClone, stack, cloneValue),
+        deepCloneWithImpl(
+          value,
+          undefined,
+          objectToClone,
+          stack,
+          node,
+          cloneValue,
+        ),
       );
     }
 
     return result as T;
-  }
-
-  if (isBuffer(valueToClone)) {
-    return (valueToClone as any).subarray() as T;
   }
 
   if (isTypedArray(valueToClone)) {
@@ -127,19 +202,12 @@ export function deepCloneWithImpl<T>(
         i,
         objectToClone,
         stack,
+        node,
         cloneValue,
       );
     }
 
     return result as T;
-  }
-
-  if (
-    valueToClone instanceof ArrayBuffer ||
-    (typeof SharedArrayBuffer !== 'undefined' &&
-      valueToClone instanceof SharedArrayBuffer)
-  ) {
-    return valueToClone.slice(0) as T;
   }
 
   if (valueToClone instanceof DataView) {
@@ -150,7 +218,15 @@ export function deepCloneWithImpl<T>(
     );
     stack.set(valueToClone, result);
 
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      true,
+    );
 
     return result as T;
   }
@@ -162,7 +238,15 @@ export function deepCloneWithImpl<T>(
     });
     stack.set(valueToClone, result);
 
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      true,
+    );
 
     return result as T;
   }
@@ -172,7 +256,15 @@ export function deepCloneWithImpl<T>(
     const result = new Blob([valueToClone], { type: valueToClone.type });
     stack.set(valueToClone, result);
 
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      true,
+    );
 
     return result as T;
   }
@@ -184,41 +276,71 @@ export function deepCloneWithImpl<T>(
     result.message = valueToClone.message;
     result.name = valueToClone.name;
     result.stack = valueToClone.stack;
-    result.cause = valueToClone.cause;
     result.constructor = valueToClone.constructor;
 
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
+    // `cause` is non-enumerable, so copyProperties never reaches it; without
+    // this it would be shared by reference with the original.
+    if (Object.hasOwn(valueToClone, 'cause')) {
+      result.cause = deepCloneWithImpl(
+        valueToClone.cause,
+        'cause',
+        objectToClone,
+        stack,
+        node,
+        cloneValue,
+      );
+    }
+
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      true,
+    );
 
     return result as T;
   }
 
-  if (valueToClone instanceof Boolean) {
-    const result = new Boolean(valueToClone.valueOf()) as T;
+  if (
+    valueToClone instanceof Boolean ||
+    valueToClone instanceof Number ||
+    valueToClone instanceof String
+  ) {
+    const result = new (valueToClone.constructor as any)(
+      valueToClone.valueOf(),
+    );
     stack.set(valueToClone, result);
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
-    return result;
+
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      true,
+    );
+
+    return result as T;
   }
 
-  if (valueToClone instanceof Number) {
-    const result = new Number(valueToClone.valueOf()) as T;
-    stack.set(valueToClone, result);
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
-    return result;
-  }
-
-  if (valueToClone instanceof String) {
-    const result = new String(valueToClone.valueOf()) as T;
-    stack.set(valueToClone, result);
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
-    return result;
-  }
-
-  if (typeof valueToClone === 'object' && isCloneableObject(valueToClone)) {
-    const result = Object.create(Object.getPrototypeOf(valueToClone));
+  if (isCloneableObject(valueToClone)) {
+    const result = Object.create(proto);
 
     stack.set(valueToClone, result);
 
-    copyProperties(result, valueToClone, objectToClone, stack, cloneValue);
+    copyProperties(
+      result,
+      valueToClone,
+      objectToClone,
+      stack,
+      node,
+      cloneValue,
+      false,
+    );
 
     return result as T;
   }
@@ -226,29 +348,81 @@ export function deepCloneWithImpl<T>(
   return valueToClone;
 }
 
+/**
+ * Copies own enumerable string and symbol properties. `guarded` targets are
+ * built-ins that already own properties of their own (a `String` wrapper's
+ * indexes, say), which are left alone when not writable.
+ */
 function copyProperties<T>(
   target: any,
   source: any,
-  objectToClone: T = target,
-  stack?: Map<any, any> | undefined,
-  cloneValue?: WithCustomizer<T>,
-) {
-  const keys = [...Object.keys(source), ...getSymbols(source)];
+  objectToClone: T,
+  stack: Map<any, any>,
+  parent: WithCustomizer.PathNode | undefined,
+  cloneValue: WithCustomizer<T> | undefined,
+  guarded: boolean,
+): void {
+  const keys = Object.keys(source);
 
   for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+    copyProperty(
+      target,
+      source,
+      keys[i],
+      objectToClone,
+      stack,
+      parent,
+      cloneValue,
+      guarded,
+    );
+  }
 
-    if (descriptor == null || descriptor.writable) {
-      target[key] = deepCloneWithImpl(
-        source[key],
-        key,
+  const symbols = Object.getOwnPropertySymbols(source);
+
+  for (let i = 0; i < symbols.length; i++) {
+    if (Object.prototype.propertyIsEnumerable.call(source, symbols[i])) {
+      copyProperty(
+        target,
+        source,
+        symbols[i],
         objectToClone,
         stack,
+        parent,
         cloneValue,
+        guarded,
       );
     }
   }
+}
+
+function copyProperty<T>(
+  target: any,
+  source: any,
+  key: PropertyKey,
+  objectToClone: T,
+  stack: Map<any, any>,
+  parent: WithCustomizer.PathNode | undefined,
+  cloneValue: WithCustomizer<T> | undefined,
+  guarded: boolean,
+): void {
+  if (guarded) {
+    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+
+    if (descriptor !== undefined && !descriptor.writable) return;
+  }
+
+  const value = source[key];
+  const cloned =
+    cloneValue === undefined
+      ? undefined
+      : cloneValue(value, key, objectToClone, stack, parent);
+
+  target[key] =
+    cloned !== undefined
+      ? cloned
+      : typeof value !== 'object' || value === null
+        ? value
+        : cloneObject(value, key, objectToClone, stack, parent, cloneValue);
 }
 
 function isCloneableObject(object: object) {
@@ -281,9 +455,4 @@ function isCloneableObject(object: object) {
       return false;
     }
   }
-}
-function getSymbols(object: any) {
-  return Object.getOwnPropertySymbols(object).filter(symbol =>
-    Object.prototype.propertyIsEnumerable.call(object, symbol),
-  );
 }

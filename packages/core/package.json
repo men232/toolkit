@@ -22,6 +22,7 @@
     "build": "obuild",
     "prepack": "obuild",
     "test": "vitest run --typecheck",
+    "bench": "vitest bench --run",
     "test:watch": "vitest watch --typecheck"
   },
   "exports": {

@@ -209,7 +209,7 @@ export function isEqual(a: unknown, b: unknown): boolean {
       return false;
     }
 
-    for (let i = length; i-- !== 0; ) {
+    for (let i = length; i-- !== 0;) {
       if (!isEqual(a[i], (b as any[])[i])) {
         return false;
       }
@@ -264,7 +264,7 @@ export function isEqual(a: unknown, b: unknown): boolean {
       return false;
     }
 
-    for (let i = byteLength; i-- !== 0; ) {
+    for (let i = byteLength; i-- !== 0;) {
       if (a.getUint8(i) !== (b as DataView).getUint8(i)) {
         return false;
       }
@@ -284,7 +284,7 @@ export function isEqual(a: unknown, b: unknown): boolean {
       return false;
     }
 
-    for (let i = length; i-- !== 0; ) {
+    for (let i = length; i-- !== 0;) {
       if ((a as Uint8Array)[i] !== (b as Uint8Array)[i]) {
         return false;
       }
@@ -302,7 +302,7 @@ export function isEqual(a: unknown, b: unknown): boolean {
 
   let key: any;
 
-  for (let i = aKeys.length; i-- !== 0; ) {
+  for (let i = aKeys.length; i-- !== 0;) {
     key = aKeys[i];
     if (
       !Object.hasOwn(b as any, key) ||
@@ -388,10 +388,6 @@ export function isPromise<T = void>(value: unknown): value is Promise<T> {
   );
 }
 
-var primitiveTypeofSet = Object.freeze(
-  new Set(['string', 'number', 'boolean', 'bigint', 'symbol', 'undefined']),
-);
-
 /**
  * Checks whether a value is a JavaScript primitive.
  *
@@ -399,7 +395,9 @@ var primitiveTypeofSet = Object.freeze(
  * @group Predicates
  */
 export const isPrimitive = (value: unknown): value is Primitive => {
-  return value === null || primitiveTypeofSet.has(typeof value);
+  var type = typeof value;
+
+  return value === null || (type !== 'object' && type !== 'function');
 };
 
 /**

@@ -1,6 +1,6 @@
 import { noop } from '@/is';
 import { describe, expect, it } from 'vitest';
-import { deepCloneWith } from './deepCloneWith';
+import { type WithCustomizer, deepCloneWith } from './deepCloneWith';
 
 describe('deepCloneWith', () => {
   it('should clone primitive values', () => {
@@ -156,5 +156,74 @@ describe('deepCloneWith', () => {
     const cloned = deepCloneWith(obj, customizer);
 
     expect(cloned).toEqual({ a: 2, b: { c: 4, d: { e: 6 } } });
+  });
+
+  it('clones the Error cause instead of sharing it', () => {
+    const cause = { a: 1 };
+    const cloned = deepCloneWith({ err: new Error('x', { cause }) }, noop);
+    expect(cloned.err.cause).toEqual(cause);
+    expect(cloned.err.cause).not.toBe(cause);
+  });
+
+  it('returns objects with a user-defined Symbol.toStringTag by reference', () => {
+    class Tagged {
+      value = 1;
+      get [Symbol.toStringTag]() {
+        return 'Tagged';
+      }
+    }
+    const original = new Tagged();
+    const cloned = deepCloneWith({ tagged: original }, noop);
+    expect(cloned.tagged).toBe(original);
+  });
+
+  it('returns exotic builtins such as Promise by reference', () => {
+    const promise = Promise.resolve(1);
+    const cloned = deepCloneWith({ promise }, noop);
+    expect(cloned.promise).toBe(promise);
+  });
+
+  it('gives Set members a keyless node and Map entries their key', () => {
+    const paths: string[] = [];
+    const customizer: WithCustomizer = (value, key, _obj, _stack, parent) => {
+      if (typeof value !== 'number') return;
+
+      const segments: string[] = [String(key)];
+
+      for (let node = parent; node; node = node.parent) {
+        segments.unshift(node.key === undefined ? '<none>' : String(node.key));
+      }
+
+      paths.push(segments.join('.'));
+    };
+
+    deepCloneWith(
+      { s: new Set([{ a: 1 }]), m: new Map([['k', { b: 2 }]]) },
+      customizer,
+    );
+
+    expect(paths).toEqual(['<none>.s.<none>.a', '<none>.m.k.b']);
+  });
+
+  it('passes the parent chain of the value as the fifth customizer argument', () => {
+    const paths: string[] = [];
+    const customizer: WithCustomizer = (value, key, _obj, _stack, parent) => {
+      if (typeof value !== 'number') return;
+
+      const segments: PropertyKey[] = [key!];
+
+      for (let node = parent; node; node = node.parent) {
+        if (node.key !== undefined) segments.unshift(node.key);
+      }
+
+      paths.push(segments.map(String).join('.'));
+    };
+
+    deepCloneWith(
+      { a: { b: 1, c: [{ d: 2 }], e: new Map([['f', 3]]) } },
+      customizer,
+    );
+
+    expect(paths).toEqual(['a.b', 'a.c.0.d', 'a.e.f']);
   });
 });
