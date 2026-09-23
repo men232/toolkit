@@ -28,7 +28,7 @@ import { createTimeoutError } from './createTimeoutError';
  * @param promiseOrCallback - The asynchronous operation to execute. This can either be:
  *   - A `Promise` that will be awaited until completion, or
  *   - A function that takes an `AbortSignal` and returns a `Promise` or a value.
- * @param timeoutError - The error that will be thrown if the timeout is reached before the promise or callback resolves.
+ * @param [timeoutError] - The error that will be thrown if the timeout is reached before the promise or callback resolves.
  *   (Defaults to `AppError(408)` if not provided).
  * @returns A `Promise` that resolves with the result of the provided `promiseOrCallback`, or rejects with the `timeoutError` if the timeout occurs.
  *
@@ -39,7 +39,7 @@ import { createTimeoutError } from './createTimeoutError';
 export function timeout<T = any>(
   ms: number,
   promiseOrCallback: Promise<T> | ((abortSignal: AbortSignal) => Awaitable<T>),
-  timeoutError: unknown,
+  timeoutError?: unknown,
 ): Promise<T> {
   const abortController = new AbortController();
 
