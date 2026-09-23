@@ -1,49 +1,53 @@
 import { assert } from './assert';
-import { env } from './env';
+import { createEnvParser } from './env/createEnvParser';
+import { getEnvTarget } from './env/getEnvTarget';
 import { isString, noop } from './is';
 import { sprintf } from './str/sprintf';
 import type { Logger } from './types';
 
 export type LogLevel = Exclude<keyof Logger, 'extend'>;
 
-const LEVEL_NAME_TO_NUM: Record<LogLevel, number> = {
+/**
+ * Log levels and their severity. A message is written when its level is at
+ * least as severe as the current one, see {@link setLoggerLevel}.
+ *
+ * @example
+ * if (LOG_LEVELS[getLoggerLevel()] <= LOG_LEVELS.debug) {
+ *   // expensive debug-only diagnostics
+ * }
+ *
+ * @group Utility Functions
+ */
+export const LOG_LEVELS = Object.freeze({
   debug: 0,
   log: 1,
   info: 2,
   warn: 3,
   error: 4,
-};
+} as const) satisfies Readonly<Record<LogLevel, number>>;
 
-const LEVEL_NUM_TO_NAME: Record<number, LogLevel> = {
-  0: 'debug',
-  1: 'log',
-  2: 'info',
-  3: 'warn',
-  4: 'error',
-};
-
-const LOG_LEVEL = env.string('LOG_LEVEL', 'info');
+const LOG_LEVEL_NAMES = Object.keys(LOG_LEVELS) as readonly LogLevel[];
 
 let currentLogLevel: number =
-  LOG_LEVEL in LEVEL_NAME_TO_NUM
-    ? LEVEL_NAME_TO_NUM[LOG_LEVEL as LogLevel]
-    : LEVEL_NAME_TO_NUM.log;
+  LOG_LEVELS[
+    createEnvParser(getEnvTarget()).oneOf('LOG_LEVEL', LOG_LEVEL_NAMES, 'info')
+  ];
 
 /**
  * Set global log level.
  * @group Utility Functions
  */
 export const setLoggerLevel = (level: LogLevel) => {
-  assert.number(LEVEL_NAME_TO_NUM[level], `Invalid log level: ${level}`);
-  currentLogLevel = LEVEL_NAME_TO_NUM[level];
+  assert.number(LOG_LEVELS[level], `Invalid log level: ${level}`);
+  currentLogLevel = LOG_LEVELS[level];
 };
 
 /**
- * Set global log level.
+ * Get global log level.
  * @group Utility Functions
  */
 export const getLoggerLevel = (): LogLevel => {
-  return LEVEL_NUM_TO_NAME[currentLogLevel];
+  return LOG_LEVEL_NAMES.find(name => LOG_LEVELS[name] === currentLogLevel)!;
 };
 
 /**
@@ -68,7 +72,7 @@ export const logger = (...baseArgs: any[]): Logger => {
   }
 
   const writeLog = (level: LogLevel, ...[pattern, ...args]: any[]) => {
-    const levelNum = LEVEL_NAME_TO_NUM[level];
+    const levelNum = LOG_LEVELS[level];
 
     if (levelNum < currentLogLevel) {
       return;
