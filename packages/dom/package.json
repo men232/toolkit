@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/dom",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Utility functions to simplify animations, clipboard operations, and smooth scrolling.",
   "keywords": [
     "dom",

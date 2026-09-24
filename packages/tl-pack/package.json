@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/tl-pack",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Another implementation of binary serialization.",
   "keywords": [
     "tl",
