@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/search-query-language",
-  "version": "0.4.10",
+  "version": "0.5.0",
   "description": "Converts human-readable query strings into structured representations.",
   "keywords": [
     "search",

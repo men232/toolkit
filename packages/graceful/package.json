@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/graceful",
-  "version": "0.4.10",
+  "version": "0.5.0",
   "description": "Utility to manage application shutdown.",
   "keywords": [
     "graceful",
