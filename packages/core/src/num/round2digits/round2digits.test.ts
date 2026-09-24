@@ -17,7 +17,8 @@ describe('round2digits', () => {
 
   // Test rounding to integer (0 decimal places)
   it('should round a number to an integer when 0 digits are specified', () => {
-    expect(round2digits(3.789, 0)).toBe(3);
+    expect(round2digits(3.789, 0)).toBe(4);
+    expect(round2digits(3000000000.5, 0)).toBe(3000000001);
   });
 
   // Test default behavior when no second argument is provided (round to 2 decimal places)

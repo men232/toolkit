@@ -26,7 +26,7 @@
  */
 export function round2digits(value: number, digits: number = 2) {
   if (digits === 0) {
-    return value << 0;
+    return Math.round(value);
   }
 
   // @ts-expect-error
