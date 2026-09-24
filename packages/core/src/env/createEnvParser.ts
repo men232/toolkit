@@ -39,58 +39,82 @@ export type EnvValueParser<T> = (value: string) => T | undefined;
  */
 export interface EnvParser {
   /**
-   * NODE_ENV is `development`
+   * `true` when `NODE_ENV`, or Vite `MODE` without it, is `development`.
    */
   readonly isDevelopment: boolean;
 
   /**
-   * NODE_ENV is `production`
+   * `true` when `NODE_ENV`, or Vite `MODE` without it, is `production`.
    */
   readonly isProduction: boolean;
 
   /**
-   * NODE_ENV is `stage`
+   * `true` when `NODE_ENV`, or Vite `MODE` without it, is `stage`.
    */
   readonly isStage: boolean;
 
   /**
-   * NODE_ENV is `test`
+   * `true` when `NODE_ENV`, or Vite `MODE` without it, is `test`.
    */
   readonly isTest: boolean;
 
   /**
-   * Returns `true` when environment key has set to `"true"`
+   * Reads a boolean: `"true"` or `"false"`.
    *
-   * Returns `defaultValue` when key is not defined
+   * @param key - Environment variable name.
+   * @param [defaultValue=false] - Returned when the value is missing, empty or invalid.
+   * @returns The parsed boolean or `defaultValue`.
+   *
+   * @example
+   * const DEBUG = env.bool('DEBUG');
    */
   bool(key: string, defaultValue?: boolean): boolean;
 
   /**
-   * Returns `number` when environment key has correct number value.
+   * Reads a safe integer.
    *
-   * Returns `defaultValue` when environment key is not defined or has invalid number value
+   * @param key - Environment variable name.
+   * @param [defaultValue=0] - Returned when the value is missing, empty or invalid.
+   * @returns The parsed integer or `defaultValue`.
+   *
+   * @example
+   * const PORT = env.int('PORT', 3000);
    */
   int(key: string, defaultValue?: number): number;
 
   /**
-   * Returns `number` when environment key has correct number value.
+   * Reads a number, including `Infinity`.
    *
-   * Returns `defaultValue` when environment key is not defined or has invalid number value
+   * @param key - Environment variable name.
+   * @param [digits] - Decimal places to round to, applied to `defaultValue` as well.
+   * @param [defaultValue=0] - Returned when the value is missing, empty or invalid.
+   * @returns The parsed number or `defaultValue`, rounded to `digits` when given.
+   *
+   * @example
+   * const RATIO = env.decimal('RATIO', 2, 0.5);
    */
   decimal(key: string, digits?: number, defaultValue?: number): number;
 
   /**
-   * Returns `string` when environment key has defined.
+   * Reads a raw string. The value is not trimmed and an empty value is returned as is.
    *
-   * Returns `defaultValue` when environment key is not defined
+   * @param key - Environment variable name.
+   * @param [defaultValue=''] - Returned when the key is missing.
+   * @returns The raw value or `defaultValue`.
+   *
+   * @example
+   * const API_KEY = env.string('API_KEY', 'test_key');
    */
   string(key: string, defaultValue?: string): string;
 
   /**
-   * Returns `array` of parsed comma-separated environment value. Items that
-   * fail to parse are skipped with a warning.
+   * Reads a comma-separated list. Empty items are dropped, items that fail to
+   * parse are skipped with a warning.
    *
-   * Returns `defaultValue` when key is not defined or no item could be parsed
+   * @param key - Environment variable name.
+   * @param itemType - Item type name, allowed values or item parser.
+   * @param [defaultValue=[]] - Returned when the key is missing or no item could be parsed.
+   * @returns The parsed items, `[]` when the value has no items (e.g. `""` or `" , "`), or `defaultValue`.
    *
    * @example
    * env.list('ROLES', 'string');                        // string[]
@@ -111,17 +135,25 @@ export interface EnvParser {
   list<T>(key: string, parser: EnvValueParser<T>, defaultValue?: T[]): T[];
 
   /**
-   * Returns parsed json value.
+   * Reads a JSON value.
    *
-   * Returns `defaultValue` when key is not defined or invalid json value
+   * @param key - Environment variable name.
+   * @param [defaultValue=null] - Returned when the value is missing, empty or invalid.
+   * @returns The parsed value or `defaultValue`.
+   *
+   * @example
+   * const CREDS = env.json<{ token: string }>('CREDS');
    */
+  json<T = any>(key: string, defaultValue: T): T;
   json<T = any>(key: string, defaultValue?: T | null): T | null;
 
   /**
-   * Returns the environment value when it is one of `allowedValues`, typed as their
-   * union.
+   * Reads one of `allowedValues`, typed as their union.
    *
-   * Returns `defaultValue` when key is not defined or the value is not listed
+   * @param key - Environment variable name.
+   * @param allowedValues - Accepted values.
+   * @param [defaultValue] - Returned when the value is missing, empty or not listed.
+   * @returns The matched value or `defaultValue`.
    *
    * @example
    * const level = env.oneOf('LOG_LEVEL', ['debug', 'info', 'warn'], 'info');
@@ -134,18 +166,19 @@ export interface EnvParser {
   ): T[number] | D;
 
   /**
-   * Returns the result of `parser` applied to the environment value.
+   * Reads a value through a custom parser.
    *
-   * Returns `defaultValue` when key is not defined, or when `parser` returns
-   * `undefined` or throws
+   * @param key - Environment variable name.
+   * @param parser - Signals failure by returning `undefined` or throwing.
+   * @param [defaultValue] - Returned when the value is missing, empty or fails to parse.
+   * @returns The parsed value or `defaultValue`.
    *
    * @example
    * const url = env.parse('DATABASE_URL', value => new URL(value));
-   * const port = env.parse('PORT', Number, 3000);
    */
   parse<T, D = undefined>(
     key: string,
-    parser: (value: string) => T | undefined,
+    parser: EnvValueParser<T>,
     defaultValue?: D,
   ): T | D;
 }
@@ -190,15 +223,7 @@ export function createEnvParser(
     return value == null ? undefined : String(value);
   };
 
-  /**
-   * An empty value is how `.env` templates spell "unset", so only non-empty
-   * values that fail to parse are worth a warning.
-   */
-  var warnInvalid = (type: string, key: string, value: string) => {
-    if (value) {
-      log?.warn('Failed to parse env variable as "%s": %s', type, key);
-    }
-  };
+  var nodeEnv = () => read('NODE_ENV')?.trim() || read('MODE')?.trim();
 
   /**
    * Shared read-parse-fallback path. `parser` signals failure by returning
@@ -210,16 +235,16 @@ export function createEnvParser(
     parser: EnvValueParser<T>,
     defaultValue: D,
   ): T | D => {
-    var value = read(key);
+    var value = read(key)?.trim();
 
-    if (value === undefined) {
+    if (!value) {
       return defaultValue;
     }
 
     var parsed = tryParse(parser, value);
 
     if (parsed === undefined) {
-      warnInvalid(type, key, value);
+      log?.warn('Failed to parse env variable as "%s": %s', type, key);
       return defaultValue;
     }
 
@@ -228,19 +253,19 @@ export function createEnvParser(
 
   return Object.freeze({
     get isDevelopment() {
-      return targetObject.NODE_ENV === 'development';
+      return nodeEnv() === 'development';
     },
 
     get isProduction() {
-      return targetObject.NODE_ENV === 'production';
+      return nodeEnv() === 'production';
     },
 
     get isStage() {
-      return targetObject.NODE_ENV === 'stage';
+      return nodeEnv() === 'stage';
     },
 
     get isTest() {
-      return targetObject.NODE_ENV === 'test';
+      return nodeEnv() === 'test';
     },
 
     bool(key: string, defaultValue: boolean = false): boolean {
@@ -275,9 +300,7 @@ export function createEnvParser(
     ): any[] {
       var rawValue = read(key);
 
-      // No outer trim: blank input yields only skipped items and falls back
-      // to `defaultValue` below, so trimming the whole string is wasted work.
-      if (!rawValue) {
+      if (rawValue === undefined) {
         return defaultValue;
       }
 
@@ -295,6 +318,7 @@ export function createEnvParser(
         parse = createOneOfParser(itemType);
       }
 
+      var hasItems = false;
       var items = filterMap<string, any>(
         rawValue.split(','),
         (value, skip, idx) => {
@@ -304,6 +328,7 @@ export function createEnvParser(
             return skip;
           }
 
+          hasItems = true;
           var parsedValue = tryParse(parse, trimmedValue);
 
           if (parsedValue === undefined) {
@@ -321,7 +346,7 @@ export function createEnvParser(
         },
       );
 
-      return items.length ? items : defaultValue;
+      return items.length || !hasItems ? items : defaultValue;
     },
 
     json<T = any>(key: string, defaultValue: T | null = null): T | null {
@@ -343,7 +368,7 @@ export function createEnvParser(
 
     parse<T, D = undefined>(
       key: string,
-      parser: (value: string) => T | undefined,
+      parser: EnvValueParser<T>,
       defaultValue?: D,
     ): T | D {
       return parseValue(key, 'custom', parser, defaultValue as D);
@@ -387,12 +412,12 @@ function parseBoolean(value: string): boolean | undefined {
 }
 
 function _parseInt(value: string): number | undefined {
-  var parsed = parseInt(value);
-  return isNumber(parsed) ? parsed : undefined;
+  var parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
 function parseDecimal(value: string, digits?: number): number | undefined {
-  var parsed = parseFloat(value);
+  var parsed = Number(value);
 
   if (!isNumber(parsed)) {
     return undefined;

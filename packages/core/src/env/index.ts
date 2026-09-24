@@ -31,6 +31,12 @@ export * from './createEnvParser';
  * // env.json
  * const GOOGLE_CREDS = env.json<{ projectId: string; token: string; }>('GOOGLE_CREDS');
  *
+ * // env.oneOf
+ * const LOG_LEVEL = env.oneOf('LOG_LEVEL', ['debug', 'info', 'warn'], 'info');
+ *
+ * // env.parse
+ * const DATABASE_URL = env.parse('DATABASE_URL', value => new URL(value));
+ *
  * @group Environment
  */
 export const env = createEnvParser(getEnvTarget(), { logger: logger('env') });

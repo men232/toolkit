@@ -26,6 +26,7 @@ const ENV: Record<string, string> = {
   list_string_correct: 'word1,word2,word3, word4',
   list_empty: '',
   list_blank: '   ',
+  list_commas: ' , , ',
 };
 
 /** Boolean */
@@ -63,10 +64,39 @@ test('env (int = correct)', () => {
   expect(env.int('int_correct')).toBe(150);
 });
 
-test('env (int = with decimal)', () => {
+test('env (int = with decimal / default)', () => {
   const env = createEnvParser(ENV);
 
-  expect(env.int('int_decimal')).toBe(150);
+  expect(env.int('int_decimal', 7)).toBe(7);
+});
+
+test('env (int = strict)', () => {
+  const env = createEnvParser({
+    A: '42abc',
+    B: '1e3',
+    C: '1_000',
+    D: '9007199254740993',
+  });
+
+  expect(env.int('A', 7)).toBe(7);
+  expect(env.int('B', 7)).toBe(1000);
+  expect(env.int('C', 7)).toBe(7);
+  expect(env.int('D', 7)).toBe(7);
+  expect(env.list('B', 'int')).toStrictEqual([1000]);
+});
+
+test('env (scalar = trimmed)', () => {
+  const env = createEnvParser({
+    BOOL: ' true ',
+    INT: ' 42 ',
+    LEVEL: ' info ',
+    STR: ' x ',
+  });
+
+  expect(env.bool('BOOL')).toBe(true);
+  expect(env.int('INT')).toBe(42);
+  expect(env.oneOf('LEVEL', ['info'])).toBe('info');
+  expect(env.string('STR')).toBe(' x ');
 });
 
 test('env (int = undefined)', () => {
@@ -200,16 +230,30 @@ test('env (list = empty value)', () => {
   expect(env.list('list_empty', 'string')).toStrictEqual([]);
 });
 
-test('env (list = empty value / default)', () => {
+test('env (list = empty value overrides default)', () => {
   const env = createEnvParser(ENV);
 
-  expect(env.list('list_empty', 'string', ['ADMIN'])).toStrictEqual(['ADMIN']);
+  expect(env.list('list_empty', 'string', ['ADMIN'])).toStrictEqual([]);
 });
 
-test('env (list = blank value / default)', () => {
+test('env (list = blank value overrides default)', () => {
   const env = createEnvParser(ENV);
 
-  expect(env.list('list_blank', 'string', ['ADMIN'])).toStrictEqual(['ADMIN']);
+  expect(env.list('list_blank', 'string', ['ADMIN'])).toStrictEqual([]);
+});
+
+test('env (list = commas only overrides default)', () => {
+  const env = createEnvParser(ENV);
+
+  expect(env.list('list_commas', 'string', ['ADMIN'])).toStrictEqual([]);
+});
+
+test('env (list = missing key / default)', () => {
+  const env = createEnvParser(ENV);
+
+  expect(env.list('list_missing', 'string', ['ADMIN'])).toStrictEqual([
+    'ADMIN',
+  ]);
 });
 
 /** NODE_ENV flags */
@@ -221,6 +265,22 @@ test('env (isStage)', () => {
   expect(env.isDevelopment).toBe(false);
   expect(env.isProduction).toBe(false);
   expect(env.isTest).toBe(false);
+});
+
+test('env (flags = Vite MODE)', () => {
+  const env = createEnvParser({ MODE: 'stage' });
+
+  expect(env.isStage).toBe(true);
+  expect(env.isDevelopment).toBe(false);
+  expect(createEnvParser({ NODE_ENV: '', MODE: 'stage' }).isStage).toBe(true);
+  expect(createEnvParser({ NODE_ENV: ' test ' }).isTest).toBe(true);
+});
+
+test('env (flags = NODE_ENV over MODE)', () => {
+  const env = createEnvParser({ NODE_ENV: 'production', MODE: 'stage' });
+
+  expect(env.isProduction).toBe(true);
+  expect(env.isStage).toBe(false);
 });
 
 /** Prototype keys are not environment values */
@@ -305,6 +365,35 @@ test('env (no logger = silent)', () => {
 
 /** Non-finite decimals */
 
+test('env (decimal = strict)', () => {
+  const env = createEnvParser({ A: '1.5abc', B: '1.5e1' });
+
+  expect(env.decimal('A', undefined, 7)).toBe(7);
+  expect(env.decimal('B')).toBe(15);
+  expect(env.list('A', 'decimal')).toStrictEqual([]);
+});
+
+test('env (json = default typed)', () => {
+  const env = createEnvParser({});
+
+  expectTypeOf(env.json<{ a: number }>('X')).toEqualTypeOf<{
+    a: number;
+  } | null>();
+  expectTypeOf(env.json<{ a: number }>('X', null)).toEqualTypeOf<{
+    a: number;
+  } | null>();
+  expectTypeOf(env.json<{ a: number }>('X', { a: 1 })).toEqualTypeOf<{
+    a: number;
+  }>();
+  expectTypeOf(
+    env.json<{ a: number } | null>('X', null as { a: number } | null),
+  ).toEqualTypeOf<{ a: number } | null>();
+  expectTypeOf(
+    env.json<{ a: number }>('X', null as { a: number } | null),
+  ).toEqualTypeOf<{ a: number } | null>();
+  expect(env.json('X', { a: 1 })).toStrictEqual({ a: 1 });
+});
+
 test('env (decimal = Infinity)', () => {
   const env = createEnvParser({
     inf: 'Infinity',
@@ -364,7 +453,7 @@ test('getEnvTarget (node = process.env)', () => {
 test('env (invalid scalar values warn)', () => {
   const warn = vi.fn();
   const env = createEnvParser(
-    { BOOL: 'yes', INT: 'abc', DEC: 'abc', EMPTY: '' },
+    { BOOL: 'yes', INT: 'abc', DEC: 'abc', EMPTY: '', BLANK: '   ' },
     { logger: { ...noopLogger, warn } },
   );
 
@@ -382,6 +471,8 @@ test('env (invalid scalar values warn)', () => {
 
   expect(env.int('EMPTY', 7)).toBe(7);
   expect(env.bool('EMPTY', true)).toBe(true);
+  expect(env.int('BLANK', 7)).toBe(7);
+  expect(env.parse('EMPTY', Number, 3000)).toBe(3000);
   expect(env.int('MISSING', 7)).toBe(7);
   expect(warn).not.toHaveBeenCalled();
 });
