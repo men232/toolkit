@@ -64,12 +64,32 @@ export async function withTimeout<T>(
   run: () => Promise<T>,
   opts: WithTimeoutOptions,
 ): Promise<T> {
+  const task = run();
+  const controller = new AbortController();
+  const lift = () => controller.abort();
+  const cleanup = () => {
+    opts.signal?.removeEventListener('abort', lift);
+    controller.abort();
+  };
+
+  if (opts.signal?.aborted) lift();
+  opts.signal?.addEventListener('abort', lift, { once: true });
+
   return Promise.race([
-    run(),
-    delay(opts.timeoutMs, opts).then(() => {
-      if (opts.signal?.aborted) return new Promise<never>(noop);
+    task,
+    delay(opts.timeoutMs, { signal: controller.signal }).then(() => {
+      if (controller.signal.aborted) return new Promise<never>(noop);
 
       return Promise.reject(opts.timeoutError || createTimeoutError());
     }),
-  ]);
+  ]).then(
+    value => {
+      cleanup();
+      return value;
+    },
+    error => {
+      cleanup();
+      throw error;
+    },
+  );
 }
