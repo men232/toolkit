@@ -45,4 +45,19 @@ describe('round2digits', () => {
   it('should round a number to the specified decimal places', () => {
     expect(round2digits(0.123456789, 5)).toBe(0.12346);
   });
+  it('handles values in exponent notation', () => {
+    expect(round2digits(1e-7, 2)).toBe(0);
+    expect(round2digits(1.5e-7, 7)).toBe(2e-7);
+    expect(round2digits(1.5e21, 2)).toBe(1.5e21);
+  });
+
+  it('handles negative digits', () => {
+    expect(round2digits(1234.5678, -2)).toBe(1200);
+  });
+
+  it('returns non-finite values as is', () => {
+    expect(round2digits(Infinity)).toBe(Infinity);
+    expect(round2digits(-Infinity)).toBe(-Infinity);
+    expect(round2digits(NaN)).toBe(NaN);
+  });
 });

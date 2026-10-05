@@ -25,10 +25,32 @@
  * @group Numbers
  */
 export function round2digits(value: number, digits: number = 2) {
-  if (digits === 0) {
+  if (digits === 0 || !Number.isFinite(value)) {
     return Math.round(value);
   }
 
-  // @ts-expect-error
-  return Number(Math.round(value + 'e' + digits) + 'e-' + digits);
+  const str = String(value);
+
+  if (str.indexOf('e') === -1) {
+    const result = Number(
+      Math.round(Number(str + 'e' + digits)) + 'e' + -digits,
+    );
+
+    if (result === result) return result;
+  }
+
+  return scaleByPow10(Math.round(scaleByPow10(value, digits)), -digits);
+}
+
+function scaleByPow10(value: number, by: number): number {
+  const str = String(value);
+  const eIndex = str.indexOf('e');
+
+  if (eIndex === -1) {
+    return Number(str + 'e' + by);
+  }
+
+  return Number(
+    str.slice(0, eIndex) + 'e' + (Number(str.slice(eIndex + 1)) + by),
+  );
 }
