@@ -1,28 +1,42 @@
-import { isNumber } from '@/is';
-
-const rndCharacters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-const charactersLength = rndCharacters.length;
+var DEFAULT_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+var DEFAULT_ALPHABET_LENGTH = DEFAULT_ALPHABET.length;
 
 /**
- * Generates a random string of the specified length using characters from a predefined set.
- * The characters used in the generated string include lowercase letters (a-z) and digits (0-9).
+ * Generates a random string of the specified length using characters from the given alphabet.
+ * By default the alphabet is lowercase letters (a-z) and digits (0-9).
  *
- * @param {number} length - The length of the random string to generate. Must be a positive integer.
+ * @param {number} length - The length of the random string to generate. Fractional values are floored.
+ * @param {string} [alphabet='abcdefghijklmnopqrstuvwxyz0123456789'] - Characters to pick from.
  *
- * @returns {string} A random string of the specified length, composed of characters from 'a-z' and '0-9'.
+ * @returns {string} A random string of the specified length, or an empty string for an empty alphabet.
  *
  * @example
  * randomString(8);  // e.g. 'a1b2c3d4'
  * randomString(12); // e.g. '3f6g7h8i9j0k'
- * randomString(5);  // e.g. '1a2b3'
+ * randomString(6, '0123456789'); // e.g. '402817'
+ * randomString(4, 'AB'); // e.g. 'ABBA'
  *
  * @group Strings
  */
-export function randomString(length: number): string {
-  let str = '';
-  let num = isNumber(length) ? Math.max(0, length) : 0;
-  while (num--) {
-    str += rndCharacters[(charactersLength * Math.random()) | 0];
+export function randomString(length: number, alphabet?: string): string {
+  var str = '';
+  var num = Number.isFinite(length) ? Math.max(0, Math.floor(length)) : 0;
+
+  if (alphabet === undefined) {
+    while (num--) {
+      str += DEFAULT_ALPHABET[(DEFAULT_ALPHABET_LENGTH * Math.random()) | 0];
+    }
+
+    return str;
   }
+
+  const size = alphabet.length;
+
+  if (size === 0) return str;
+
+  while (num--) {
+    str += alphabet[(size * Math.random()) | 0];
+  }
+
   return str;
 }
