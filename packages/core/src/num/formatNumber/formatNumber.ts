@@ -50,9 +50,16 @@ export function formatNumber(
     return formatNumber(parseFloat(value), format);
   }
 
-  if (!isNumber(value)) return '';
+  if (!isNumber(value) || !Number.isFinite(value)) return '';
 
-  const [integerPart, decimalPart] = value.toFixed(2).split('.');
+  let fixed =
+    Math.abs(value) < 1e21
+      ? value.toFixed(2)
+      : BigInt(value).toString() + '.00';
+
+  if (fixed === '-0.00') fixed = '0.00';
+
+  const [integerPart, decimalPart] = fixed.split('.');
 
   let result = String(integerPart).replace(regExp, format.thousands);
 

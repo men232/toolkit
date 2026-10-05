@@ -15,4 +15,17 @@ describe('formatNumber', () => {
   test('invalid value', () => {
     expect(formatNumber('test', { decimal: '|', thousands: '_' })).toBe('');
   });
+  test('numbers from 1e21 are not printed in exponent notation', () => {
+    expect(formatNumber(1e21)).toBe('1,000,000,000,000,000,000,000');
+    expect(formatNumber(-1.5e22)).toBe('-15,000,000,000,000,000,000,000');
+  });
+
+  test('infinity', () => {
+    expect(formatNumber(Infinity)).toBe('');
+    expect(formatNumber(-Infinity)).toBe('');
+  });
+
+  test('negative value rounded to zero', () => {
+    expect(formatNumber(-0.004)).toBe('0');
+  });
 });
