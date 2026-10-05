@@ -49,6 +49,7 @@ export interface BaseX {
 export function basex(alphabet: string): BaseX {
   var BASE = BigInt(alphabet.length);
   var ZERO_CHAR = alphabet[0];
+  var CHARS_PER_BYTE = Math.max(8 / Math.log2(alphabet.length), 1);
   var CHAR_INDEX: Record<string, number> = {};
 
   for (let idx = 0; idx < alphabet.length; idx++) {
@@ -65,7 +66,9 @@ export function basex(alphabet: string): BaseX {
   function encode(input: Uint8Array): string {
     var value = 0n;
     var i = 0;
-    var result: string[] = new Array((((input.length * 8) / 5) | 0) + 1);
+    var result: string[] = new Array(
+      Math.ceil(input.length * CHARS_PER_BYTE) + 1,
+    );
     var pos = result.length;
     var leadingZeros = 0;
     var rem = 0n;
@@ -104,7 +107,9 @@ export function basex(alphabet: string): BaseX {
     for (i = leadingZeros; i < input.length; i++) {
       char = input[i];
       index = CHAR_INDEX[char];
-      if (index === undefined) throw new Error('Invalid base62 character');
+      if (index === undefined) {
+        throw new Error('Invalid character "' + char + '" for the alphabet');
+      }
       value = value * BASE + BigInt(index);
     }
 
