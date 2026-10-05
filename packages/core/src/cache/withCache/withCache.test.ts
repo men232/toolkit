@@ -89,4 +89,70 @@ describe('withCache', () => {
 
     expect(called).toBe(1);
   });
+  test('should not mix up arguments of different types', () => {
+    let called = 0;
+    const fn = withCache((...args: unknown[]) => {
+      called++;
+      return args;
+    });
+
+    const variants: unknown[][] = [
+      [1],
+      ['1'],
+      [true],
+      ['true'],
+      [null],
+      ['null'],
+      [undefined],
+      ['undefined'],
+      [1n],
+      [[1]],
+      [],
+      [''],
+    ];
+
+    for (const args of variants) {
+      expect(fn(...args)).toStrictEqual(args);
+    }
+
+    expect(called).toBe(variants.length);
+  });
+
+  test('should not mix up arguments containing separators', () => {
+    let called = 0;
+    const fn = withCache((...args: unknown[]) => {
+      called++;
+      return args;
+    });
+
+    const variants: unknown[][] = [
+      ['a_b'],
+      ['a', 'b'],
+      [['a/b']],
+      [['a', 'b']],
+      [['a'], 'b'],
+    ];
+
+    for (const args of variants) {
+      expect(fn(...args)).toStrictEqual(args);
+    }
+
+    expect(called).toBe(variants.length);
+  });
+
+  test('should distinguish dates by milliseconds', () => {
+    const fn = withCache((date: Date) => date.getTime());
+
+    expect(fn(new Date(1000))).toBe(1000);
+    expect(fn(new Date(1001))).toBe(1001);
+    expect(fn(new Date(1001))).toBe(1001);
+  });
+
+  test('should distinguish functions with the same source', () => {
+    const make = (value: number) => () => value;
+    const fn = withCache((cb: () => number) => cb());
+
+    expect(fn(make(1))).toBe(1);
+    expect(fn(make(2))).toBe(2);
+  });
 });

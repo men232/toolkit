@@ -1,5 +1,5 @@
 import { type WithCachePointer, isWithCache } from '../createWithCache';
-import { type ArgToKeyOptions, argToKey } from '../createWithCache/utils';
+import { type ArgToKeyOptions, argsToKey } from '../createWithCache/utils';
 import { cache } from '../withCache';
 import { cacheBucket } from '../withCacheBucket';
 import { cacheFixed } from '../withCacheFixed';
@@ -26,7 +26,7 @@ export function dropCache(
     argToKeyOptions = cachePointer.$cache.argToKeyOptions;
   }
 
-  const cacheKey = args.map(v => argToKey(v, argToKeyOptions)).join('_');
+  const cacheKey = argsToKey(args, argToKeyOptions);
 
   if (isWithCache(cachePointer)) {
     if (cachePointer.$cache.getBucket().has(cacheKey)) {

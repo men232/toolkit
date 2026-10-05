@@ -1,5 +1,5 @@
 import { arrayable } from '@/array';
-import { argToKey } from '@/cache/createWithCache/utils';
+import { argsToKey } from '@/cache/createWithCache/utils';
 import type { Arrayable } from '@/types';
 
 type ResolverFn<R extends Promise<any>, T = any, A extends any[] = any[]> = (
@@ -27,16 +27,7 @@ type GetCacheKey<T = any, A extends any[] = any[]> = (
 
 var KEY_OPTIONS = { objectStrategy: 'json' } as const;
 
-var computeArgsKey = (args: any[]): string => {
-  var key = '';
-
-  for (var i = 0; i < args.length; i++) {
-    if (i) key += '_';
-    key += argToKey(args[i], KEY_OPTIONS);
-  }
-
-  return key;
-};
+var computeArgsKey = (args: any[]): string => argsToKey(args, KEY_OPTIONS);
 
 var stringifyArgs = (...args: any[]): string => computeArgsKey(args);
 

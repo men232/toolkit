@@ -1,7 +1,7 @@
 import { isPromise } from '@/is';
 import { def } from '@/object/def';
 import type { AnyFunction } from '@/types';
-import { type ArgToKeyOptions, SYM_WITH_CACHE, argToKey } from './utils';
+import { type ArgToKeyOptions, SYM_WITH_CACHE, argsToKey } from './utils';
 
 interface CreateWithCacheOptions<T extends AnyFunction>
   extends Partial<ArgToKeyOptions> {
@@ -47,7 +47,7 @@ export function createWithCache<T extends AnyFunction>({
 
   const wrapFn = function (this: any, ...args: Parameters<T>) {
     const storage = getBucket(getPointer());
-    const cacheKey = args.map(v => argToKey(v, argToKeyOptions)).join('_');
+    const cacheKey = argsToKey(args, argToKeyOptions);
 
     if (storage.has(cacheKey)) {
       const value = storage.get(cacheKey);

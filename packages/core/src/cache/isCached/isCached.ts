@@ -1,6 +1,6 @@
 import type { AnyFunction } from '@/types';
 import { type WithCachePointer, isWithCache } from '../createWithCache';
-import { type ArgToKeyOptions, argToKey } from '../createWithCache/utils';
+import { type ArgToKeyOptions, argsToKey } from '../createWithCache/utils';
 import { cache } from '../withCache';
 import { cacheBucket } from '../withCacheBucket';
 import { cacheFixed } from '../withCacheFixed';
@@ -30,7 +30,7 @@ export function isCached<T extends AnyFunction>(
     argToKeyOptions = fn.$cache.argToKeyOptions;
   }
 
-  const cacheKey = args.map(v => argToKey(v, argToKeyOptions)).join('_');
+  const cacheKey = argsToKey(args, argToKeyOptions);
 
   if (isWithCache(fn)) {
     cached = fn.$cache.getBucket().has(cacheKey);
