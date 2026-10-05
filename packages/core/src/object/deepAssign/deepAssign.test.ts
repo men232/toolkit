@@ -26,4 +26,13 @@ describe('deepAssign', () => {
       },
     });
   });
+
+  test('ignores __proto__ key from parsed JSON', () => {
+    const dest = {};
+
+    deepAssign(dest, JSON.parse('{"__proto__":{"polluted":true}}'));
+
+    expect(({} as any).polluted).toBeUndefined();
+    expect(Object.getPrototypeOf(dest)).toBe(Object.prototype);
+  });
 });

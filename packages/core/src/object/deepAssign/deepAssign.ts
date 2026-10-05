@@ -1,4 +1,5 @@
 import { isObject } from '@/is';
+import { isUnsafeProperty } from '@/str/isUnsafeProperty.ts';
 
 /**
  * Performs a deep merge of the source object into the destination object.
@@ -38,11 +39,13 @@ import { isObject } from '@/is';
  */
 export const deepAssign = (dest: object, source: object): void => {
   for (const key of Object.keys(source)) {
+    if (isUnsafeProperty(key)) continue;
+
     const destValue = (dest as any)[key];
     const sourceValue = (source as any)[key];
 
     if (isObject(destValue) && isObject(sourceValue)) {
-      deepAssign(destValue as any, sourceValue as any);
+      deepAssign(destValue, sourceValue);
     } else {
       (dest as any)[key] = sourceValue;
     }
