@@ -62,6 +62,11 @@ export function timeout<T = any>(
 
   let timer: ReturnType<typeof setTimeout> | undefined;
 
+  const cleanup = () => {
+    timer && clearTimeout(timer);
+    timer = undefined;
+  };
+
   return Promise.race([
     taskResult,
     new Promise((_, reject) => {
@@ -70,8 +75,14 @@ export function timeout<T = any>(
         reject(timeoutError || createTimeoutError());
       }, ms);
     }),
-  ]).finally(() => {
-    timer && clearTimeout(timer);
-    timer = undefined;
-  }) as Promise<T>;
+  ]).then(
+    value => {
+      cleanup();
+      return value;
+    },
+    error => {
+      cleanup();
+      throw error;
+    },
+  ) as Promise<T>;
 }

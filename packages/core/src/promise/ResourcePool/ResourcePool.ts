@@ -344,10 +344,13 @@ export class ResourcePool<
       .catch(err => {
         this.emit('error', toError(err));
       })
-      .finally(() => {
-        this.state.destroying = false;
-        this.resolveDestroyQueue();
-      });
+      .then(
+        () => this.finishDestroy(),
+        err => {
+          this.finishDestroy();
+          throw err;
+        },
+      );
   }
 
   private tryGetAvailableResource(): T | null {
@@ -382,9 +385,21 @@ export class ResourcePool<
         this.state.inUseResources.add(resource);
         return resource;
       })
-      .finally(() => {
-        this.state.createPending--;
-      });
+      .then(
+        resource => {
+          this.state.createPending--;
+          return resource;
+        },
+        err => {
+          this.state.createPending--;
+          throw err;
+        },
+      );
+  }
+
+  private finishDestroy(): void {
+    this.state.destroying = false;
+    this.resolveDestroyQueue();
   }
 
   private enqueueAcquireRequest(): Promise<T> {
