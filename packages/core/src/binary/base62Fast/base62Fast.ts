@@ -8,13 +8,37 @@ for (let i = 0; i < ENCODE_TABLE.length; ++i) {
   DECODE_TABLE[ENCODE_TABLE[i]] = i;
 }
 
+var DECODE_ENTRIES = new Uint16Array(128).fill(0xffff);
+for (let i = 0; i < ENCODE_TABLE.length; ++i) {
+  DECODE_ENTRIES[ENCODE_TABLE[i]] = i | (((i & 0x1e) === 0x1e ? 5 : 6) << 8);
+}
+
 var LOG2_TABLE = new Uint8Array(62);
 LOG2_TABLE[0] = 1;
 for (let i = 1; i < 62; ++i) {
   LOG2_TABLE[i] = Math.ceil(Math.log2(i + 1));
 }
 
-var allocEncode = createAllocator();
+var PAIR_TABLE = new Uint32Array(4096);
+for (let v = 0; v < 4096; ++v) {
+  let c0 = v & 0x3f;
+  let s0 = 6;
+  if ((c0 & 0x1e) === 0x1e) {
+    c0 &= 0x1f;
+    s0 = 5;
+  }
+  let c1 = (v >> s0) & 0x3f;
+  let s1 = 6;
+  if ((c1 & 0x1e) === 0x1e) {
+    c1 &= 0x1f;
+    s1 = 5;
+  }
+  PAIR_TABLE[v] =
+    ENCODE_TABLE[c0] | (ENCODE_TABLE[c1] << 8) | ((s0 + s1) << 16);
+}
+
+var ENCODE_BUFFER_SIZE = 2048;
+var encodeBuffer = new Uint8Array(ENCODE_BUFFER_SIZE);
 
 /**
  * Base62-like encoder/decoder for binary data but **super fast**. Useful for human readable tokens generation
@@ -54,54 +78,61 @@ export const base62Fast: BaseX = {
    * @returns The encoded Base62 string.
    */
   encode(input: Uint8Array): string {
-    var totalBits = input.length * 8;
-    var output: Uint8Array = allocEncode(((totalBits / 5) | 0) + 1);
+    var inputLength = input.length;
+    var need = (((inputLength * 8) / 5) | 0) + 4;
+    var output =
+      need <= ENCODE_BUFFER_SIZE ? encodeBuffer : new Uint8Array(need);
     var outputIndex = 0;
-
-    var bitPosition = 0;
-    var buffer = 0;
+    var remainingBits = inputLength * 8;
     var inputIndex = 0;
+    var buffer = 0;
+    var bitPosition = 0;
+    var pair;
     var chunkSize;
     var value;
 
-    // Fill buffer with first byte if available
-    if (input.length > 0) {
-      buffer = input[0];
-      inputIndex = 1;
-      bitPosition = 8;
-    }
-
-    while (bitPosition > 0 || inputIndex < input.length) {
-      // Ensure we have enough bits in buffer
-      while (bitPosition < 6 && inputIndex < input.length) {
-        buffer |= input[inputIndex] << bitPosition;
-        inputIndex++;
-        bitPosition += 8;
+    while (remainingBits > 20) {
+      if (bitPosition < 12) {
+        buffer |=
+          (input[inputIndex] | (input[inputIndex + 1] << 8)) << bitPosition;
+        inputIndex += 2;
+        bitPosition += 16;
       }
-
-      if (bitPosition === 0) break;
-
-      // Extract value (take from least significant bits)
-      value = buffer & 0x3f;
-      chunkSize = 6; // Default to 6 bits
-
-      // Custom 5-bit encoding logic
-      if ((value & 0x1e) === 0x1e) {
-        // Check if we should use 5 bits instead
-        var remainingBits = bitPosition + (input.length - inputIndex) * 8;
-        if (remainingBits > 6 || value > 0x1f) {
-          chunkSize = 5;
-          value &= 0x1f;
-        }
-      }
-
-      // Store the character for the current value
-      output[outputIndex] = ENCODE_TABLE[value];
-      outputIndex++;
-
-      // Remove processed bits from buffer
+      pair = PAIR_TABLE[buffer & 0xfff];
+      output[outputIndex] = pair;
+      output[outputIndex + 1] = pair >> 8;
+      outputIndex += 2;
+      chunkSize = pair >> 16;
       buffer >>= chunkSize;
       bitPosition -= chunkSize;
+      remainingBits -= chunkSize;
+    }
+
+    while (remainingBits > 6) {
+      if (bitPosition < 6) {
+        buffer |= input[inputIndex++] << bitPosition;
+        bitPosition += 8;
+      }
+      value = buffer & 0x3f;
+      if ((value & 0x1e) === 0x1e) {
+        value &= 0x1f;
+        buffer >>= 5;
+        bitPosition -= 5;
+        remainingBits -= 5;
+      } else {
+        buffer >>= 6;
+        bitPosition -= 6;
+        remainingBits -= 6;
+      }
+      output[outputIndex++] = ENCODE_TABLE[value];
+    }
+
+    if (remainingBits > 0) {
+      if (buffer > 0x3d) {
+        output[outputIndex++] = ENCODE_TABLE[buffer & 0x1f];
+        buffer >>= 5;
+      }
+      output[outputIndex++] = ENCODE_TABLE[buffer];
     }
 
     return textDecoder.decode(output.subarray(0, outputIndex));
@@ -114,78 +145,96 @@ export const base62Fast: BaseX = {
    */
   decode(input: string): Uint8Array {
     var inputLength = input.length;
-
-    var maxOutputLength = ((inputLength * 6) / 8) | 0;
-    var output = new Uint8Array(maxOutputLength + 1);
-
+    var output = new Uint8Array(((inputLength * 6) >> 3) + 5);
     var writeIndex = 0;
     var bitPosition = 0;
     var buffer = 0;
-    var charCode = 0;
-    var value = 0;
-    var bitsToAdd = 0;
+    var readIndex = 0;
+    var lastIndex = inputLength - 1;
+    var quadEnd = lastIndex - 3;
+    var e0;
+    var e1;
+    var e2;
+    var e3;
+    var s0;
+    var s1;
+    var s2;
+    var fullBits;
+    var value;
 
-    // Process characters from left to right (same as original)
-    for (var readIndex = 0; readIndex < inputLength; readIndex++) {
-      charCode = input.charCodeAt(readIndex);
-      value = DECODE_TABLE[charCode];
+    while (readIndex < quadEnd) {
+      e0 = DECODE_ENTRIES[input.charCodeAt(readIndex)];
+      e1 = DECODE_ENTRIES[input.charCodeAt(readIndex + 1)];
+      e2 = DECODE_ENTRIES[input.charCodeAt(readIndex + 2)];
+      e3 = DECODE_ENTRIES[input.charCodeAt(readIndex + 3)];
+      if (!(e0 < 0x700 && e1 < 0x700 && e2 < 0x700 && e3 < 0x700)) {
+        throwInvalid(input, readIndex);
+      }
+      readIndex += 4;
+      s0 = e0 >> 8;
+      s1 = s0 + (e1 >> 8);
+      s2 = s1 + (e2 >> 8);
+      buffer |=
+        ((e0 & 0xff) |
+          ((e1 & 0xff) << s0) |
+          ((e2 & 0xff) << s1) |
+          ((e3 & 0xff) << s2)) <<
+        bitPosition;
+      bitPosition += s2 + (e3 >> 8);
+      output[writeIndex] = buffer;
+      output[writeIndex + 1] = buffer >> 8;
+      output[writeIndex + 2] = buffer >> 16;
+      fullBits = (bitPosition >> 3) << 3;
+      writeIndex += fullBits >> 3;
+      buffer >>= fullBits;
+      bitPosition -= fullBits;
+    }
 
-      // Validate character: must be in the alphabet
+    while (readIndex < lastIndex) {
+      e0 = DECODE_ENTRIES[input.charCodeAt(readIndex)];
+      if (!(e0 < 0x700)) {
+        throwInvalid(input, readIndex);
+      }
+      readIndex++;
+      buffer |= (e0 & 0xff) << bitPosition;
+      bitPosition += e0 >> 8;
+      output[writeIndex] = buffer;
+      fullBits = (bitPosition >> 3) << 3;
+      writeIndex += fullBits >> 3;
+      buffer >>= fullBits;
+      bitPosition -= fullBits;
+    }
+
+    if (inputLength > 0) {
+      value = DECODE_TABLE[input.charCodeAt(lastIndex)];
       if (!(value < 62)) {
-        throw new Error(
-          'Invalid Base62 input: contains non-alphabet characters. Index: ' +
-            readIndex,
-        );
+        throwInvalid(input, lastIndex);
       }
-
-      // Determine how many bits this character represents
-      if (readIndex === inputLength - 1) {
-        // If it's the very last character
-        if (LOG2_TABLE[value] === undefined) {
-          throw new Error(
-            'Invalid Base62 input: unexpected value for last character.',
-          );
-        }
-        bitsToAdd = LOG2_TABLE[value];
-      } else if ((value & 0x1e) === 0x1e) {
-        bitsToAdd = 5; // Consume 5 bits
-      } else {
-        bitsToAdd = 6; // Consume 6 bits
-      }
-
-      // Add the decoded value to the buffer
       buffer |= value << bitPosition;
-      bitPosition += bitsToAdd;
-
-      // If we have accumulated 8 or more bits, write complete bytes to output
-      while (bitPosition >= 8) {
-        output[writeIndex] = buffer & 0xff;
-        writeIndex++;
-        buffer >>= 8;
-        bitPosition -= 8;
-      }
+      bitPosition += LOG2_TABLE[value];
     }
 
-    // After loop, if there are remaining bits in the buffer, write the last partial byte
+    if (bitPosition >= 8) {
+      output[writeIndex++] = buffer & 0xff;
+      buffer >>= 8;
+      bitPosition -= 8;
+    }
     if (bitPosition > 0) {
-      output[writeIndex] = buffer & 0xff;
-      writeIndex++;
+      output[writeIndex++] = buffer & 0xff;
     }
 
-    // Return the relevant part of the output array (from 0 to writeIndex)
     return output.subarray(0, writeIndex);
   },
 };
 
-function createAllocator(): (size: number) => Uint8Array {
-  var currentBuffer = new Uint8Array(256);
-  var currentSize = 256;
-
-  return (size: number) => {
-    if (currentSize < size) {
-      currentBuffer = new Uint8Array(size);
-      currentSize = size;
+function throwInvalid(input: string, from: number): never {
+  for (var readIndex = from; readIndex < input.length; readIndex++) {
+    if (!(DECODE_TABLE[input.charCodeAt(readIndex)] < 62)) {
+      throw new Error(
+        'Invalid Base62 input: contains non-alphabet characters. Index: ' +
+          readIndex,
+      );
     }
-    return currentBuffer;
-  };
+  }
+  throw new Error('Invalid Base62 input: contains non-alphabet characters.');
 }
