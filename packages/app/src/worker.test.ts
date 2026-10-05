@@ -183,8 +183,14 @@ describe('addWorkerTask', () => {
     );
     const instance = app.setupState.worker as WorkerInstance;
 
-    // queueSize=5 > 5*0.8=4 → overloaded
+    // the running worker loop takes the first task straight away,
+    // so 5 tasks leave queueSize=4, which is not above 5*0.8=4
     for (let i = 0; i < 5; i++) addWorkerTask(instance, {} as any);
+    expect(instance.queueSize).toBe(4);
+    expect(overloadedSignal).not.toHaveBeenCalled();
+
+    // queueSize=5 > 4 → overloaded
+    addWorkerTask(instance, {} as any);
     expect(overloadedSignal).toHaveBeenCalledTimes(1);
     expect(instance.overloadedSignaled).toBe(true);
   });
