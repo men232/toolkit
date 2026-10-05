@@ -26,4 +26,28 @@ describe('humanize', () => {
     expect(humanize(1000000000000)).toBe('1T');
     expect(humanize(1500000000000)).toBe('1.5T');
   });
+  test('rolls over to the next suffix', () => {
+    expect(humanize(999949)).toBe('999.9k');
+    expect(humanize(999950)).toBe('1M');
+    expect(humanize(999999)).toBe('1M');
+    expect(humanize(999999999)).toBe('1B');
+  });
+
+  test('rounds half up', () => {
+    expect(humanize(1950)).toBe('2k');
+    expect(humanize(1949)).toBe('1.9k');
+    expect(humanize(1500, 0)).toBe('2k');
+    expect(humanize(-1950)).toBe('-2k');
+  });
+
+  test('keeps significant decimals and drops trailing zeros', () => {
+    expect(humanize(1050, 2)).toBe('1.05k');
+    expect(humanize(1500, 2)).toBe('1.5k');
+    expect(humanize(1999)).toBe('2k');
+  });
+
+  test('huge numbers', () => {
+    expect(humanize(999999999999999)).toBe('1000T');
+    expect(humanize(1e16)).toBe('1.0x10^16');
+  });
 });
