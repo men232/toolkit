@@ -25,6 +25,17 @@ describe('chunkSeries', () => {
     expect(chunkSeries([])).toStrictEqual([]);
   });
 
+  test('unsorted input', () => {
+    expect(chunkSeries([10, 9, 8, 1, 2])).toStrictEqual([
+      [1, 2],
+      [8, 10],
+    ]);
+  });
+
+  test('multi-digit numbers', () => {
+    expect(chunkSeries([9, 10, 11, 20])).toStrictEqual([[9, 11], [20]]);
+  });
+
   test('no series', () => {
     expect(chunkSeries([1, 3])).toStrictEqual([[1], [3]]);
   });

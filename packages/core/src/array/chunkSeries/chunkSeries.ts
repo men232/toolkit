@@ -20,9 +20,9 @@ export function chunkSeries(list: readonly number[], step = 1): number[][] {
     return result;
   }
 
-  const sortedList = [...list].sort();
+  const sortedList = [...list].sort((a, b) => a - b);
 
-  let currentRange = [list[0]];
+  let currentRange = [sortedList[0]];
   let currentValue: number;
 
   for (let idx = 1; idx < sortedList.length; idx++) {
