@@ -27,7 +27,9 @@ export function parseHEX(value: unknown): Color.ColorChannels | null {
     hex = hex.slice(0, 3);
   }
 
-  if (hex.length === 3) hex = hex + hex;
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
 
   return [
     parseInt(hex.slice(0, 2), 16),
