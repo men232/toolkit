@@ -14,8 +14,10 @@ export type UseTransactionEffectOptions = Partial<
 /**
  * Executes a transactional effect with cleanup on error or rollback.
  *
- * Ensures the `callback` function is executed only once per transaction, even during retries.
+ * Ensures `setup` is executed only once per transaction, even during retries.
  * On errors or dependency changes, the cleanup logic is invoked before re-execution to maintain consistency.
+ *
+ * Both `flush` modes run before the commit. For side effects after the commit use `onCommitted()`.
  *
  * @param setup A function defining the transactional effect. It is guaranteed to run once per transaction
  *              and may be re-executed after cleanup if dependencies change.
@@ -23,7 +25,7 @@ export type UseTransactionEffectOptions = Partial<
  * @example
  * const confirmOrder = withMongoTransaction({
  *   connection: () => mongoose.connection.getClient(),
- *   async fn(session) {
+ *   async fn(session, orderId: string) {
  *     // Register an alert as a transactional effect
  *     await useTransactionEffect(async () => {
  *       const alertId = await alertService.create({
@@ -96,6 +98,8 @@ export function useTransactionEffect(
       scope.hooks.effects.cursor++;
     });
   }
+
+  scope.hooks.effects.cursor++;
 
   return Promise.resolve();
 }

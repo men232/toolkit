@@ -1,5 +1,6 @@
-import { defer, noop } from '@andrew_l/toolkit';
-import { describe, expect, it } from 'vitest';
+import { defer, noop, noopLogger } from '@andrew_l/toolkit';
+import { describe, expect, it, vi } from 'vitest';
+import { onCommitted, onRollback, useTransactionEffect } from '../hooks';
 import { createTransactionScope } from '../scope';
 
 describe('scope', () => {
@@ -125,6 +126,43 @@ describe('scope', () => {
     });
   });
 
+  describe('logger', () => {
+    it('should log effect apply error to the provided logger', async () => {
+      const effectError = new Error('apply failed');
+      const logError = vi.fn();
+
+      const t = createTransactionScope(
+        async () => {
+          await useTransactionEffect(() => Promise.reject(effectError));
+        },
+        { ...noopLogger, error: logError },
+      );
+
+      await t.run();
+
+      expect(logError).toHaveBeenCalledTimes(1);
+      expect(logError.mock.calls[0]).toContain(effectError);
+    });
+
+    it('should log effect cleanup error to the provided logger', async () => {
+      const cleanupError = new Error('cleanup failed');
+      const logError = vi.fn();
+
+      const t = createTransactionScope(
+        async () => {
+          await useTransactionEffect(() => () => Promise.reject(cleanupError));
+        },
+        { ...noopLogger, error: logError },
+      );
+
+      await t.run();
+      await t.rollback().catch(noop);
+
+      expect(logError).toHaveBeenCalledTimes(1);
+      expect(logError.mock.calls[0]).toContain(cleanupError);
+    });
+  });
+
   describe('.commit', () => {
     it('should throw error when main function failed', async () => {
       const t = createTransactionScope(() => Promise.reject(new Error('test')));
@@ -132,6 +170,78 @@ describe('scope', () => {
       await t.run();
 
       expect(() => t.commit()).rejects.toThrowError('test');
+    });
+
+    it('should log hook error and run remaining hooks', async () => {
+      const hookError = new Error('hook failed');
+      let calls = 0;
+
+      const logError = vi.fn();
+      const t = createTransactionScope(
+        () => {
+          onCommitted(() => Promise.reject(hookError));
+          onCommitted(() => void calls++);
+        },
+        { ...noopLogger, error: logError },
+      );
+
+      await t.run();
+      await expect(t.commit()).resolves.toBe(undefined);
+
+      expect(calls).toBe(1);
+      expect(logError).toHaveBeenCalledTimes(1);
+      expect(logError.mock.calls[0]).toContain(hookError);
+    });
+  });
+
+  describe('.rollback', () => {
+    it('should log hook error and run remaining hooks', async () => {
+      const hookError = new Error('hook failed');
+      let calls = 0;
+
+      const logError = vi.fn();
+      const t = createTransactionScope(
+        () => {
+          onRollback(() => {
+            throw hookError;
+          });
+          onRollback(() => void calls++);
+        },
+        { ...noopLogger, error: logError },
+      );
+
+      await t.run();
+      await expect(t.rollback()).resolves.toBe(undefined);
+
+      expect(calls).toBe(1);
+      expect(logError).toHaveBeenCalledTimes(1);
+      expect(logError.mock.calls[0]).toContain(hookError);
+    });
+
+    it('should run hooks once and retry only failed cleanups', async () => {
+      const calls = { okCleanup: 0, badCleanup: 0, hook: 0 };
+      let failOnce = true;
+
+      const t = createTransactionScope(async () => {
+        await useTransactionEffect(() => () => void calls.okCleanup++);
+        await useTransactionEffect(() => () => {
+          calls.badCleanup++;
+
+          if (failOnce) {
+            failOnce = false;
+            throw new Error('cleanup failed');
+          }
+        });
+        onRollback(() => void calls.hook++);
+      }, noopLogger);
+
+      await t.run();
+
+      await expect(t.rollback()).rejects.toThrowError('cleanup failed');
+      expect(calls).toStrictEqual({ okCleanup: 1, badCleanup: 1, hook: 1 });
+
+      await expect(t.rollback()).resolves.toBe(undefined);
+      expect(calls).toStrictEqual({ okCleanup: 1, badCleanup: 2, hook: 1 });
     });
   });
 

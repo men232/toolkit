@@ -1,20 +1,51 @@
+import type { Logger } from '@andrew_l/toolkit';
 import { createTransactionScope } from './scope';
+
+export interface WithTransactionControlledOptions {
+  /**
+   * Receives effect and hook errors.
+   *
+   * @default logger('TransactionScope')
+   */
+  logger?: Logger;
+}
 
 export interface TransactionControlled<
   T,
   K = any,
   Args extends Array<any> = any[],
 > {
+  /**
+   * Runs the function once. Never rejects because of `fn`: see `error` and `result`.
+   */
   run: (this: K, ...args: Args) => Promise<void>;
 
+  /**
+   * Runs `onCommitted` hooks and clears the scope. Rejects with `error` if the run failed.
+   */
   commit: () => Promise<void>;
 
+  /**
+   * Runs effect cleanups, then `onRollback` hooks, then clears the scope.
+   *
+   * Rejects with the cleanup error if a cleanup failed; the scope is kept, so calling
+   * `rollback()` again retries only the failed cleanups and does not run the hooks again.
+   */
   rollback: () => Promise<void>;
 
+  /**
+   * Result of the last run, `undefined` if it failed.
+   */
   result: Readonly<T | undefined>;
 
+  /**
+   * Error of the last run.
+   */
   error: Readonly<Error | undefined>;
 
+  /**
+   * `true` while `run()` is in progress.
+   */
   active: boolean;
 }
 
@@ -25,6 +56,9 @@ export interface TransactionControlled<
  * This provides finer-grained control over the transaction lifecycle, enabling users to
  * explicitly commit or rollback a transaction based on custom logic. It's especially useful
  * in scenarios where transactional state or conditions need to be externally determined.
+ *
+ * @param fn - The target function to wrap with transaction handling.
+ * @param [options.logger] - Receives effect and hook errors. Defaults to `logger('TransactionScope')`.
  *
  * @example
  * const t = withTransactionControlled(async (userId) => {
@@ -39,11 +73,10 @@ export interface TransactionControlled<
  *   return user;
  * });
  *
- *
  * await t.run();
  *
  * // Remove premium when no subscriptions
- * if (t.result.activeSubscriptions > 0) {
+ * if (t.result && t.result.activeSubscriptions > 0) {
  *   await t.commit();
  * } else {
  *   await t.rollback();
@@ -57,8 +90,9 @@ export function withTransactionControlled<
   Args extends Array<any> = any[],
 >(
   fn: (this: K, ...args: Args) => T,
+  options?: WithTransactionControlledOptions,
 ): TransactionControlled<Awaited<T>, K, Args> {
-  const scope = createTransactionScope(fn);
+  const scope = createTransactionScope(fn, options?.logger);
 
   const controlled = {
     run(...args: Args) {

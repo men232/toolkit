@@ -1,10 +1,10 @@
 import { withContext } from '@andrew_l/context';
 import {
   type Awaitable,
+  type Logger,
   assert,
   asyncForEach,
   catchError,
-  env,
   isFunction,
   logger,
   noop,
@@ -15,11 +15,13 @@ export interface TransactionEffect {
   /**
    * Specifies when the transaction effect should run:
    *
-   * `pre` -  execute immediately
+   * `pre` - execute immediately
    *
-   *  `post` - execute before transaction commit
+   * `post` - execute after the transaction function resolves, before commit
    *
-   * @default: "pre"
+   * Both run once per transaction unless dependencies change.
+   *
+   * @default "pre"
    */
   flush: 'pre' | 'post';
 
@@ -78,7 +80,7 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
   /**
    * @internal
    */
-  log = logger('TransactionScope');
+  log: Logger;
 
   /**
    * @internal
@@ -107,8 +109,13 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
     rollbacks: { byCursor: [], cursor: 0 },
   };
 
-  constructor(private fn: (...args: Args) => T) {
+  constructor(
+    private fn: (...args: Args) => T,
+    log: Logger = logger('TransactionScope'),
+  ) {
     const scope = this;
+
+    this.log = log;
 
     this.run = function (...args) {
       const self = this === scope ? undefined : this;
@@ -168,14 +175,12 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
       return Promise.reject(this.error);
     }
 
-    return asyncForEach(
-      this.hooks.committed.byCursor,
-      h => catchError(h.callback) as any,
-      { concurrency: 4 },
-    ).then(() => {
-      this.reset();
-      this.clean();
-    });
+    return runHooks(this, 'onCommitted', this.hooks.committed.byCursor).then(
+      () => {
+        this.reset();
+        this.clean();
+      },
+    );
   }
 
   rollback(): Promise<void> {
@@ -185,20 +190,17 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
       );
     }
 
-    return effectsCleanup(this).then(error => {
-      if (error) {
-        return Promise.reject(error);
-      }
+    return effectsCleanup(this).then(cleanupError =>
+      runHooks(this, 'onRollback', this.hooks.rollbacks.byCursor).then(() => {
+        // Scope is kept so a later rollback() retries only the failed cleanups.
+        if (cleanupError) {
+          return Promise.reject(cleanupError);
+        }
 
-      return asyncForEach(
-        this.hooks.rollbacks.byCursor,
-        h => catchError(h.callback) as any,
-        { concurrency: 4 },
-      ).then(() => {
         this.reset();
         this.clean();
-      });
-    });
+      }),
+    );
   }
 
   reset() {
@@ -221,8 +223,32 @@ export class TransactionScope<T = any, Args extends any[] = any[]> {
 
 export function createTransactionScope<T = any, Args extends any[] = any[]>(
   fn: (...args: Args) => T,
+  log?: Logger,
 ): TransactionScope<Awaited<T>, Args> {
-  return new TransactionScope<any>(fn);
+  return new TransactionScope<any>(fn, log);
+}
+
+// Hook errors are only logged: the transaction outcome is already final here.
+function runHooks(
+  scope: TransactionScope,
+  name: string,
+  hooks: Array<TransactionOnCommitted | TransactionOnRollback>,
+): Promise<void> {
+  return asyncForEach(
+    hooks,
+    (hook, index) =>
+      Promise.resolve()
+        .then(() => catchError(hook.callback))
+        .then(({ 0: err }) => {
+          // Marks the hook as done, like cancel(): a repeated rollback() must not run it again.
+          hook.callback = noop;
+
+          if (err) {
+            scope.log.error('%s hook #%d error', name, index + 1, err);
+          }
+        }),
+    { concurrency: 4 },
+  );
 }
 
 export function effectsApply(
@@ -277,13 +303,12 @@ export function applyEffect(
     .then(() => catchError(effect.setup))
     .then(({ 0: err, 1: effectResult }) => {
       if (err) {
-        !env.isTest &&
-          scope.log.error(
-            'Effect name = %s, flush = %s apply error',
-            effect.name,
-            effect.flush,
-            err,
-          );
+        scope.log.error(
+          'Effect name = %s, flush = %s apply error',
+          effect.name,
+          effect.flush,
+          err,
+        );
         return err;
       }
 
@@ -309,13 +334,12 @@ export function cleanupEffect(
     .then(() => catchError(effect.cleanup!))
     .then(({ 0: err }) => {
       if (err) {
-        !env.isTest &&
-          scope.log.error(
-            'Effect name = %s, flush = %s, cleanup error',
-            effect.name,
-            effect.flush,
-            err,
-          );
+        scope.log.error(
+          'Effect name = %s, flush = %s, cleanup error',
+          effect.name,
+          effect.flush,
+          err,
+        );
         return err;
       }
 

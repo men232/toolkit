@@ -3,89 +3,155 @@
 [![npm](https://img.shields.io/npm/v/@andrew_l/mongo-transaction?style=flat-square&color=f76707&labelColor=2b2f36&label=npm)](https://www.npmjs.com/package/@andrew_l/mongo-transaction)
 [![license](https://img.shields.io/npm/l/@andrew_l/mongo-transaction?style=flat-square&color=f76707&labelColor=2b2f36)](https://github.com/men232/toolkit/blob/main/LICENSE)
 
-This package solves a common issue with MongoDB's `session.withTransaction`, where the provided function might be executed multiple times due to retries. This can create challenges for managing side effects that need to be rolled back consistently during transaction retries or failures.
+Manages side effects in MongoDB transactions: runs them once across retries, undoes them on failure, emits after commit.
 
-[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/mongo-transaction/) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
+[Documentation](https://men232.github.io/toolkit/reference/@andrew_l/mongo-transaction/) · [Changelog](./CHANGELOG.md) · [Toolkit](https://github.com/men232/toolkit) · [Issues](https://github.com/men232/toolkit/issues)
 
 <!-- install placeholder -->
 
 ## ✨ Features
 
-- **Transactional Effects:** Easily register actions to be rolled back if a transaction fails.
-- **Retry-Safe Operations:** Avoid duplicating side effects during transaction retries.
-- **Cleanup Support:** Ensure that all registered effects are undone if the transaction is canceled.
+- **`onCommitted`** – runs once after the commit, never for a rolled back transaction.
+- **`onRollback`** – runs once when the transaction finally fails, after effect cleanups.
+- **`useTransactionEffect`** – a side effect with an undo, applied once across retries.
+- **`useMongoSession`** – the current session anywhere in the call stack.
+- **`onMongoSessionCommitted`** – after-commit callback for a plain `ClientSession`.
+- Works with the `mongodb` driver and Mongoose 7/8.
 
-## ⚠️ Cautions
+## 🚀 Quick Start
 
-To ensure smooth usage, please keep the following in mind:
+```ts
+import mongoose from 'mongoose';
+import { onCommitted, withMongoTransaction } from '@andrew_l/mongo-transaction';
 
-- **Error Handling:** If your effects throw an error, the transaction will roll back.
-- **Calls:** Always `await` the promises returned by `useTransactionEffect()`.
-- **Placement:** Do not use `useTransactionEffect()` inside nested blocks like conditionals or loops.
-- **Mongoose:** Ensure the connection is established before using the client: `withMongoTransaction(() => mongoose.connection.getClient())`.
+const confirmOrder = withMongoTransaction({
+  connection: () => mongoose.connection.getClient(),
+  async fn(session, orderId: string) {
+    await Order.updateOne(
+      { _id: orderId },
+      { status: 'confirmed' },
+      { session },
+    );
 
-## 🚀 Example: Automatic Rollback of Side Effects
+    onCommitted(() => events.emit('order:confirmed', orderId));
+  },
+});
 
-This example demonstrates how to use the transaction context to automatically manage side effects and roll back actions if an error occurs during execution.
+await confirmOrder('673b907dddd8ae43262aec0d');
+```
 
-```js
+## 🪝 Hooks
+
+```ts
+// Examples use Mongoose models and arbitrary services.
+const getClient = () => mongoose.connection.getClient();
+```
+
+### `useMongoSession()`
+
+No session threading through function arguments.
+
+```ts
+async function reserveStock(sku: string) {
+  const session = useMongoSession() ?? undefined;
+
+  await Stock.updateOne({ sku }, { $inc: { reserved: 1 } }, { session });
+}
+
+const placeOrder = withMongoTransaction(getClient, async (session, order) => {
+  await Order.create([order], { session });
+  await reserveStock(order.sku);
+});
+```
+
+### `onCommitted()` / `onRollback()`
+
+```ts
+const payOrder = withMongoTransaction(getClient, async (session, orderId) => {
+  await Order.updateOne({ _id: orderId }, { status: 'paid' }, { session });
+
+  onCommitted(() => mailer.send(orderId, 'Payment received'));
+  onRollback(() => metrics.increment('payments.failed'));
+});
+```
+
+### `useTransactionEffect()`
+
+An external call that must be undone if the transaction fails, and must not repeat when MongoDB retries the transaction.
+
+```ts
+const payOrder = withMongoTransaction(getClient, async (session, orderId) => {
+  await useTransactionEffect(async () => {
+    const chargeId = await stripe.charge(orderId);
+
+    return () => stripe.refund(chargeId);
+  });
+
+  await Order.updateOne({ _id: orderId }, { status: 'paid' }, { session });
+});
+```
+
+### `withTransaction()`
+
+The same hooks without MongoDB.
+
+```ts
 const confirmOrder = withTransaction(async orderId => {
-  // Register Alert
   await useTransactionEffect(async () => {
     const alertId = await alertService.create({
-      title: 'New Order: ' + orderId,
+      title: `New order: ${orderId}`,
     });
 
     return () => alertService.removeById(alertId);
   });
 
-  // Update Statistics
   await useTransactionEffect(async () => {
-    await statService.increment('orders_amount', 1);
+    await statService.increment('orders', 1);
 
-    return () => statService.decrement('orders_amount', 1);
+    return () => statService.decrement('orders', 1);
   });
-
-  throw new Error('Oops.');
 });
 ```
 
-## 🚀 Example: Usage MongoDB
+### `onMongoSessionCommitted()`
 
-Below is an example demonstrating how to use `withMongoTransaction` to manage side effects like creating and removing alerts during a transaction. If the transaction fails, the created alert is automatically removed. Additionally, the logic ensures duplicate alerts are not created during MongoDB's retry mechanism.
+After-commit callback without `withMongoTransaction`. Fires when the session ends.
 
-```js
-import mongoose from 'mongoose';
-import {
-  useTransactionEffect,
-  withMongoTransaction,
-} from '@andrew_l/mongo-transaction';
+```ts
+const session = client.startSession();
 
-const confirmOrder = withMongoTransaction({
-  connection: () => mongoose.connection.getClient(),
-  async fn(session) {
-    // Register an alert as a transactional effect
-    await useTransactionEffect(async () => {
-      const alertId = await alertService.create({
-        title: `Order Confirmed: ${orderId}`,
-      });
+await session.withTransaction(async () => {
+  await Order.updateOne({ _id: orderId }, { status: 'confirmed' }, { session });
 
-      // Define cleanup logic to remove the alert on rollback
-      return () => alertService.removeById(alertId);
-    });
-
-    // Simulate order processing (e.g., database updates)
-    await db
-      .collection('orders')
-      .updateOne({ orderId }, { $set: { status: 'confirmed' } }, { session });
-
-    // Simulate an error to test rollback
-    throw new Error('Simulated transaction failure');
-  },
+  onMongoSessionCommitted(session, () =>
+    events.emit('order:confirmed', orderId),
+  );
 });
 
-confirmOrder('673b907dddd8ae43262aec0d').catch(console.error);
+await session.endSession();
 ```
+
+## ⏱️ When Hooks Run
+
+| Hook                                          | When                                            | On retry                                        | Without commit                   |
+| --------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | -------------------------------- |
+| `useTransactionEffect(fn)`                    | Immediately                                     | Not applied again, unless `dependencies` change | Cleanup runs                     |
+| `useTransactionEffect(fn, { flush: 'post' })` | After `fn` resolves, before `commitTransaction` | Not applied again, unless `dependencies` change | Cleanup runs                     |
+| `onCommitted(fn)`                             | After `commitTransaction`                       | Once per transaction                            | Not called                       |
+| `onRollback(fn)`                              | After the final failure, after cleanups         | Not called between attempts                     | Called once                      |
+| `onMongoSessionCommitted(fn)`                 | When the session ends committed                 | Once **per attempt**, prefer `onCommitted`      | Not called, resolves `undefined` |
+
+- An effect that throws rolls the transaction back.
+- A hook that throws is logged and does not change the transaction result.
+- Effect and hook errors go to the `logger` option (`noopLogger` from `@andrew_l/toolkit` silences them).
+- A cleanup that throws is logged; `onRollback` hooks still run and `withMongoTransaction` / `withTransaction` reject with the original error. `withTransactionControlled().rollback()` rejects with the cleanup error and can be called again to retry only the failed cleanups.
+
+## ⚠️ Cautions
+
+- Always `await` `useTransactionEffect()`.
+- Do not call hooks inside conditionals or loops.
+- `flush: 'post'` runs **before** the commit. For after-commit side effects use `onCommitted()`.
+- Mongoose: connect before the client is used, `withMongoTransaction(() => mongoose.connection.getClient())`.
 
 ## 🤔 Why Use This Package?
 

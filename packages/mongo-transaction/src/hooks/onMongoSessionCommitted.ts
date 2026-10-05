@@ -5,40 +5,37 @@ import {
   isPromise,
 } from '@andrew_l/toolkit';
 import type { ClientSession } from 'mongodb';
+import { isTransactionCommitted } from '../utils';
 import { injectMongoSession } from './useMongoSession';
 
 export type OnMongoSessionCommittedResult<T> = {
   /**
-   * Executes the provided function upon transaction commit.
-   *
-   * Returns `T` if the transaction is committed and the function completes successfully.
-   *
-   * Returns `undefined` if the transaction is explicitly aborted or ends without committing.
-   *
-   * Rejects if the function throws an error.
+   * Resolves with `T` after commit, with `undefined` if the transaction did not commit.
+   * Rejects only if `fn` throws.
    */
   promise: Promise<T | undefined>;
 
+  /**
+   * Removes the listener. `promise` never settles afterwards.
+   */
   cancel: () => void;
 };
 
 /**
- * Executes the provided function upon transaction commit.
+ * Executes the provided function when the session ends with a committed transaction.
+ * Not called on rollback or abort.
  *
- * Returns `T` if the transaction is committed and the function completes successfully.
- *
- * Returns `false` if the transaction ends without committing.
- *
- * Rejects if the function throws an error.
+ * ⚠️ Registers a listener per call, so a retried callback runs it once per attempt.
+ * Inside `withMongoTransaction` prefer `onCommitted()`.
  *
  * @example
- * const { promise } = onTransactionCommitted(async () => {
+ * const { promise } = onMongoSessionCommitted(async () => {
  *   console.info('Transaction committed successfully!');
  *   return Math.random(); // Random value generated after commit
  * });
  *
  * promise.then(result => {
- *   if (result !== false) {
+ *   if (result !== undefined) {
  *     console.info('Handler result:', result); // e.g., Handler result: 0.07576196837476501
  *   }
  * });
@@ -70,7 +67,7 @@ export function onMongoSessionCommitted(
   const q = defer<undefined | unknown>();
 
   const onEnded = () => {
-    if (!session.transaction.isCommitted) {
+    if (!isTransactionCommitted(session.transaction)) {
       return q.resolve(undefined);
     }
 

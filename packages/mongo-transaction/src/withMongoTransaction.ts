@@ -7,6 +7,7 @@ import {
 import {
   type AnyFunction,
   type Awaitable,
+  type Logger,
   catchError,
   deepDefaults,
   isFunction,
@@ -58,7 +59,7 @@ export interface WithMongoTransactionOptions<
   /**
    * Transaction session options
    *
-   * @default: {
+   * @default {
    *   defaultTransactionOptions: {
    *     readPreference: 'primary',
    *     readConcern: { level: 'local' },
@@ -78,6 +79,13 @@ export interface WithMongoTransactionOptions<
   timeoutMS?: number;
 
   /**
+   * Receives effect and hook errors.
+   *
+   * @default logger('TransactionScope')
+   */
+  logger?: Logger;
+
+  /**
    * Transaction function that will be executed
    *
    * ⚠️ Possible several times!
@@ -94,7 +102,8 @@ type WithMongoTransactionWrapped<
 /**
  * Runs a provided callback within a transaction, retrying either the commitTransaction operation or entire transaction as needed (and when the error permits) to better ensure that the transaction can complete successfully.
  *
- * Passes the session as the function's first argument or via `useMongoSession()` hook
+ * Passes the session as the function's first argument or via `useMongoSession()` hook.
+ * Enables `useTransactionEffect()`, `onCommitted()` and `onRollback()` inside `fn`.
  *
  * @example
  * const executeTransaction = withMongoTransaction({
@@ -124,7 +133,8 @@ export function withMongoTransaction<
 /**
  * Runs a provided callback within a transaction, retrying either the commitTransaction operation or entire transaction as needed (and when the error permits) to better ensure that the transaction can complete successfully.
  *
- * Passes the session as the function's first argument or via `useMongoSession()` hook
+ * Passes the session as the function's first argument or via `useMongoSession()` hook.
+ * Enables `useTransactionEffect()`, `onCommitted()` and `onRollback()` inside `fn`.
  *
  * @example
  * const executeTransaction = withMongoTransaction(mongoose.connection.getClient(), async () => {
@@ -158,6 +168,7 @@ export function withMongoTransaction(
     fn,
     sessionOptions = {},
     timeoutMS,
+    logger,
   } = prepareOptions(connectionOrOptions, maybeFn, maybeOptions);
 
   return function (this: any, ...args: any[]) {
@@ -175,7 +186,7 @@ export function withMongoTransaction(
         ) {
           provideMongoSession(session);
           return fn.call(this, session, ...args);
-        });
+        }, logger);
 
         const timeoutAt = timeoutMS ? Date.now() + timeoutMS : 0;
         const timeoutError = new MongoTransactionError(
@@ -219,8 +230,10 @@ export function withMongoTransaction(
               }
 
               if (transactionError) {
+                // A cleanup error is already logged and must not replace the transaction error.
                 return scope
                   .rollback()
+                  .catch(noop)
                   .then(() => Promise.reject(transactionError));
               }
 

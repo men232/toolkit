@@ -9,6 +9,14 @@ export function isTransactionAborted(transaction: Transaction): boolean {
   return (transaction as any)?.state === 'TRANSACTION_ABORTED';
 }
 
+// The driver's `Transaction.isCommitted` is deprecated and also true for TRANSACTION_ABORTED.
+export function isTransactionCommitted(transaction: Transaction): boolean {
+  const state = (transaction as any)?.state;
+  return (
+    state === 'TRANSACTION_COMMITTED' || state === 'TRANSACTION_COMMITTED_EMPTY'
+  );
+}
+
 export function isTransactionCommittedEmpty(transaction: Transaction): boolean {
   return (transaction as any)?.state === 'TRANSACTION_COMMITTED_EMPTY';
 }

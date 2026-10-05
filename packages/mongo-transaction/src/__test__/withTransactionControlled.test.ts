@@ -1,5 +1,6 @@
-import { defer, noop } from '@andrew_l/toolkit';
-import { describe, expect, it } from 'vitest';
+import { defer, noop, noopLogger } from '@andrew_l/toolkit';
+import { describe, expect, it, vi } from 'vitest';
+import { useTransactionEffect } from '../hooks';
 import { withTransactionControlled } from '../withTransactionControlled';
 
 describe('withTransactionControlled', () => {
@@ -105,5 +106,23 @@ describe('withTransactionControlled', () => {
     q.resolve();
     await task;
     expect(t.active).toBe(false);
+  });
+
+  it('should log effect error to the provided logger', async () => {
+    const effectError = new Error('apply failed');
+    const logError = vi.fn();
+
+    const t = withTransactionControlled(
+      async () => {
+        await useTransactionEffect(() => Promise.reject(effectError));
+      },
+      { logger: { ...noopLogger, error: logError } },
+    );
+
+    await t.run();
+
+    expect(t.error).toBe(effectError);
+    expect(logError).toHaveBeenCalledTimes(1);
+    expect(logError.mock.calls[0]).toContain(effectError);
   });
 });

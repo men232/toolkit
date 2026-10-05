@@ -3,20 +3,12 @@ import type { OnCommittedCallback } from '../scope';
 import { injectTransactionScope } from './scope';
 
 /**
- * Registers a callback to be executed upon transaction commitment, with support
- * for dependency-based updates.
+ * Registers a callback that runs once after a successful commit, regardless of retries.
+ * A hook error is logged and does not affect the transaction result.
  *
- * This function is used within a transaction scope to perform specific actions
- * when a transaction is committed. If dependencies are provided, the callback
- * is re-registered only if the dependencies have changed. Otherwise, the
- * callback is registered unconditionally.
- *
- * @param {OnCommittedCallback} callback - The function to be executed upon
- *   transaction commitment.
- * @param {readonly any[]} [dependencies=[]] - An optional array of dependencies
- *   to determine if the callback should be re-registered. If the dependencies
- *   differ from the previously registered ones, the callback is updated.
- * @returns {Fn} A cleanup function to cancel event listener.
+ * @param callback Runs after the commit.
+ * @param dependencies When provided, the callback is replaced on retry only if they changed.
+ * @returns Cancels the callback.
  *
  * @example
  * // Basic usage without dependencies

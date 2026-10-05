@@ -13,4 +13,5 @@ export {
 export {
   withTransactionControlled,
   type TransactionControlled,
+  type WithTransactionControlledOptions,
 } from './withTransactionControlled';

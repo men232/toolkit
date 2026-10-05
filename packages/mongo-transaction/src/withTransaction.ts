@@ -1,29 +1,39 @@
-import { type RetryOnErrorConfig, noop, retryOnError } from '@andrew_l/toolkit';
+import {
+  type Logger,
+  type RetryOnErrorConfig,
+  noop,
+  retryOnError,
+} from '@andrew_l/toolkit';
 import { createTransactionScope } from './scope';
 
-export interface WithTransactionOptions extends Partial<RetryOnErrorConfig> {}
+export interface WithTransactionOptions extends Partial<RetryOnErrorConfig> {
+  /**
+   * Receives effect and hook errors.
+   *
+   * @default logger('TransactionScope')
+   */
+  logger?: Logger;
+}
 
 /**
  * Wraps a function with transaction context, enabling retry logic and transactional effects.
  *
- * The wrapped function may be executed multiple times (up to `maxRetriesNumber`) to ensure
+ * The wrapped function may be executed multiple times (up to `maxAttempts`) to ensure
  * all side effects complete successfully. If the retries are exhausted without success,
  * registered cleanup functions will be executed to undo any applied effects.
  *
- * This utility is useful for managing transactional side effects, such as
- * updates to external systems, and ensures proper cleanup in case of failure.
- *
- * Additionally, this enables hooks like `useTransactionEffect()`, which allows
- * defining effects with automatic rollback mechanisms.
+ * Enables `useTransactionEffect()`, `onCommitted()` and `onRollback()` inside `fn`.
  *
  * @param fn - The target function to wrap with transaction handling.
  * @param [options] - Configuration options for the transaction handling.
  * @param [options.beforeRetryCallback] - An optional callback to execute before each retry attempt.
  * @param [options.shouldRetryBasedOnError] - A predicate to determine if a retry should occur based on the thrown error. Defaults to always retry.
- * @param [options.maxRetriesNumber=5] - The maximum number of retries before failing the transaction. Defaults to 5.
+ * @param [options.maxAttempts] - Total number of attempts, initial run included. Takes precedence over `maxRetriesNumber`.
+ * @param [options.maxRetriesNumber=5] - Deprecated, use `maxAttempts`. The maximum number of retries before failing the transaction.
  * @param [options.delayFactor=0] - A multiplier for the delay between retries. Default is 0 (no exponential backoff).
  * @param [options.delayMaxMs=1000] - The maximum delay between retries, in milliseconds. Defaults to 1000 ms.
  * @param [options.delayMinMs=100] - The minimum delay between retries, in milliseconds. Defaults to 100 ms.
+ * @param [options.logger] - Receives effect and hook errors. Defaults to `logger('TransactionScope')`.
  *
  * @example
  * const confirmOrder = withTransaction(async (orderId) => {
@@ -59,10 +69,11 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
     delayFactor = 0,
     delayMaxMs = 1000,
     delayMinMs = 100,
+    logger,
   }: WithTransactionOptions = {},
 ): (this: K, ...args: Args) => Promise<Awaited<T>> {
   return function (this: K, ...args: Args): Promise<Awaited<T>> {
-    const scope = createTransactionScope(fn);
+    const scope = createTransactionScope(fn, logger);
 
     return retryOnError(
       {
@@ -90,7 +101,11 @@ export function withTransaction<T, K = any, Args extends Array<any> = any[]>(
         const { error, result } = scope;
 
         if (error) {
-          return scope.rollback().then(() => Promise.reject(error));
+          // A cleanup error is already logged and must not replace the function error.
+          return scope
+            .rollback()
+            .catch(noop)
+            .then(() => Promise.reject(error));
         }
 
         return scope.commit().then(() => result as Awaited<T>);

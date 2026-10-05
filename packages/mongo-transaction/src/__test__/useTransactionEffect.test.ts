@@ -1,3 +1,4 @@
+import { noopLogger } from '@andrew_l/toolkit';
 import { describe, expect, it } from 'vitest';
 import { useTransactionEffect } from '../hooks';
 import { createTransactionScope } from '../scope';
@@ -35,7 +36,7 @@ describe('useTransactionEffect', () => {
     const toThrow = new Error('Effect error');
     const t = createTransactionScope(async () => {
       await useTransactionEffect(() => Promise.reject(toThrow));
-    });
+    }, noopLogger);
 
     await t.run();
 
@@ -48,7 +49,7 @@ describe('useTransactionEffect', () => {
       await useTransactionEffect(() => Promise.reject(toThrow), {
         flush: 'post',
       });
-    });
+    }, noopLogger);
 
     await t.run();
 

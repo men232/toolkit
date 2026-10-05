@@ -3,20 +3,12 @@ import type { OnRollbackCallback } from '../scope';
 import { injectTransactionScope } from './scope';
 
 /**
- * Registers a callback to be executed upon transaction rollback, with support
- * for dependency-based updates.
+ * Registers a callback that runs once after the final failure, after effect cleanups.
+ * Not called between retries. A hook error is logged and does not affect the transaction result.
  *
- * This function is used within a transaction scope to perform specific actions
- * when a transaction is rolled back. If dependencies are provided, the callback
- * is re-registered only if the dependencies have changed. Otherwise, the
- * callback is registered unconditionally.
- *
- * @param {OnRollbackCallback} callback - The function to be executed upon
- *   transaction rollback.
- * @param {readonly any[]} [dependencies=[]] - An optional array of dependencies
- *   to determine if the callback should be re-registered. If the dependencies
- *   differ from the previously registered ones, the callback is updated.
- * @returns {Fn} A cleanup function to cancel event listener.
+ * @param callback Runs after the rollback.
+ * @param dependencies When provided, the callback is replaced on retry only if they changed.
+ * @returns Cancels the callback.
  *
  * @example
  * // Basic usage without dependencies
@@ -54,7 +46,7 @@ export function onRollback(
 
   if (dependencies && config?.dependencies) {
     if (!isEqual(dependencies, config.dependencies)) {
-      scope.log.debug('OnCommitted caused by dependencies', {
+      scope.log.debug('OnRollback caused by dependencies', {
         prevDependencies: config.dependencies,
         newDependencies: dependencies,
         cursor,
@@ -63,11 +55,11 @@ export function onRollback(
       byCursor[cursor] = { callback, dependencies };
     }
   } else {
-    scope.log.debug('OnCommitted caused by missing dependencies', { cursor });
+    scope.log.debug('OnRollback caused by missing dependencies', { cursor });
     byCursor[cursor] = { callback, dependencies };
   }
 
-  scope.hooks.committed.cursor++;
+  scope.hooks.rollbacks.cursor++;
 
   return () => {
     byCursor[cursor].callback = noop;
