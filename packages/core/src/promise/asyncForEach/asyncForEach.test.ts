@@ -47,12 +47,19 @@ describe('asyncForEach', () => {
 
   it('async predicate', async () => {
     const arr = [1, 2];
+    const events: string[] = [];
 
-    const stateAt = Date.now();
-    const result = await asyncForEach(arr, (_, idx) => {
-      return new Promise(resolve => setTimeout(resolve, 100));
+    await asyncForEach(arr, (_, idx) => {
+      events.push(`start ${idx}`);
+
+      return new Promise<void>(resolve =>
+        setTimeout(() => {
+          events.push(`end ${idx}`);
+          resolve();
+        }, 10),
+      );
     });
 
-    expect(Date.now() - stateAt).greaterThanOrEqual(200);
+    expect(events).toEqual(['start 0', 'end 0', 'start 1', 'end 1']);
   });
 });

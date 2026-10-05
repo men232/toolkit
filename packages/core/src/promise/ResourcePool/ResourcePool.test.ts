@@ -588,16 +588,16 @@ describe('ResourcePool', () => {
         createResource: slowCreateResource,
         destroyResource: slowDestroyResource,
       });
-      const startTime = Date.now();
-      const resource1 = await pool.acquire();
-      const resource2 = await pool.acquire();
-      expect(Date.now() - startTime).toBeGreaterThanOrEqual(50);
+      const resource1: any = await pool.acquire();
+      const resource2: any = await pool.acquire();
+      expect(slowCreateResource).toHaveBeenCalledTimes(2);
+      expect(resource1.id).not.toBe(resource2.id);
       pool.release(resource1);
       pool.release(resource2);
-      const destroyStartTime = Date.now();
       await pool.destroy();
-      expect(Date.now() - destroyStartTime).toBeGreaterThanOrEqual(30);
       expect(slowDestroyResource).toHaveBeenCalledTimes(2);
+      expect(resource1.destroyed).toBe(true);
+      expect(resource2.destroyed).toBe(true);
     });
   });
 });

@@ -1,20 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { delay } from './delay';
 
 describe('delay', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('tick', async () => {
-    const startAt = Date.now();
+    let microtaskDone = false;
+    Promise.resolve().then(() => (microtaskDone = true));
 
     await delay('tick');
 
-    expect(Date.now() - startAt).lessThan(5);
+    expect(microtaskDone).toBe(true);
   });
 
   it('ms', async () => {
-    const startAt = Date.now();
+    vi.useFakeTimers();
 
-    await delay(101);
+    let resolved = false;
+    delay(100).then(() => (resolved = true));
 
-    expect(Date.now() - startAt).greaterThanOrEqual(100);
+    await vi.advanceTimersByTimeAsync(99);
+    expect(resolved).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(resolved).toBe(true);
   });
 });

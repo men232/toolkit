@@ -75,13 +75,20 @@ describe('asyncMap', () => {
 
   it('async predicate', async () => {
     const arr = [1, 2];
+    const events: string[] = [];
 
-    const stateAt = Date.now();
+    const result = await asyncMap(arr, (v, idx) => {
+      events.push(`start ${idx}`);
 
-    await asyncMap(arr, v => {
-      return new Promise(resolve => setTimeout(() => resolve(v ** 2), 100));
+      return new Promise<number>(resolve =>
+        setTimeout(() => {
+          events.push(`end ${idx}`);
+          resolve(v ** 2);
+        }, 10),
+      );
     });
 
-    expect(Date.now() - stateAt).greaterThanOrEqual(200);
+    expect(result).toEqual([1, 4]);
+    expect(events).toEqual(['start 0', 'end 0', 'start 1', 'end 1']);
   });
 });
