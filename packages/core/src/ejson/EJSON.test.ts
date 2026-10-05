@@ -92,6 +92,10 @@ describe('EJSON', () => {
       makeStringifyTest(0xffffffffffffffffn, { $bigint: '//////////8' });
     });
 
+    describe('negative bigint', () => {
+      makeStringifyTest(-5n, { $bigint: '-BQ' });
+    });
+
     describe('binary', () => {
       describe('uint8', () => {
         makeStringifyTest(new Uint8Array([0]), { $binary: 'AA==' });
@@ -173,6 +177,16 @@ describe('EJSON', () => {
 
     describe('bigint', () => {
       makeParseTest({ $bigint: 'AA' }, 0n);
+    });
+
+    describe('negative bigint', () => {
+      makeParseTest({ $bigint: '-BQ' }, -5n);
+    });
+
+    it('should round-trip bigint sign', () => {
+      const value = [0n, 1n, -1n, -5n, 2n ** 64n, -(2n ** 64n)];
+
+      expect(EJSON.parse(EJSON.stringify(value))).toStrictEqual(value);
     });
 
     describe('set', () => {

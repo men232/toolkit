@@ -53,10 +53,18 @@ export const BigIntType: EJSONType = {
   placeholder: '$bigint',
   encode: value => {
     if (typeof value === 'bigint') {
-      return base64.encode(bigIntBytes(value), { includePadding: false });
+      const encoded = base64.encode(bigIntBytes(value), {
+        includePadding: false,
+      });
+
+      return value < 0n ? '-' + encoded : encoded;
     }
   },
   decode(value) {
+    if (value.startsWith('-')) {
+      return -bigIntFromBytes(base64.decode(value.slice(1), { strict: false }));
+    }
+
     return bigIntFromBytes(base64.decode(value, { strict: false }));
   },
 };
