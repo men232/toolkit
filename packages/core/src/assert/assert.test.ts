@@ -168,12 +168,12 @@ describe('greaterThan', () => {
 });
 
 describe('lessThan', () => {
-  it('passes when value is less than or equal to target', () => {
+  it('passes when value is strictly less than target', () => {
     expect(() => assert.lessThan(2, 3)).not.toThrow();
-    expect(() => assert.lessThan(3, 3)).not.toThrow();
   });
 
-  it('throws when value is greater than target', () => {
+  it('throws when value is equal to or greater than target', () => {
+    expect(() => assert.lessThan(3, 3)).toThrow(AssertionError);
     expect(() => assert.lessThan(4, 3)).toThrow(AssertionError);
   });
 

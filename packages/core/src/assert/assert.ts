@@ -139,7 +139,7 @@ export function greaterThan(
       greaterThan,
       value,
       message,
-      'Expected number value greater then ' + target + '.',
+      'Expected number value greater than ' + target + '.',
     );
   }
 }
@@ -149,12 +149,12 @@ export function lessThan(
   target: number,
   message?: string | Error,
 ): asserts value is number {
-  if (!isNumber(value) || value > target) {
+  if (!isNumber(value) || value >= target) {
     throw toError(
       lessThan,
       value,
       message,
-      'Expected number value less then ' + target + '.',
+      'Expected number value less than ' + target + '.',
     );
   }
 }
