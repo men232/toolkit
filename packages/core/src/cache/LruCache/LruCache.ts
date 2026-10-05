@@ -17,7 +17,9 @@ export class LruCache<TKey = any, TValue = any> {
   private items: Map<TKey, number>;
   private forward: Uint8Array | Uint16Array | Uint32Array;
   private backward: Uint8Array | Uint16Array | Uint32Array;
-  private K: TKey[];
+  private freeHead: number;
+  private deletedSize: number;
+  private K: (TKey | undefined)[];
   private V: (TValue | undefined)[];
 
   size: number;
@@ -29,6 +31,8 @@ export class LruCache<TKey = any, TValue = any> {
 
     this.forward = pointerArray(this.capacity);
     this.backward = pointerArray(this.capacity);
+    this.freeHead = 0;
+    this.deletedSize = 0;
     this.K = new Array(capacity);
     this.V = new Array(capacity);
 
@@ -46,6 +50,7 @@ export class LruCache<TKey = any, TValue = any> {
     this.size = 0;
     this.head = 0;
     this.tail = 0;
+    this.deletedSize = 0;
     this.items.clear();
   }
 
@@ -59,8 +64,16 @@ export class LruCache<TKey = any, TValue = any> {
       return this;
     }
 
+    // Reusing a slot freed by delete
+    if (this.deletedSize > 0) {
+      pointer = this.freeHead;
+      this.freeHead = this.forward[pointer];
+      this.deletedSize--;
+      this.size++;
+    }
+
     // The cache is not yet full
-    if (this.size < this.capacity) {
+    else if (this.size < this.capacity) {
       pointer = this.size++;
     }
 
@@ -68,7 +81,7 @@ export class LruCache<TKey = any, TValue = any> {
     else {
       pointer = this.tail;
       this.tail = this.backward[pointer];
-      this.items.delete(this.K[pointer]);
+      this.items.delete(this.K[pointer] as TKey);
     }
 
     // Storing key & value
@@ -85,15 +98,46 @@ export class LruCache<TKey = any, TValue = any> {
   }
 
   has(key: TKey): boolean {
-    return this.peek(key) !== undefined;
+    return this.items.has(key);
   }
 
-  delete(key: TKey): void {
+  delete(key: TKey): boolean {
     const pointer = this.items.get(key);
 
-    if (pointer === undefined) return;
+    if (pointer === undefined) return false;
 
+    this.items.delete(key);
+
+    if (this.size === 1) {
+      this.clear();
+      this.K[pointer] = undefined;
+      this.V[pointer] = undefined;
+      return true;
+    }
+
+    const previous = this.backward[pointer],
+      next = this.forward[pointer];
+
+    if (this.head === pointer) {
+      this.head = next;
+    } else {
+      this.forward[previous] = next;
+    }
+
+    if (this.tail === pointer) {
+      this.tail = previous;
+    } else {
+      this.backward[next] = previous;
+    }
+
+    this.K[pointer] = undefined;
     this.V[pointer] = undefined;
+    this.forward[pointer] = this.freeHead;
+    this.freeHead = pointer;
+    this.deletedSize++;
+    this.size--;
+
+    return true;
   }
 
   get(key: TKey): TValue | undefined {
@@ -134,14 +178,11 @@ export class LruCache<TKey = any, TValue = any> {
       next: () => {
         if (i >= l) return { done: true, value: undefined };
 
-        const key = keys[pointer];
+        const key = keys[pointer] as TKey;
 
         i++;
 
         if (i < l) pointer = forward[pointer];
-
-        // skip marked as removed
-        if (this.peek(key) === undefined) return iterator.next();
 
         return {
           done: false,
@@ -175,14 +216,11 @@ export class LruCache<TKey = any, TValue = any> {
       next: () => {
         if (i >= l) return { done: true, value: undefined };
 
-        const value = values[pointer];
+        const value = values[pointer] as TValue;
 
         i++;
 
         if (i < l) pointer = forward[pointer];
-
-        // skip marked as removed
-        if (value === undefined) return iterator.next();
 
         return {
           done: false,
