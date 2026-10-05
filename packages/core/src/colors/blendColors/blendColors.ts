@@ -25,6 +25,6 @@ export function blendColors(
     Math.round(r1 * (1 - factor) + r2 * factor),
     Math.round(g1 * (1 - factor) + g2 * factor),
     Math.round(b1 * (1 - factor) + b2 * factor),
-    Math.round(a1 * (1 - factor) + a2 * factor),
+    a1 * (1 - factor) + a2 * factor,
   ];
 }
