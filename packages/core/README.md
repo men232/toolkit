@@ -15,6 +15,14 @@ A personal collection of utility JavaScript functions that have been developed a
 - Helps speed up development by providing ready-made solutions for everyday problems.
 - Built with performance and maintainability in mind.
 
+## 🤖 Agents
+
+```sh
+npx skills add men232/toolkit
+```
+
+Installs an index of every `@andrew_l` package into your coding agent, so it reaches for `uniq()` instead of `[...new Set()]`.
+
 ## 🧑‍💻 Authors
 
 - ES-Toolkit

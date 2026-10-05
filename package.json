@@ -16,10 +16,11 @@
     "format-check": "prettier --check --cache .",
     "preinstall": "npx only-allow pnpm",
     "docs:generate": "node ./scripts/generate-docs.mjs",
+    "skill:generate": "node ./scripts/generate-skill.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "pnpm docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "prepare-publish": "node ./scripts/update-version.mjs && pnpm run build && SKIP_PERFORMANCE_TEST=true pnpm run test",
+    "prepare-publish": "node ./scripts/update-version.mjs && pnpm run skill:generate && pnpm run build && SKIP_PERFORMANCE_TEST=true pnpm run test",
     "publish-all": "pnpm publish --filter \"@andrew_l/*\" --access public"
   },
   "engines": {

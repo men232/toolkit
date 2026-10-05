@@ -53,6 +53,10 @@ pnpm add @andrew_l/toolkit     # npm i / yarn add — all work the same
 Everything is published to npm under the [`@andrew_l/*`](https://www.npmjs.com/org/andrew_l) scope
 and installs independently — there is no meta-package to pull in.
 
+```bash
+npx skills add men232/toolkit  # index of every package for your coding agent
+```
+
 <br>
 
 ## Packages
@@ -212,6 +216,7 @@ pnpm build                         # build every package
 pnpm test                          # run the full test suite
 pnpm lint                          # eslint across the workspace
 pnpm docs:dev                      # preview the documentation site
+pnpm skill:generate                # regenerate skills/andrew-toolkit/SKILL.md
 
 pnpm --filter @andrew_l/app test:watch    # work on a single package
 ```
