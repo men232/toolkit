@@ -17,6 +17,7 @@ export function hslToChannels(value: string): Color.ColorChannels {
 
   let { h, s, l, a } = parsed;
 
+  h = ((h % 360) + 360) % 360;
   s /= 100;
   l /= 100;
   const k = (n: number) => (n + h / 30) % 12;

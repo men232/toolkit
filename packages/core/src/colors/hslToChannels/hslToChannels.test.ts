@@ -19,4 +19,9 @@ describe('channelsToHSL', () => {
       179, 133, 224, 0.5,
     ]);
   });
+  test('negative hue wraps around the color wheel', () => {
+    expect(hslToChannels('hsl(-120, 100%, 50%)')).toStrictEqual([0, 0, 255, 1]);
+    expect(hslToChannels('hsl(-480, 100%, 50%)')).toStrictEqual([0, 0, 255, 1]);
+    expect(hslToChannels('hsl(-0.5turn, 100%, 50%)')).toStrictEqual([0, 255, 255, 1]);
+  });
 });
