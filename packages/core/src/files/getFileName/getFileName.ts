@@ -17,11 +17,14 @@ export function getFileName(value: string): string | null {
 
   if (!isString(value)) return null;
 
-  const ext = getFileExtension(value, true);
+  const base = value.slice(
+    Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\')) + 1,
+  );
+  const ext = getFileExtension(base, true);
 
   if (!ext) {
-    return value;
+    return base;
   }
 
-  return value.slice(0, -ext.length);
+  return base.slice(0, -ext.length);
 }

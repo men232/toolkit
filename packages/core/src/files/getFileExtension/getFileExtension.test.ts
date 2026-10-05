@@ -26,4 +26,25 @@ describe('getFileExtension', () => {
       ),
     ).toBe('mp3');
   });
+
+  test('should return null when there is no extension', () => {
+    expect(getFileExtension('file')).toBe(null);
+    expect(getFileExtension('file.')).toBe(null);
+    expect(getFileExtension('.gitignore')).toBe(null);
+  });
+
+  test('should ignore dots in directory names', () => {
+    expect(getFileExtension('packages/my.lib/index')).toBe(null);
+    expect(getFileExtension('packages/my.lib/index.ts')).toBe('.ts');
+    expect(getFileExtension('C:\\dir.v2\\readme')).toBe(null);
+  });
+
+  test('should take the last extension', () => {
+    expect(getFileExtension('archive.tar.gz')).toBe('.gz');
+    expect(getFileExtension('.eslintrc.json')).toBe('.json');
+  });
+
+  test('should ignore dots in the query string', () => {
+    expect(getFileExtension('https://x.com/a.mp3?v=1.2')).toBe('.mp3');
+  });
 });
