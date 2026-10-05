@@ -204,6 +204,19 @@ describe('deepClone', () => {
   });
 
   //-------------------------------------------------------------------------------------
+  // Buffer
+
+  it('should clone Buffer into independent memory', () => {
+    const buffer = Buffer.from([1, 2, 3]);
+    const cloned = deepClone({ buffer }).buffer;
+
+    cloned[0] = 9;
+
+    expect(Buffer.isBuffer(cloned)).toBe(true);
+    expect(Array.from(buffer)).toEqual([1, 2, 3]);
+    expect(Array.from(cloned)).toEqual([9, 2, 3]);
+  });
+
   // ArrayBuffer
   //-------------------------------------------------------------------------------------
   it('should clone ArrayBuffer objects', () => {

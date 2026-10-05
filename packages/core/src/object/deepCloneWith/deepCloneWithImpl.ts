@@ -145,7 +145,7 @@ function cloneObject<T>(
   }
 
   if (isBuffer(valueToClone)) {
-    return (valueToClone as any).subarray() as T;
+    return (valueToClone as any).constructor.from(valueToClone) as T;
   }
 
   if (
