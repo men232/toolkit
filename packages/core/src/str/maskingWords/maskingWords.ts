@@ -15,7 +15,7 @@ import { getWords } from '../getWords';
  * @returns {string} The input string with middle characters of words masked, or an empty string if the input is invalid.
  *
  * @example
- * maskingWords('hello world'); // 'h**o w**d'
+ * maskingWords('hello world'); // 'h***o w***d'
  * maskingWords('John Doe');    // 'J**n D**e'
  * maskingWords('a b c');       // '* * *'
  *
@@ -31,7 +31,7 @@ export function maskingWords(value: string, withChar = '*'): string {
       } else if (len < 3) {
         return word[0].padEnd(len, withChar);
       } else {
-        return word[0].padEnd(len - 2, withChar) + word.at(-1);
+        return word[0].padEnd(len - 1, withChar) + word[len - 1];
       }
     })
     .join(' ');

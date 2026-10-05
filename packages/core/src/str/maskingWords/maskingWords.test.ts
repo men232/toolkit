@@ -3,11 +3,11 @@ import { maskingWords } from './maskingWords';
 
 describe('maskingWords', () => {
   test('few words', () => {
-    expect(maskingWords('hello world')).toBe('h**o w**d');
+    expect(maskingWords('hello world')).toBe('h***o w***d');
   });
 
   test('one word', () => {
-    expect(maskingWords('andrew')).toBe('a***w');
+    expect(maskingWords('andrew')).toBe('a****w');
   });
 
   test('len 2', () => {
@@ -19,6 +19,6 @@ describe('maskingWords', () => {
   });
 
   test('with char', () => {
-    expect(maskingWords('hello world', 'X')).toBe('hXXo wXXd');
+    expect(maskingWords('hello world', 'X')).toBe('hXXXo wXXXd');
   });
 });
