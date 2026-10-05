@@ -37,7 +37,7 @@ export function weightedRoundRobin<T = unknown>(arr: WrrItem<T>[]): () => T {
   const instance = new WeightedRoundRobin(
     arr.map(v => ({
       item: v.item,
-      weight: Math.min(v.weight ?? 1, 1),
+      weight: Math.max(v.weight || 1, 1),
     })),
   );
 
