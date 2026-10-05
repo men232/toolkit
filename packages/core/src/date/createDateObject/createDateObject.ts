@@ -5,6 +5,8 @@ import { isDateObject } from '../isDateObject';
 
 export type DateObjectInput = Date | string | number | DateObject;
 
+const DATE_ONLY_REGEX = /^\d{4}(?:-\d{2}(?:-\d{2})?)?$/;
+
 export function createDateObject(value: DateObjectInput): DateObject;
 export function createDateObject(
   value: DateObjectInput,
@@ -28,12 +30,16 @@ export function createDateObject(
  * @throws {Error} If the input is invalid and `returnsNullWhenInvalid` is `false`.
  *
  * @example
- * // Using a valid Date object
- * createDateObject(new Date('2024-12-08')); // { year: 2024, month: 12, date: 8 }
+ * // Using a valid Date object (read in local time)
+ * createDateObject(new Date(2024, 11, 8)); // { year: 2024, month: 12, date: 8 }
+ *
+ * @example
+ * // Using a date-only string (the calendar date is kept in any timezone)
+ * createDateObject('2024-12-08'); // { year: 2024, month: 12, date: 8 }
  *
  * @example
  * // Using a valid timestamp
- * createDateObject(1702032000000); // { year: 2024, month: 12, date: 8 }
+ * createDateObject(1733659200000); // { year: 2024, month: 12, date: 8 } (2024-12-08T12:00Z, local time)
  *
  * @example
  * // Using an existing DateObject
@@ -55,17 +61,25 @@ export function createDateObject(
 ): DateObject | null {
   let result: DateObject | null = null;
   let inputValue = value;
+  let isDateOnly = false;
 
   if (isNumber(inputValue) || isString(inputValue)) {
+    isDateOnly = isString(inputValue) && DATE_ONLY_REGEX.test(inputValue);
     inputValue = new Date(inputValue);
   }
 
   if (isDate(inputValue)) {
-    result = {
-      year: inputValue.getFullYear(),
-      month: inputValue.getMonth() + 1,
-      date: inputValue.getDate(),
-    };
+    result = isDateOnly
+      ? {
+          year: inputValue.getUTCFullYear(),
+          month: inputValue.getUTCMonth() + 1,
+          date: inputValue.getUTCDate(),
+        }
+      : {
+          year: inputValue.getFullYear(),
+          month: inputValue.getMonth() + 1,
+          date: inputValue.getDate(),
+        };
   } else if (isDateObject(inputValue)) {
     result = { ...inputValue };
   }
