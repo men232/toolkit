@@ -1,7 +1,5 @@
-import { SimpleEventEmitter } from '../SimpleEventEmitter';
-
 /**
- * A basic queue implementation with a limit and event-based synchronization.
+ * A basic FIFO queue with an optional limit and waiting `get` / `put`.
  *
  * This class allows you to put items into a queue and retrieve them asynchronously.
  * If the queue exceeds a specified limit, the `put` operation will wait until an item is retrieved,
@@ -28,37 +26,47 @@ import { SimpleEventEmitter } from '../SimpleEventEmitter';
 export class Queue<T> {
   items: T[] = [];
   #limit?: number;
-  #events = new SimpleEventEmitter();
+  #getters: ((item: T) => void)[] = [];
+  #putters: (() => void)[] = [];
 
   constructor(limit?: number) {
     this.#limit = limit;
   }
 
   get(): Promise<T> {
-    var getItem = (): Promise<T> => {
-      const item = this.items.shift()!;
-      this.#events.emit('get');
-      return Promise.resolve(item);
-    };
-
     if (this.items.length === 0) {
-      return SimpleEventEmitter.once(this.#events, 'put').then(getItem);
+      return new Promise<T>(resolve => {
+        this.#getters.push(resolve);
+      });
     }
 
-    return getItem();
+    var item = this.items.shift()!;
+    var putter = this.#putters.shift();
+
+    if (putter !== undefined) putter();
+
+    return Promise.resolve(item);
   }
 
   put(item: T): Promise<void> {
-    var putItem = (): Promise<void> => {
-      this.items.push(item);
-      this.#events.emit('put');
-      return Promise.resolve();
-    };
+    var getter = this.#getters.shift();
 
-    if (this.#limit && this.items.length >= this.#limit) {
-      return SimpleEventEmitter.once(this.#events, 'get').then(putItem);
+    if (getter !== undefined) {
+      getter(item);
+      return Promise.resolve();
     }
 
-    return putItem();
+    if (this.#limit && this.items.length >= this.#limit) {
+      return new Promise<void>(resolve => {
+        this.#putters.push(() => {
+          this.items.push(item);
+          resolve();
+        });
+      });
+    }
+
+    this.items.push(item);
+
+    return Promise.resolve();
   }
 }
