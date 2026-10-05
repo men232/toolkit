@@ -20,4 +20,13 @@ describe('weeksInYear', () => {
   it('should handle leap years correctly', () => {
     expect(weeksInYear(2000)).toBe(52);
   });
+  it('should match ISO 8601 for every year in 2000-2040', () => {
+    const longYears = [2004, 2009, 2015, 2020, 2026, 2032, 2037];
+
+    for (let year = 2000; year <= 2040; year++) {
+      expect(weeksInYear(year), String(year)).toBe(
+        longYears.includes(year) ? 53 : 52,
+      );
+    }
+  });
 });

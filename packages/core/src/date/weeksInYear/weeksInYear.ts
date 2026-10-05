@@ -11,14 +11,18 @@
  * weeksInYear(2023); // 52
  *
  * @example
- * // Leap year with 53 weeks
+ * // January 1 is a Wednesday in a leap year, so the year has 53 weeks
  * weeksInYear(2020); // 53
  *
  * @group Date
  */
 export function weeksInYear(year: number): number {
-  const target = new Date(Date.UTC(year + 1, 0, 1));
-  const dayNumber = target.getDay();
-
-  return dayNumber < 4 ? 52 : 53;
+  return dec31Weekday(year) === 4 || dec31Weekday(year - 1) === 3 ? 53 : 52;
 }
+
+const dec31Weekday = (year: number): number =>
+  (year +
+    Math.floor(year / 4) -
+    Math.floor(year / 100) +
+    Math.floor(year / 400)) %
+  7;
