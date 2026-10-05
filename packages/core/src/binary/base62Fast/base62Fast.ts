@@ -3,7 +3,7 @@ import type { BaseX } from '../basex';
 
 var ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 var ENCODE_TABLE = new TextEncoder().encode(ALPHABET);
-var DECODE_TABLE = new Uint8Array(128);
+var DECODE_TABLE = new Uint8Array(128).fill(255);
 for (let i = 0; i < ENCODE_TABLE.length; ++i) {
   DECODE_TABLE[ENCODE_TABLE[i]] = i;
 }
@@ -131,7 +131,7 @@ export const base62Fast: BaseX = {
       value = DECODE_TABLE[charCode];
 
       // Validate character: must be in the alphabet
-      if (isNaN(charCode) || value === undefined) {
+      if (!(value < 62)) {
         throw new Error(
           'Invalid Base62 input: contains non-alphabet characters. Index: ' +
             readIndex,

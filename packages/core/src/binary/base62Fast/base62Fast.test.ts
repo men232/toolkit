@@ -24,6 +24,14 @@ function doPerformanceTest(api: any) {
 }
 
 describe('base62Fast', () => {
+  it('should reject characters outside the alphabet', () => {
+    for (const input of ['!!!', 'ab-c', 'ab c', '+/', 'abcé']) {
+      expect(() => base62Fast.decode(input), input).toThrow(
+        'contains non-alphabet characters',
+      );
+    }
+  });
+
   it('should handle all byte values', () => {
     const { decoded, encoded, original } = doTest(base62Fast);
     // console.log({ encoded });
