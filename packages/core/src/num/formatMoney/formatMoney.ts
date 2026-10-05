@@ -74,9 +74,17 @@ export function formatMoney(
       }
     : formatOrCode;
 
+  if (format.decimal === '') {
+    amount = Math.round(amount);
+  }
+
   const formattedNumber = formatNumber(amount, format);
 
-  return format.symbolBefore
-    ? format.symbol + formattedNumber
-    : formattedNumber + format.symbol;
+  if (!format.symbolBefore) {
+    return formattedNumber + format.symbol;
+  }
+
+  return formattedNumber.charCodeAt(0) === 45
+    ? '-' + format.symbol + formattedNumber.slice(1)
+    : format.symbol + formattedNumber;
 }

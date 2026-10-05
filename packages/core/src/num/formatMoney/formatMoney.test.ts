@@ -15,4 +15,15 @@ describe('formatMoney', () => {
   test('intMode', () => {
     expect(formatMoney(1599, 'USD', true)).toBe('$15.99');
   });
+  test('currencies without minor units are rounded', () => {
+    expect(formatMoney(12.5, 'JPY')).toBe('¥13');
+    expect(formatMoney(1234.4, 'KRW')).toBe('₩1,234');
+  });
+
+  test('negative amounts put the sign before the symbol', () => {
+    expect(formatMoney(-5, 'USD')).toBe('-$5');
+    expect(formatMoney(-1234.5, 'EUR')).toBe('-€1.234,50');
+    expect(formatMoney(-1500, 'RUB')).toBe('-1 500₽');
+    expect(formatMoney(-0.004, 'USD')).toBe('$0');
+  });
 });
