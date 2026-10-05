@@ -24,4 +24,29 @@ describe('isTimeString', () => {
     expect(isTimeString(null)).toBe(false); // Null
     expect(isTimeString(undefined)).toBe(false); // Undefined
   });
+  it('should accept one or two digits in each part', () => {
+    expect(isTimeString('9:05')).toBe(true);
+    expect(isTimeString('9:5')).toBe(true);
+    expect(isTimeString('09:5')).toBe(true);
+  });
+
+  it('should reject empty parts and non-digit characters', () => {
+    for (const value of [
+      '12:',
+      ':30',
+      ':',
+      '1.5:2',
+      '1e1:0',
+      '0x1:0',
+      ' 9:05',
+      '9: 05',
+      '12:30 ',
+      '-1:30',
+      '+1:30',
+      '123:00',
+      '12:000',
+    ]) {
+      expect(isTimeString(value), value).toBe(false);
+    }
+  });
 });
