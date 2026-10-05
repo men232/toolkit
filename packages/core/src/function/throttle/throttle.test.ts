@@ -117,4 +117,18 @@ describe('throttle', () => {
     await delay(throttleMs + 1);
     expect(func).toBeCalledTimes(1);
   });
+  it('should keep this for leading and trailing calls', async () => {
+    const contexts: unknown[] = [];
+    const obj = {
+      run: throttle(function (this: unknown) {
+        contexts.push(this);
+      }, 50),
+    };
+
+    obj.run();
+    obj.run();
+    await delay(60);
+
+    expect(contexts).toEqual([obj, obj]);
+  });
 });
