@@ -1,20 +1,22 @@
 import { assert } from '@/assert';
 
 /**
- * Converts a Uint8Array to a Uint16Array.
+ * Converts a `Uint8Array` into a `Uint16Array`, reading each pair of bytes as little-endian.
+ *
+ * Inverse of `uint16ToUint8`.
  *
  * @param {Uint8Array} value - The input byte array to convert. Must have an even length.
  * @returns {Uint16Array} - The converted Uint16Array.
  *
  * @example
  * // Example 1: Converting a valid Uint8Array into a Uint16Array
- * const uint8Array = new Uint8Array([0x12, 0x34, 0x56, 0x78]);
+ * const uint8Array = new Uint8Array([0x34, 0x12, 0x78, 0x56]);
  * const uint16Array = uint8ToUint16(uint8Array);
  * console.log(uint16Array); // Output: Uint16Array [ 0x1234, 0x5678 ]
  *
  * @example
  * // Example 2: Another conversion example
- * const uint8Array2 = new Uint8Array([0xff, 0xee, 0xdd, 0xcc]);
+ * const uint8Array2 = new Uint8Array([0xee, 0xff, 0xcc, 0xdd]);
  * const uint16Array2 = uint8ToUint16(uint8Array2);
  * console.log(uint16Array2); // Output: Uint16Array [ 0xffee, 0xddcc ]
  *
@@ -29,7 +31,7 @@ export function uint8ToUint16(value: Uint8Array): Uint16Array {
   const uint16Array = new Uint16Array(value.length / 2);
 
   for (let i = 0; i < uint16Array.length; i++) {
-    uint16Array[i] = (value[i * 2] << 8) | value[i * 2 + 1];
+    uint16Array[i] = value[i * 2] | (value[i * 2 + 1] << 8);
   }
 
   return uint16Array;

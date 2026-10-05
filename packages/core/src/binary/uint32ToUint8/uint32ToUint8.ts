@@ -1,5 +1,7 @@
 /**
- * Converts a `Uint32Array` into a `Uint8Array`.
+ * Converts a `Uint32Array` into a `Uint8Array`, writing each value as 4 bytes in little-endian order.
+ *
+ * Inverse of `uint8ToUint32`.
  *
  * @param {Uint32Array} value - The input `Uint32Array` to convert.
  * @returns {Uint8Array} - The resulting `Uint8Array`, with length four times that of the input `Uint32Array`.

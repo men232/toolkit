@@ -1,5 +1,7 @@
 /**
- * Converts a `Uint16Array` into a `Uint8Array`.
+ * Converts a `Uint16Array` into a `Uint8Array`, writing each value as 2 bytes in little-endian order.
+ *
+ * Inverse of `uint8ToUint16`.
  *
  * @param {Uint16Array} value - The input `Uint16Array` to convert.
  * @returns {Uint8Array} - The resulting `Uint8Array`, with length twice that of the input `Uint16Array`.

@@ -146,6 +146,29 @@ describe('EJSON', () => {
           new Uint32Array([0xffffffff]),
         );
       });
+
+      describe('uint16 little-endian', () => {
+        makeParseTest(
+          { $binary: { value: 'AgE=', bit: 16 } },
+          new Uint16Array([0x0102]),
+        );
+      });
+
+      describe('uint32 little-endian', () => {
+        makeParseTest(
+          { $binary: { value: 'BAMCAQ==', bit: 32 } },
+          new Uint32Array([0x01020304]),
+        );
+      });
+
+      it('should round-trip uint16 and uint32 values', () => {
+        const value = {
+          u16: new Uint16Array([1, 258, 0xabcd]),
+          u32: new Uint32Array([1, 0x01020304, 0xfedcba98]),
+        };
+
+        expect(EJSON.parse(EJSON.stringify(value))).toStrictEqual(value);
+      });
     });
 
     describe('bigint', () => {

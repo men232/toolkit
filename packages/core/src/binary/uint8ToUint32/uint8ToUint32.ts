@@ -1,7 +1,9 @@
 import { assert } from '@/assert';
 
 /**
- * Converts a `Uint8Array` into a `Uint32Array`.
+ * Converts a `Uint8Array` into a `Uint32Array`, reading each group of 4 bytes as little-endian.
+ *
+ * Inverse of `uint32ToUint8`.
  *
  * @param {Uint8Array} value - The input byte array to convert. Length must be a multiple of 4.
  * @returns {Uint32Array} - The converted array of 32-bit unsigned integers.
@@ -16,9 +18,9 @@ import { assert } from '@/assert';
  * // Example 2: Another conversion example
  * const uint8Array2 = new Uint8Array([0xff, 0xee, 0xdd, 0xcc, 0xab, 0xcd, 0xef, 0x01]);
  * const uint32Array2 = uint8ToUint32(uint8Array2);
- * console.log(uint32Array2); // Output: Uint32Array [ 0xccddeeff, 0x01abcded ]
+ * console.log(uint32Array2); // Output: Uint32Array [ 0xccddeeff, 0x01efcdab ]
  *
- *  @group Binary
+ * @group Binary
  */
 export function uint8ToUint32(value: Uint8Array): Uint32Array {
   assert.ok(
@@ -29,10 +31,10 @@ export function uint8ToUint32(value: Uint8Array): Uint32Array {
   const uint32Array = new Uint32Array(value.length / 4);
   for (let i = 0; i < uint32Array.length; i++) {
     uint32Array[i] =
-      (value[i * 4] << 24) |
-      (value[i * 4 + 1] << 16) |
-      (value[i * 4 + 2] << 8) |
-      value[i * 4 + 3];
+      value[i * 4] |
+      (value[i * 4 + 1] << 8) |
+      (value[i * 4 + 2] << 16) |
+      (value[i * 4 + 3] << 24);
   }
 
   return uint32Array;
