@@ -59,7 +59,7 @@ export function crc32(
     return crc32(textEncoder.encode(value), seed);
   }
 
-  var crc = seed === 0 ? 0 : ~~seed! ^ -1;
+  var crc = ~~seed! ^ -1;
 
   if (value instanceof Uint8Array) {
     for (var index = 0; index < value.length; index++) {

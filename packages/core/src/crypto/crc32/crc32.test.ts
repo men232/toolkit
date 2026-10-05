@@ -45,9 +45,21 @@ describe('crc32', () => {
     expect(crc32(text, 123456789)).toBe(seedResult);
   });
 
-  it('uses 0 seed correctly', () => {
+  it('treats 0 seed as the start of a stream', () => {
     const text = 'zero seed test';
-    expect(crc32(text, 0)).toBe(-1286639364);
+    expect(crc32(text, 0)).toBe(crc32(text));
+  });
+
+  it('computes the same hash in chunks starting from 0', () => {
+    let crc = 0;
+    for (const chunk of ['hello', ' ', 'world']) crc = crc32(chunk, crc);
+
+    expect(crc).toBe(crc32('hello world'));
+    expect(crc >>> 0).toBe(222957957);
+  });
+
+  it('chains through an empty chunk', () => {
+    expect(crc32('hello', crc32(''))).toBe(crc32('hello'));
   });
 
   // Edge cases
