@@ -1,6 +1,6 @@
 {
   "name": "@andrew_l/mongo-transaction",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Manages side effects in MongoDB transactions: runs them once across retries, undoes them on failure, emits after commit.",
   "keywords": [
     "mongo",
