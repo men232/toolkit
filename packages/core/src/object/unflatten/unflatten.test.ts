@@ -39,4 +39,7 @@ describe('unflatten', () => {
   test('should handle invalid value', () => {
     expect(unflatten(null as any, '.')).toStrictEqual({});
   });
+  test('should return an empty object for an empty input', () => {
+    expect(unflatten({})).toStrictEqual({});
+  });
 });

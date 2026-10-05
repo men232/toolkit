@@ -89,7 +89,7 @@ export function unflatten(input: object, separator = '_') {
     }
   }
 
-  return output;
+  return output === undefined ? {} : output;
 }
 
 function empty(key: unknown): any {
