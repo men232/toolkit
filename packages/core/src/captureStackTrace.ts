@@ -23,5 +23,10 @@ export function captureStackTrace(till: AnyFunction): string {
     (Error.captureStackTrace as any)(err, till);
   }
 
-  return (err.stack || '').slice(6);
+  // Drop the header line whatever it is: tools that override
+  // `Error.prepareStackTrace` (vitest, source-map-support) emit `Error: ` instead of `Error`
+  const stack = err.stack || '';
+  const firstFrame = stack.indexOf('\n');
+
+  return firstFrame === -1 ? '' : stack.slice(firstFrame + 1);
 }
