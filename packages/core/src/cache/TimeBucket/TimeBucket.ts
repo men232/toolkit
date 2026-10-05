@@ -54,7 +54,7 @@ export class TimeBucket<K = any, V = any> {
   }
 
   get sizeMs(): number {
-    return this.sizeMs;
+    return this._sizeMs;
   }
 
   set sizeMs(value: number) {

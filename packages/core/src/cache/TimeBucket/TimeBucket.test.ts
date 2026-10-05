@@ -84,3 +84,13 @@ test('TimeBucket', async () => {
 
   expect(map.size).toBe(0);
 });
+
+test('sizeMs getter returns the configured size', () => {
+  const map = new TimeBucket({ sizeMs: 100 });
+
+  expect(map.sizeMs).toBe(100);
+
+  map.sizeMs = 250;
+
+  expect(map.sizeMs).toBe(250);
+});
