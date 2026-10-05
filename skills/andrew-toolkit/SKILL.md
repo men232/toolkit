@@ -22,7 +22,6 @@ Full reference: https://men232.github.io/toolkit/reference/
 | [`@andrew_l/graceful`](#andrew_lgraceful) | Utility to manage application shutdown. |
 | [`@andrew_l/mongo-pagination`](#andrew_lmongo-pagination) | Manages pagination without relying on traditional offsets. |
 | [`@andrew_l/mongo-transaction`](#andrew_lmongo-transaction) | Manages side effects in MongoDB transactions: runs them once across retries, undoes them on failure, emits after commit. |
-| [`@andrew_l/pino-pretty`](#andrew_lpino-pretty) | Pino transport for beautiful log output |
 | [`@andrew_l/search-query-language`](#andrew_lsearch-query-language) | Converts human-readable query strings into structured representations. |
 | [`@andrew_l/service-actor`](#andrew_lservice-actor) | Forget about passing data like trace IDs between functions. |
 | [`@andrew_l/snowflake`](#andrew_lsnowflake) | Another implementation of snowflake id generator. |
@@ -561,18 +560,6 @@ Manages side effects in MongoDB transactions: runs them once across retries, und
 | `withMongoTransaction(options)` | Runs a provided callback within a transaction, retrying either the commitTransaction operation or entire transaction as needed (and when the error permits) to better ensure that the transaction can complete successfully. |
 | `withTransaction(fn, options?)` | Wraps a function with transaction context, enabling retry logic and transactional effects. |
 | `withTransactionControlled(fn, options?)` | Wraps a function and returns a `TransactionControlled` interface, allowing manual control over transaction commit and rollback operations. |
-
-## @andrew_l/pino-pretty
-
-Pino transport for beautiful log output
-
-`pnpm add @andrew_l/pino-pretty`
-
-### Other functions
-
-| Export | Does |
-| --- | --- |
-| `build(opts?)` | Constructs a of stream to which the produced prettified log data will be written. |
 
 ## @andrew_l/search-query-language
 
