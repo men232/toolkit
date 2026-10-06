@@ -71,7 +71,7 @@ export const logger = (...baseArgs: any[]): Logger => {
     baseArgs[0] = `[${baseArgs[0].split('/')!.at(-1)!.split('?', 1)[0]!}]`;
   }
 
-  const writeLog = (level: LogLevel, ...[pattern, ...args]: any[]) => {
+  const writeLog = (level: LogLevel, pattern?: any, ...args: any[]) => {
     const levelNum = LOG_LEVELS[level];
 
     if (levelNum < currentLogLevel) {
