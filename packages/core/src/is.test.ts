@@ -215,3 +215,26 @@ describe('isBuffer', () => {
     global.Buffer = originalBuffer; // Restore Buffer
   });
 });
+
+describe('isEqual with objects without own keys', () => {
+  it('compares errors by message', () => {
+    expect(isEqual(new Error('a'), new Error('b'))).toBe(false);
+    expect(isEqual(new Error('a'), new Error('a'))).toBe(true);
+  });
+
+  it('compares boxed primitives by value', () => {
+    expect(isEqual(new Number(1), new Number(2))).toBe(false);
+    expect(isEqual(new Number(NaN), new Number(NaN))).toBe(true);
+    expect(isEqual(new String('a'), new String('a'))).toBe(true);
+  });
+
+  it('compares URLs by href', () => {
+    expect(isEqual(new URL('http://a'), new URL('http://b'))).toBe(false);
+    expect(isEqual(new URL('http://a/x'), new URL('http://a/x'))).toBe(true);
+  });
+
+  it('keeps empty plain and null-prototype objects equal', () => {
+    expect(isEqual({}, {})).toBe(true);
+    expect(isEqual(Object.create(null), Object.create(null))).toBe(true);
+  });
+});

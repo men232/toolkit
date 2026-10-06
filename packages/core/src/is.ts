@@ -330,6 +330,10 @@ export function isEqual(a: unknown, b: unknown): boolean {
     return false;
   }
 
+  if (aKeys.length === 0) {
+    return isEqualOpaque(a, b);
+  }
+
   let key: any;
 
   for (let i = aKeys.length; i-- !== 0;) {
@@ -514,4 +518,22 @@ export function isNode(): boolean {
     typeof globalThis?.process !== 'undefined' &&
     process?.versions?.node != null
   );
+}
+
+function isEqualOpaque(a: any, b: any): boolean {
+  var valueOf = a.valueOf;
+  var toString = a.toString;
+
+  if (typeof valueOf === 'function' && valueOf !== Object.prototype.valueOf) {
+    return Object.is(valueOf.call(a), b.valueOf());
+  }
+
+  if (
+    typeof toString === 'function' &&
+    toString !== Object.prototype.toString
+  ) {
+    return toString.call(a) === b.toString();
+  }
+
+  return true;
 }
