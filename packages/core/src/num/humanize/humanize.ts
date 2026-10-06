@@ -1,3 +1,10 @@
+const UNITS: readonly [number, string][] = [
+  [1e3, 'k'],
+  [1e6, 'M'],
+  [1e9, 'B'],
+  [1e12, 'T'],
+];
+
 /**
  * Humanizes large numbers into a more readable format using suffixes like K, M, B, T (thousand, million, billion, trillion).
  *
@@ -28,13 +35,6 @@
  *
  * @group Numbers
  */
-const UNITS: readonly [number, string][] = [
-  [1e3, 'k'],
-  [1e6, 'M'],
-  [1e9, 'B'],
-  [1e12, 'T'],
-];
-
 export function humanize(input: number | string, decimals = 1): string {
   if (input === null || input === undefined) {
     return String(input);
