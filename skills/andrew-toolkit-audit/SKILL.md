@@ -405,6 +405,11 @@ Every entry below is a pattern people write by hand where an @andrew_l export do
   - Detect: `\*\s*(?:0\.)?299\s*\+[\s\S]{0,40}?\*\s*(?:0\.)?587`
   - Detect: `(?:0\.)?299\s*\*\s*\w+(?:\[\d\])?\s*\+[\s\S]{0,40}?(?:0\.)?587\s*\*`
 
+#### `toError(value, unknownMessage?)`
+
+- Replaces `err instanceof Error ? err.message : String(err)` — `toError(err).message` gives the same text for errors, strings and numbers, uses `message` of error-like objects instead of `'[object Object]'`, and recognises errors from another realm (`vm`, iframes).
+  - Detect: `instanceof\s+Error\s*\?\s*[\w.]+\.message\s*:\s*String\(`
+
 #### `toPath(deepKey)`
 
 - Replaces `path.split('.')` to walk a key path — breaks on brackets and quoted keys (`a[0].b`, `a["c.d"]`); `toPath` parses both like lodash (`a["c.d"]` → `['a', 'c.d']`). To read or write the value, prefer `get`/`set`.
