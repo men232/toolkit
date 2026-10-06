@@ -17,4 +17,14 @@ describe('strAssign', () => {
       }),
     ).toBe('Hello WORLD');
   });
+
+  test('placeholders with digits', () => {
+    expect(
+      strAssign('{{id1}} {{ name }} {{v2.x}}', {
+        id1: 5,
+        name: 'n',
+        'v2.x': 7,
+      }),
+    ).toBe('5 n 7');
+  });
 });

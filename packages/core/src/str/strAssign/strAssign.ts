@@ -1,4 +1,4 @@
-const DEF_STR_ASSIGN_REGEXP = /\{{([A-z-_. ]*)\}}/g;
+const DEF_STR_ASSIGN_REGEXP = /\{\{([\w\-. ]*)\}\}/g;
 const DEF_STR_ASSIGN_METHOD = (obj: any, key: string) => obj[key];
 
 /**
