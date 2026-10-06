@@ -55,4 +55,36 @@ describe('AsyncIterableQueue', () => {
 
     expect(queue.closed).toBe(true);
   });
+  it('close ends every consumer that is waiting', async () => {
+    const queue = new AsyncIterableQueue<number>();
+    const first = queue[Symbol.asyncIterator]().next();
+    const second = queue[Symbol.asyncIterator]().next();
+
+    queue.close();
+
+    const result = await Promise.race([
+      Promise.all([first, second]),
+      new Promise(resolve => setTimeout(() => resolve('timeout'), 50)),
+    ]);
+
+    expect(result).toEqual([
+      { value: undefined, done: true },
+      { value: undefined, done: true },
+    ]);
+    expect((queue as any)._queue.items).toEqual([]);
+  });
+
+  it('close after buffered items ends consumers once the items are read', async () => {
+    const queue = new AsyncIterableQueue<number>();
+    const iterator = queue[Symbol.asyncIterator]();
+
+    queue.put(1);
+    queue.put(2);
+    queue.close();
+
+    expect(await iterator.next()).toEqual({ value: 1, done: false });
+    expect(await iterator.next()).toEqual({ value: 2, done: false });
+    expect(await iterator.next()).toEqual({ value: undefined, done: true });
+    expect(await iterator.next()).toEqual({ value: undefined, done: true });
+  });
 });

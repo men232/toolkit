@@ -33,6 +33,11 @@ export class Queue<T> {
     this.#limit = limit;
   }
 
+  /** @internal */
+  get waiting(): number {
+    return this.#getters.length;
+  }
+
   get(): Promise<T> {
     if (this.items.length === 0) {
       return new Promise<T>(resolve => {

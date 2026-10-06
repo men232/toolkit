@@ -53,7 +53,12 @@ export class AsyncIterableQueue<T> implements AsyncIterable<T> {
     if (this._closed) return;
 
     this._closed = true;
-    this._queue.put(AsyncIterableQueue.QUEUE_END_MARKER);
+
+    const markers = this._queue.waiting || 1;
+
+    for (let i = 0; i < markers; i++) {
+      this._queue.put(AsyncIterableQueue.QUEUE_END_MARKER);
+    }
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
