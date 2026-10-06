@@ -780,4 +780,10 @@ describe('EJSON', () => {
       });
     });
   });
+  it('should round-trip an Invalid Date as an Invalid Date', () => {
+    const value = EJSON.parse(EJSON.stringify({ d: new Date('garbage') }));
+
+    expect(value.d).toBeInstanceOf(Date);
+    expect(Number.isNaN(value.d.getTime())).toBe(true);
+  });
 });

@@ -22,10 +22,12 @@ import {
  * | Set         | $set        | EJSON.Set      |
  * | Infinity    | $inf        | EJSON.Infinity |
  * | BigInt      | $bigint     | EJSON.BigInt   |
- * | RegExp      | $regexp     | EJSON.RegExp   |
+ * | RegExp      | $regex      | EJSON.RegExp   |
  * | Uint8Array  | $binary     | EJSON.Binary   |
  * | Uint16Array | $binary     | EJSON.Binary   |
  * | Uint32Array | $binary     | EJSON.Binary   |
+ *
+ * A Node `Buffer` is encoded as `$binary` and decodes back as a plain `Uint8Array`.
  *
  * `EJSON.Type.Error` (`$error`) is available but not part of the basic set,
  * add it explicitly with `addType`.

@@ -15,7 +15,7 @@ export const DateType: EJSONType = {
     }
   },
   decode(value) {
-    return new Date(value);
+    return new Date(value === null ? NaN : value);
   },
 };
 
