@@ -16,3 +16,32 @@ describe('difference', () => {
     expect(difference([1, 2, 3, 4, 5], [2, 4], [1, 5])).toEqual([3]);
   });
 });
+
+it('should ignore duplicates inside a single array', () => {
+  expect(difference([1], [2, 2])).toEqual([1, 2]);
+  expect(difference([1, 1, 3], [2, 2, 2], [3])).toEqual([1, 2]);
+  expect(difference([1, 2], [2, 2], [4, 4])).toEqual([1, 4]);
+});
+
+it('should match a reference implementation on random inputs', () => {
+  const reference = (...arrays: number[][]) => {
+    const counts = new Map<number, number>();
+    for (const items of arrays) {
+      for (const item of new Set(items)) {
+        counts.set(item, (counts.get(item) ?? 0) + 1);
+      }
+    }
+    return [...counts].filter(([, count]) => count === 1).map(([item]) => item);
+  };
+
+  for (let n = 0; n < 500; n++) {
+    const arrays = Array.from({ length: 2 + (n % 3) }, () =>
+      Array.from(
+        { length: (Math.random() * 8) | 0 },
+        () => (Math.random() * 6) | 0,
+      ),
+    );
+
+    expect(difference(...arrays)).toEqual(reference(...arrays));
+  }
+});

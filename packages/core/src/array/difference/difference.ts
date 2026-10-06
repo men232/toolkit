@@ -21,22 +21,38 @@ export function difference<T>(...arrays: (readonly T[])[]): T[] {
   if (arrays.length === 0) return [];
   if (arrays.length === 1) return [...arrays[0]];
 
-  const [first, ...rest] = arrays;
-  const blacklist = new Set();
-  const set = new Set(first);
+  var set = new Set<T>(arrays[0]);
+  var seen = new Set<T>();
+  var last = arrays.length - 1;
+  var fresh: T[] = [];
+  var items, item, a, i;
 
-  for (const items of rest) {
-    for (const item of items) {
-      if (blacklist.has(item)) continue;
-      if (set.has(item)) {
-        set.delete(item);
-        blacklist.add(item);
-        continue;
+  for (a = 1; a <= last; a++) {
+    items = arrays[a];
+
+    if (a > 1) {
+      for (i = 0; i < fresh.length; i++) {
+        seen.delete(fresh[i]);
+        set.add(fresh[i]);
       }
 
-      set.add(item);
+      fresh = [];
+    }
+
+    for (i = 0; i < items.length; i++) {
+      item = items[i];
+
+      if (seen.has(item)) continue;
+
+      seen.add(item);
+
+      if (!set.delete(item)) fresh.push(item);
     }
   }
 
-  return Array.from(set);
+  var result = Array.from(set);
+
+  for (i = 0; i < fresh.length; i++) result.push(fresh[i]);
+
+  return result;
 }
