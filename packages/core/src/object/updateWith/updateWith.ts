@@ -1,6 +1,6 @@
 import { isObject, isString } from '@/is';
 import { isDeepKey, isIndex, toKey, toPath } from '@/str';
-import { isUnsafeProperty } from '@/str/isUnsafeProperty';
+import { isUnsafeToWriteProperty } from '@/str/isUnsafeToWriteProperty';
 import type { Arrayable } from '@/types';
 import { get } from '../get';
 
@@ -103,8 +103,8 @@ export function updateWith<T extends object, R>(
   for (let i = 0; i < resolvedPath.length && current != null; i++) {
     const key = toKey(resolvedPath[i]);
 
-    if (isUnsafeProperty(key)) {
-      continue;
+    if (isUnsafeToWriteProperty(key)) {
+      return obj;
     }
 
     let newValue: unknown;
@@ -113,6 +113,11 @@ export function updateWith<T extends object, R>(
       newValue = updateValue;
     } else {
       const objValue = current[key];
+
+      if (typeof objValue === 'function' && !Object.hasOwn(current, key)) {
+        return obj;
+      }
+
       const customizerResult = customizer?.(objValue, key as string, obj);
       newValue =
         customizerResult !== undefined

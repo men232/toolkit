@@ -245,4 +245,28 @@ describe('updateWith', () => {
     );
     expect(object).toEqual({ a: { b: 2 } });
   });
+
+  it('should not pollute Object.prototype through unsafe keys', () => {
+    const target: any = {};
+
+    expect(updateWith(target, 'constructor.prototype.polluted', () => 1)).toBe(
+      target,
+    );
+    expect(({} as any).polluted).toBeUndefined();
+    expect(target).toStrictEqual({});
+  });
+  it('should not pollute shared built-ins through inherited functions', () => {
+    for (const path of [
+      'toString.polluted',
+      ['toString', 'polluted'],
+      'toString.call.polluted',
+    ]) {
+      const target: any = {};
+      expect(updateWith(target, path as any, () => 1)).toBe(target);
+      expect((Object.prototype.toString as any).polluted).toBeUndefined();
+      expect((Function.prototype.call as any).polluted).toBeUndefined();
+      expect(Object.hasOwn(Object.prototype.toString, 'call')).toBe(false);
+      expect(Object.hasOwn(target, 'toString')).toBe(false);
+    }
+  });
 });

@@ -279,4 +279,50 @@ describe('set', () => {
       expect(pass).toBe(true);
     });
   });
+
+  it('should not pollute Object.prototype through unsafe keys', () => {
+    for (const path of [
+      'constructor.prototype.polluted',
+      ['constructor', 'prototype', 'polluted'],
+      '__proto__.polluted',
+      ['__proto__', 'polluted'],
+    ]) {
+      const target: any = {};
+
+      expect(set(target, path as any, 1)).toBe(target);
+      expect(({} as any).polluted).toBeUndefined();
+      expect(target).toStrictEqual({});
+    }
+  });
+  it('should not pollute shared built-ins through inherited functions', () => {
+    for (const path of [
+      'toString.polluted',
+      ['toString', 'polluted'],
+      'toString.call.polluted',
+    ]) {
+      const target: any = {};
+      expect(set(target, path as any, 1)).toBe(target);
+      expect((Object.prototype.toString as any).polluted).toBeUndefined();
+      expect((Function.prototype.call as any).polluted).toBeUndefined();
+      expect(Object.hasOwn(Object.prototype.toString, 'call')).toBe(false);
+      expect(Object.hasOwn(target, 'toString')).toBe(false);
+    }
+  });
+  it('should not write through an inherited method', () => {
+    class Svc {
+      handler() {
+        return 'ok';
+      }
+    }
+    const a: any = new Svc();
+    const b: any = new Svc();
+
+    expect(set(a, 'handler.meta', 1)).toBe(a);
+    expect(Object.hasOwn(a, 'handler')).toBe(false);
+    expect(a.handler()).toBe('ok');
+    expect(b.handler.meta).toBeUndefined();
+
+    set(Svc.prototype, 'handler.meta', 1);
+    expect(b.handler.meta).toBe(1);
+  });
 });
