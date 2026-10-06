@@ -1,8 +1,5 @@
 import { isObject } from '@/is';
-
-const badKeys = Object.freeze(
-  new Set(['constructor', '__proto__', 'prototype']),
-);
+import { isUnsafeToWriteProperty } from '@/str/isUnsafeToWriteProperty';
 
 /**
  * Converts a flattened object back into a nested structure.
@@ -75,7 +72,7 @@ export function unflatten(input: object, separator = '_') {
         output = output || tmp;
       }
 
-      if (badKeys.has(key)) break;
+      if (isUnsafeToWriteProperty(key)) break;
 
       if (i < arr.length) {
         next = Object.hasOwn(tmp, key) ? tmp[key] : undefined;

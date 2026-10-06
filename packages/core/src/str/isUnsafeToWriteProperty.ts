@@ -1,13 +1,14 @@
 /**
- * Checks if a property key is unsafe to write to.
+ * Checks if a property key is unsafe to write through.
  *
- * Writing through `__proto__`, `constructor`, or `prototype` can reach
- * `Object.prototype` and pollute every object, so write paths like `set`,
- * `updateWith` and `unset` abort when a path segment matches one of these keys,
- * matching lodash's behavior.
+ * Following `__proto__`, `constructor` or `prototype` from a plain object
+ * leads to shared prototypes (`Object.prototype`, `Function.prototype`), so a
+ * write that walks a path through one of these keys can pollute every object.
+ * Returns `true` for these three keys.
  *
- * Read paths like `get` use `isUnsafeProperty` instead, which only blocks
- * `__proto__`; reading `constructor` and `prototype` stays unrestricted.
+ * Unlike `isUnsafeProperty`, which only matches `__proto__`, this also matches
+ * `constructor` and `prototype`, since reading them is harmless but writing
+ * through them is not.
  *
  * @param key - The property key to check
  * @returns `true` if the property is unsafe to write to, `false` otherwise
