@@ -19,19 +19,38 @@
  * @group Files
  */
 export function getMostSpecificPaths(keys: string[]): string[] {
-  keys = [...keys].sort();
+  var sorted = keys.slice().sort();
+  var len = sorted.length;
+  var result: string[] = [];
+  var current, next, code, j;
 
-  const result = [];
+  outer: for (var i = 0; i < len; i++) {
+    current = sorted[i];
+    next = sorted[i + 1];
 
-  for (let i = 0; i < keys.length; i++) {
-    const currentPath = keys[i];
-    const nextPath = keys[i + 1];
+    if (current === next) continue;
 
-    if (currentPath === nextPath) continue;
-
-    if (!nextPath || !nextPath.startsWith(currentPath + '.')) {
-      result.push(currentPath);
+    if (next === undefined || !next.startsWith(current)) {
+      result.push(current);
+      continue;
     }
+
+    code = next.charCodeAt(current.length);
+
+    if (code === 46) continue;
+
+    for (
+      j = i + 2;
+      code < 46 && j < len && sorted[j].startsWith(current);
+      j++
+    ) {
+      code = sorted[j].charCodeAt(current.length);
+
+      if (code === 46) continue outer;
+      if (code > 46) break;
+    }
+
+    result.push(current);
   }
 
   return result;

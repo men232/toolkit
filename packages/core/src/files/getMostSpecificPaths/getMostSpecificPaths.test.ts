@@ -73,3 +73,13 @@ describe('getMostSpecificPaths', () => {
     expect(input).toEqual(inputCopy);
   });
 });
+
+it('removes parents when other keys sort between parent and child', () => {
+  expect(getMostSpecificPaths(['user', 'user-name', 'user.id'])).toEqual([
+    'user-name',
+    'user.id',
+  ]);
+  expect(
+    getMostSpecificPaths(['a', 'a b', 'a!', 'a.b', 'a.b.c', 'a.bc']),
+  ).toEqual(['a b', 'a!', 'a.b.c', 'a.bc']);
+});
