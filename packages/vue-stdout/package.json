@@ -18,8 +18,8 @@
     "dev": "tsx playground/dev.ts",
     "prepack": "obuild",
     "check-types": "vue-tsc --noEmit && vue-tsc --noEmit -p tsconfig.node.json",
-    "test": "vitest run --typecheck",
-    "test:watch": "vitest watch --typecheck"
+    "test": "vitest run --typecheck --typecheck.include='**/*.test.ts'",
+    "test:watch": "vitest watch --typecheck --typecheck.include='**/*.test.ts'"
   },
   "engines": {
     "node": ">=22.12.0"

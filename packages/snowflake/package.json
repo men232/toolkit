@@ -23,8 +23,8 @@
     "check-types": "tsc --noEmit",
     "build": "obuild",
     "prepack": "obuild",
-    "test": "vitest run --typecheck",
-    "test:watch": "vitest watch --typecheck",
+    "test": "vitest run --typecheck --typecheck.include='**/*.test.ts'",
+    "test:watch": "vitest watch --typecheck --typecheck.include='**/*.test.ts'",
     "benchmark": "vitest bench watch ./benchmark",
     "benchmark:watch": "vitest bench watch ./benchmark"
   },
