@@ -1,10 +1,4 @@
-const htmlEscapes: Record<number, string> = Object.freeze({
-  38: '&amp;', // &
-  60: '&lt;', // <
-  62: '&gt;', // >
-  34: '&quot;', // "
-  39: '&#39;', // '
-});
+const ESCAPE_RE = /["'&<>]/;
 
 /**
  * Sanitizes a string by escaping HTML syntax to prevent XSS (Cross-site scripting) attacks.
@@ -32,14 +26,40 @@ export function escapeHtml(unsafe: string) {
     return '';
   }
 
-  let result = '';
-  let strLen = unsafe.length;
-  let char: number;
+  var match = ESCAPE_RE.exec(unsafe);
 
-  for (let idx = 0; idx < strLen; idx++) {
-    char = unsafe.charCodeAt(idx);
-    result += htmlEscapes[char] || String.fromCharCode(char);
+  if (match === null) return unsafe;
+
+  var result = '',
+    last = 0,
+    len = unsafe.length,
+    escaped;
+
+  for (var i = match.index; i < len; i++) {
+    switch (unsafe.charCodeAt(i)) {
+      case 34:
+        escaped = '&quot;';
+        break;
+      case 38:
+        escaped = '&amp;';
+        break;
+      case 39:
+        escaped = '&#39;';
+        break;
+      case 60:
+        escaped = '&lt;';
+        break;
+      case 62:
+        escaped = '&gt;';
+        break;
+      default:
+        continue;
+    }
+
+    if (last !== i) result += unsafe.slice(last, i);
+    result += escaped;
+    last = i + 1;
   }
 
-  return result;
+  return last !== len ? result + unsafe.slice(last) : result;
 }

@@ -21,4 +21,30 @@ describe('escapeHtml', () => {
       expect(escapeHtml(chr)).toBe(chr);
     });
   });
+
+  it('should match a per-character reference on mixed input', () => {
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    const alphabet = ['a', ' ', '&', '<', '>', '"', "'", '😀', '\uD800', 'é'];
+
+    for (let n = 0; n < 200; n++) {
+      let input = '';
+      const len = n % 20;
+      for (let i = 0; i < len; i++) {
+        input += alphabet[(Math.random() * alphabet.length) | 0];
+      }
+
+      let expected = '';
+      for (let i = 0; i < input.length; i++) {
+        expected += map[input[i]] ?? input[i];
+      }
+
+      expect(escapeHtml(input)).toBe(expected);
+    }
+  });
 });
