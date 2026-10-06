@@ -217,4 +217,26 @@ describe('withResolve', () => {
     expect(r1).toBe('result');
     expect(r2).toBe('result');
   });
+  it('dedupes by any of several cache key variants', async () => {
+    let runs = 0;
+    const load = withResolve(
+      (user: { id: number; email: string }) => {
+        runs++;
+        return new Promise(resolve => setTimeout(() => resolve(user), 10));
+      },
+      [args => `id:${args[0].id}`, args => `email:${args[0].email}`],
+    );
+
+    const a = load({ id: 1, email: 'a' });
+    const sameId = load({ id: 1, email: 'b' });
+    const sameEmail = load({ id: 2, email: 'a' });
+
+    expect(sameId).toBe(a);
+    expect(sameEmail).toBe(a);
+    await a;
+    expect(runs).toBe(1);
+
+    await load({ id: 1, email: 'a' });
+    expect(runs).toBe(2);
+  });
 });

@@ -115,6 +115,7 @@ export function withResolve<
   return function (this: T, ...args: A) {
     let cacheKey: string | symbol | undefined;
     let pending: Promise<any> | undefined;
+    let keys: (string | symbol)[] | undefined;
 
     for (var i = 0; i < variantsLength; i++) {
       var newCacheKey = cacheKeyVariants[i].call(this, args, stringifyArgs);
@@ -129,6 +130,11 @@ export function withResolve<
       cacheKey = newCacheKey;
       pending = cache.get(cacheKey);
       if (pending) return pending;
+
+      if (variantsLength > 1) {
+        if (keys === undefined) keys = [];
+        keys.push(cacheKey);
+      }
     }
 
     if (cacheKey === undefined) {
@@ -137,8 +143,21 @@ export function withResolve<
       if (pending) return pending;
     }
 
-    var key = cacheKey;
     var promise = resolver(this, args);
+
+    if (keys !== undefined && keys.length > 1) {
+      var allKeys = keys;
+      var clearAll = () => {
+        for (var j = 0; j < allKeys.length; j++) cache.delete(allKeys[j]);
+      };
+
+      for (var j = 0; j < allKeys.length; j++) cache.set(allKeys[j], promise);
+      promise.then(clearAll, clearAll);
+
+      return promise;
+    }
+
+    var key = cacheKey;
     var clear = () => cache.delete(key);
 
     cache.set(key, promise);
