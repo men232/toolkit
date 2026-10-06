@@ -87,4 +87,21 @@ describe('AsyncIterableQueue', () => {
     expect(await iterator.next()).toEqual({ value: undefined, done: true });
     expect(await iterator.next()).toEqual({ value: undefined, done: true });
   });
+  it('size counts buffered items without the end marker', async () => {
+    const queue = new AsyncIterableQueue<number>();
+    const iterator = queue[Symbol.asyncIterator]();
+
+    expect(queue.size).toBe(0);
+
+    queue.put(1);
+    queue.put(2);
+    expect(queue.size).toBe(2);
+
+    queue.close();
+    expect(queue.size).toBe(2);
+
+    await iterator.next();
+    await iterator.next();
+    expect(queue.size).toBe(0);
+  });
 });

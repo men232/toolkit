@@ -42,6 +42,16 @@ export class AsyncIterableQueue<T> implements AsyncIterable<T> {
     return this._closed;
   }
 
+  get size(): number {
+    const items = this._queue.items;
+    const length = items.length;
+
+    return length > 0 &&
+      items[length - 1] === AsyncIterableQueue.QUEUE_END_MARKER
+      ? length - 1
+      : length;
+  }
+
   put(item: T): void {
     if (this._closed) {
       throw new Error('Queue is closed');
