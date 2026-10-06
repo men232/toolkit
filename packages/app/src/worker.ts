@@ -226,7 +226,7 @@ export function createWorkerInstance<C extends WorkerStrategy>(
       return this.pool.isIdle && this.queueSize === 0;
     },
     get queueSize() {
-      return (this.queue as any)._queue.items.length;
+      return this.queue.size;
     },
   };
 
