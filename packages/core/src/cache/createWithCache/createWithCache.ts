@@ -35,7 +35,7 @@ export function createWithCache<T extends AnyFunction>({
   getBucket,
   objectStrategy = 'ref',
 }: CreateWithCacheOptions<T>): WithCacheResult<T> {
-  const isAsync = fn.constructor.name === 'AsyncFunction';
+  let isAsync = fn.constructor.name === 'AsyncFunction';
 
   const argToKeyOptions: ArgToKeyOptions = { objectStrategy };
 
@@ -57,6 +57,8 @@ export function createWithCache<T extends AnyFunction>({
     const newValue = fn.apply(this, args);
 
     if (isPromise(newValue)) {
+      isAsync = true;
+
       // cache only success result
       return newValue.then(value => {
         storage.set(cacheKey, value);

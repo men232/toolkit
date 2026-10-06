@@ -155,4 +155,15 @@ describe('withCache', () => {
     expect(fn(make(1))).toBe(1);
     expect(fn(make(2))).toBe(2);
   });
+  test('should keep returning a promise for a function that returns one without async', async () => {
+    const load = withCache((id: number) => Promise.resolve({ id }));
+
+    const first = load(1);
+    expect(first).toBeInstanceOf(Promise);
+    expect(await first).toEqual({ id: 1 });
+
+    const hit = load(1);
+    expect(hit).toBeInstanceOf(Promise);
+    expect(await hit).toEqual({ id: 1 });
+  });
 });
