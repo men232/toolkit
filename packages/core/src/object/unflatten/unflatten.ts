@@ -58,7 +58,7 @@ export function unflatten(input: object, separator = '_') {
     return {};
   }
 
-  let arr, tmp: any, output;
+  let arr, tmp: any, next, output;
   let i = 0,
     k,
     key;
@@ -78,11 +78,11 @@ export function unflatten(input: object, separator = '_') {
       if (badKeys.has(key)) break;
 
       if (i < arr.length) {
-        if (key in tmp) {
-          tmp = tmp[key];
-        } else {
-          tmp = tmp[key] = empty(+arr[i]);
-        }
+        next = Object.hasOwn(tmp, key) ? tmp[key] : undefined;
+        tmp =
+          next !== null && typeof next === 'object'
+            ? next
+            : (tmp[key] = empty(+arr[i]));
       } else {
         tmp[key] = (input as any)[k];
       }
