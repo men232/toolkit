@@ -1,4 +1,5 @@
 import { isFunction } from '@/is';
+import { setOwnProperty } from '@/object/setOwnProperty';
 import type { IsPropertyKey, ToPropertyKey } from './types';
 
 export function keyBy<T, K extends keyof T>(
@@ -70,25 +71,31 @@ export function keyBy(
   keyBy: unknown | ((item: any) => unknown),
   objectMode?: boolean,
 ): any {
-  const getItemKey = isFunction(keyBy)
+  var getItemKey = isFunction(keyBy)
     ? keyBy
     : (item: any) => item?.[keyBy as any];
 
-  if (objectMode === true) {
-    const result: Record<any, any> = {};
+  var len = array.length,
+    i = 0,
+    item;
 
-    for (const item of array) {
-      result[getItemKey(item)] = item;
+  if (objectMode === true) {
+    var obj: Record<any, any> = {};
+
+    for (; i < len; i++) {
+      item = array[i];
+      setOwnProperty(obj, getItemKey(item), item);
     }
 
-    return result as any;
+    return obj;
   }
 
-  const result = new Map();
+  var map = new Map();
 
-  for (const item of array) {
-    result.set(getItemKey(item), item);
+  for (; i < len; i++) {
+    item = array[i];
+    map.set(getItemKey(item), item);
   }
 
-  return result as any;
+  return map;
 }

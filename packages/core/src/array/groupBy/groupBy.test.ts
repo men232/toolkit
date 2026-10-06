@@ -103,3 +103,19 @@ describe('groupBy', () => {
     makeTest(map => map, false);
   });
 });
+
+it('should group by keys that exist on Object.prototype in object mode', () => {
+  const items = [
+    { t: 'constructor' },
+    { t: 'toString' },
+    { t: '__proto__' },
+    { t: 'constructor' },
+  ];
+  const result: any = groupBy(items, 't', true);
+
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+  expect(Object.keys(result)).toEqual(['constructor', 'toString', '__proto__']);
+  expect(result.constructor).toEqual([items[0], items[3]]);
+  expect(result.toString).toEqual([items[1]]);
+  expect(result.__proto__).toEqual([items[2]]);
+});

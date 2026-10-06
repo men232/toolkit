@@ -89,3 +89,16 @@ describe('keyBy', () => {
     expect(result.get(1)).toBe(rows[1]);
   });
 });
+
+it('should keep a __proto__ key as data in object mode', () => {
+  const items = [
+    { id: '__proto__', x: 1 },
+    { id: 'a', x: 2 },
+  ];
+  const result: any = keyBy(items, 'id', true);
+
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+  expect(Object.keys(result)).toEqual(['__proto__', 'a']);
+  expect(result.x).toBeUndefined();
+  expect(result.__proto__).toBe(items[0]);
+});

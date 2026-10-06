@@ -1,4 +1,5 @@
 import { isFunction } from '@/is';
+import { setOwnProperty } from '@/object/setOwnProperty';
 import type { IsPropertyKey, ToPropertyKey } from '../keyBy/types';
 
 export function groupBy<T, K extends keyof T>(
@@ -55,35 +56,47 @@ export function groupBy(
   keyBy: unknown | ((item: any) => unknown),
   objectMode?: boolean,
 ): any {
-  const getItemKey = isFunction(keyBy)
+  var getItemKey = isFunction(keyBy)
     ? keyBy
     : (item: any) => item?.[keyBy as any];
 
-  let key;
+  var len = array.length,
+    i = 0,
+    item,
+    key,
+    bucket;
 
   if (objectMode === true) {
-    const result: Record<any, any> = {};
+    var obj: Record<any, any> = {};
 
-    for (const item of array) {
+    for (; i < len; i++) {
+      item = array[i];
       key = getItemKey(item);
-      result[key] = result[key] || [];
-      result[key].push(item);
+      bucket = obj[key];
+
+      if (Array.isArray(bucket)) {
+        bucket.push(item);
+      } else {
+        setOwnProperty(obj, key, [item]);
+      }
     }
 
-    return result as any;
+    return obj;
   }
 
-  const result = new Map();
+  var map = new Map();
 
-  for (const item of array) {
+  for (; i < len; i++) {
+    item = array[i];
     key = getItemKey(item);
+    bucket = map.get(key);
 
-    if (!result.has(key)) {
-      result.set(key, [item]);
+    if (bucket === undefined) {
+      map.set(key, [item]);
     } else {
-      result.get(key).push(item);
+      bucket.push(item);
     }
   }
 
-  return result;
+  return map;
 }
