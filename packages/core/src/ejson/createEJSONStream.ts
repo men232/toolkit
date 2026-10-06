@@ -4,8 +4,7 @@ import type { Awaitable } from '@/types';
 import { EJSONStream, type EJSONStreamOptions } from './EJSONStream';
 import { instance } from './instance';
 
-export interface EJSONStreamOptionsWithPayload
-  extends Partial<EJSONStreamOptions> {
+export interface EJSONStreamOptionsWithPayload extends Partial<EJSONStreamOptions> {
   prepend?: () => Awaitable<object | null | undefined>;
   append?: () => Awaitable<object | null | undefined>;
   resultKey: string;
@@ -81,6 +80,8 @@ function createEJSONStreamPayload(
 
   assert.notEmptyString(resultKey, 'resultKey required.');
 
+  const keyPart = JSON.stringify(resultKey) + ':';
+
   const stream = new EJSONStream({
     ejson,
     cl,
@@ -88,7 +89,7 @@ function createEJSONStreamPayload(
     sep,
     onStart(controller) {
       if (!prepend) {
-        controller.enqueue(`{"${resultKey}":`);
+        controller.enqueue('{' + keyPart);
         return Promise.resolve();
       }
 
@@ -96,7 +97,7 @@ function createEJSONStreamPayload(
         .then(() => prepend())
         .then(data => {
           if (data === null || data === undefined) {
-            controller.enqueue(`{"${resultKey}":`);
+            controller.enqueue('{' + keyPart);
             return;
           }
 
@@ -105,15 +106,15 @@ function createEJSONStreamPayload(
             'prepend result expected to be plain object',
           );
 
-          const dataPart = instance.stringify(data).slice(0, -1);
+          const dataPart = ejson.stringify(data).slice(0, -1);
 
           // Empty prepend object
           if (dataPart === '{') {
-            controller.enqueue(`{"${resultKey}":`);
+            controller.enqueue('{' + keyPart);
             return;
           }
 
-          controller.enqueue(`${dataPart}${sep}"${resultKey}":`);
+          controller.enqueue(dataPart + sep + keyPart);
         });
     },
     onFlush(controller) {
@@ -132,10 +133,10 @@ function createEJSONStreamPayload(
 
           assert.ok(
             isPlainObject(data),
-            'prepend result expected to be plain object',
+            'append result expected to be plain object',
           );
 
-          const dataPart = instance.stringify(data).slice(1);
+          const dataPart = ejson.stringify(data).slice(1);
 
           // Empty append object
           if (dataPart === '}') {

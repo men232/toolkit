@@ -55,7 +55,7 @@ export class EJSONStream extends TransformStream<any, string> {
           controller.enqueue(sep);
         }
 
-        controller.enqueue(jsonString);
+        controller.enqueue(jsonString === undefined ? 'null' : jsonString);
       },
       flush(controller) {
         controller.enqueue(cl);

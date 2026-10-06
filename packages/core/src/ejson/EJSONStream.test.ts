@@ -1,7 +1,54 @@
 import { describe, expect, it } from 'vitest';
+import { createEJSON } from './createEJSON';
 import { createEJSONStream } from './createEJSONStream';
 
 describe('EJSONStream', () => {
+  it('should escape resultKey', async () => {
+    const jsonStream = createEJSONStream({ resultKey: 'a"b' });
+
+    readableStream([1]).pipeThrough(jsonStream);
+
+    const result = (await streamToArray(jsonStream.readable)).join('');
+
+    expect(JSON.parse(result)).toEqual({ 'a"b': [1] });
+  });
+
+  it('should write undefined items as null', async () => {
+    const jsonStream = createEJSONStream();
+
+    readableStream([1, undefined, 2]).pipeThrough(jsonStream);
+
+    expect((await streamToArray(jsonStream.readable)).join('')).toBe(
+      '[1,null,2]',
+    );
+  });
+
+  it('should serialize prepend and append with the ejson option', async () => {
+    const ejson = createEJSON(true);
+    ejson.addType({
+      placeholder: '$url',
+      encode: value => (value instanceof URL ? value.href : undefined),
+      decode: value => new URL(value),
+    });
+
+    const jsonStream = createEJSONStream({
+      ejson,
+      resultKey: 'items',
+      prepend: () => ({ site: new URL('https://example.com/') }),
+      append: () => ({ next: new URL('https://example.com/2') }),
+    });
+
+    readableStream([1]).pipeThrough(jsonStream);
+
+    const result = ejson.parse(
+      (await streamToArray(jsonStream.readable)).join(''),
+    );
+
+    expect(result.site).toBeInstanceOf(URL);
+    expect(result.next).toBeInstanceOf(URL);
+    expect(result.items).toEqual([1]);
+  });
+
   it('should handle plain items', async () => {
     const dataStream = readableStream([1, 2, 3, 4]);
     const jsonStream = createEJSONStream();
