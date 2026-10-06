@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fastIdle, fastIdlePromise } from './fastIdle';
 
 describe('fastIdle', () => {
@@ -21,5 +21,31 @@ describe('fastIdlePromise', () => {
     await fastIdlePromise();
 
     expect(true).toBe(true);
+  });
+});
+
+describe('fastIdle environment', () => {
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it('should load without a global process', async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'process')!;
+    vi.resetModules();
+
+    let mod: typeof import('./fastIdle') | undefined;
+    let error: unknown;
+
+    delete (globalThis as any).process;
+    try {
+      mod = await import('./fastIdle');
+    } catch (err) {
+      error = err;
+    } finally {
+      Object.defineProperty(globalThis, 'process', descriptor);
+    }
+
+    expect(error).toBeUndefined();
+    expect(typeof mod?.fastIdle).toBe('function');
   });
 });

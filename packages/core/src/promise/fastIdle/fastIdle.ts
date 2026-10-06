@@ -2,14 +2,16 @@ import { isFunction } from '@/is';
 import type { AnyFunction, Fn } from '@/types';
 
 const defaultWindow = (globalThis as any)?.window as Window | undefined;
+const defaultProcess = (globalThis as any)?.process as
+  NodeJS.Process | undefined;
 
 const idle: (fn: AnyFunction) => void = (() => {
   if (defaultWindow?.requestIdleCallback) {
     return defaultWindow.requestIdleCallback;
   } else if (defaultWindow?.requestAnimationFrame) {
     return defaultWindow.requestAnimationFrame;
-  } else if (isFunction(process?.nextTick)) {
-    return process.nextTick;
+  } else if (isFunction(defaultProcess?.nextTick)) {
+    return defaultProcess.nextTick;
   } else {
     return fn => setTimeout(fn, 0);
   }
