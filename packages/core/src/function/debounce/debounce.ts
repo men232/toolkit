@@ -120,10 +120,13 @@ export function debounce<F extends (...args: any[]) => void>(
   const schedule = () => {
     if (timeoutId != null) {
       clearTimeout(timeoutId);
+    } else {
+      signal?.addEventListener('abort', cancel, { once: true });
     }
 
     timeoutId = setTimeout(() => {
       timeoutId = null;
+      signal?.removeEventListener('abort', cancel);
 
       onTimerEnd();
     }, debounceMs);
@@ -133,6 +136,7 @@ export function debounce<F extends (...args: any[]) => void>(
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
       timeoutId = null;
+      signal?.removeEventListener('abort', cancel);
     }
   };
 
@@ -167,8 +171,6 @@ export function debounce<F extends (...args: any[]) => void>(
   debounced.schedule = schedule;
   debounced.cancel = cancel;
   debounced.flush = flush;
-
-  signal?.addEventListener('abort', cancel, { once: true });
 
   return debounced;
 }

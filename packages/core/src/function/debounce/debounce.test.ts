@@ -194,4 +194,43 @@ describe('debounce', () => {
 
     expect(calls).toEqual([1]);
   });
+
+  it('should not keep an abort listener after the timer ends', async () => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    let listeners = 0;
+    const add = signal.addEventListener.bind(signal);
+    const remove = signal.removeEventListener.bind(signal);
+
+    signal.addEventListener = ((...args: any[]) => {
+      listeners++;
+      return (add as any)(...args);
+    }) as any;
+    signal.removeEventListener = ((...args: any[]) => {
+      listeners--;
+      return (remove as any)(...args);
+    }) as any;
+
+    const calls: number[] = [];
+    const debounced = debounce((v: number) => calls.push(v), 20, { signal });
+
+    expect(listeners).toBe(0);
+
+    debounced(1);
+    debounced(2);
+    expect(listeners).toBe(1);
+
+    await delay(60);
+    expect(calls).toEqual([2]);
+    expect(listeners).toBe(0);
+
+    debounced(3);
+    debounced.cancel();
+    expect(listeners).toBe(0);
+
+    debounced(4);
+    controller.abort();
+    await delay(60);
+    expect(calls).toEqual([2]);
+  });
 });
