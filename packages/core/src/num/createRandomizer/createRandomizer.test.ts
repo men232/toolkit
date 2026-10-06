@@ -105,4 +105,17 @@ describe('createRandomizer', () => {
 
     expect(values).toStrictEqual(valuesAfterReset);
   });
+
+  it('should produce both even and odd values with the default range', () => {
+    const randomizer = createRandomizer({ pregenerateAmount: 0 });
+    let even = 0;
+
+    for (let i = 0; i < 1000; i++) {
+      if (randomizer.get() % 2 === 0) even++;
+    }
+
+    expect(even).toBeGreaterThan(300);
+    expect(even).toBeLessThan(700);
+  });
 });
+

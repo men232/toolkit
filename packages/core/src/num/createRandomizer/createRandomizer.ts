@@ -147,8 +147,8 @@ const noopTransform = (v: number) => v;
  * @group Numbers
  */
 export function createRandomizer({
-  min = Number.MIN_SAFE_INTEGER,
-  max = Number.MAX_SAFE_INTEGER,
+  min = -(2 ** 52),
+  max = 2 ** 52 - 1,
   pregenerateAmount = 100,
   transform = noopTransform,
 }: Partial<RandomizerOptions>): Randomizer {
