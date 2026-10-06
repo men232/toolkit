@@ -917,3 +917,29 @@ describe('BitPack', () => {
     expect(Array.from(target.__buf)).toEqual([0, 1, 0, 2]);
   });
 });
+
+describe('take high masking', () => {
+  it('keeps a narrow high field within its width', () => {
+    const packer = bitPack({
+      totalBits: 16,
+      fields: [
+        { name: 'a', bits: 8, take: 'high' },
+        { name: 'b', bits: 8, take: 'low' },
+      ],
+    });
+
+    expect(packer.number({ a: 2 ** 40 + 3 * 2 ** 32, b: 5 })).toBe(
+      (3 << 8) | 5,
+    );
+    expect(packer.number({ a: 2 ** 40, b: 0 })).toBe(0);
+  });
+
+  it('packs a high word with the top bit set as unsigned', () => {
+    const packer = bitPack({
+      totalBits: 32,
+      fields: [{ name: 'a', bits: 32, take: 'high' }],
+    });
+
+    expect(packer.number({ a: 0xf0000000 * 2 ** 32 })).toBe(0xf0000000);
+  });
+});

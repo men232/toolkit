@@ -228,7 +228,7 @@ function initFields(fields: FieldInfo[]): string {
       }
 
       if (field.take === 'high') {
-        return `var ${field.id} = (data['${field.name}'] / 0x100000000) | 0;`;
+        return `var ${field.id} = ((data['${field.name}'] / 0x100000000) & 0x${field.mask.toString(16)}) >>> 0;`;
       }
 
       return `var ${field.id} = (data['${field.name}'] & 0x${field.mask.toString(16)}) >>> 0;`;
