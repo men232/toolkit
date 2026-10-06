@@ -1,7 +1,7 @@
 import { isDeepKey, toKey, toPath } from '@/str';
 import { isUnsafeProperty } from '@/str/isUnsafeProperty';
+import { isUnsafeToWriteProperty } from '@/str/isUnsafeToWriteProperty';
 import type { Arrayable } from '@/types';
-import { get } from '../get';
 
 /**
  * Removes the property at the given path of the object.
@@ -83,11 +83,32 @@ export function unset(obj: any, path: Arrayable<PropertyKey>): boolean {
   }
 }
 
-function unsetWithPath(obj: unknown, path: readonly PropertyKey[]): boolean {
-  const parent = path.length === 1 ? obj : get(obj, path.slice(0, -1));
-  const lastKey = path[path.length - 1];
+function unsetWithPath(obj: any, path: readonly PropertyKey[]): boolean {
+  const last = path.length - 1;
+  const lastKey = path[last];
+  let parent: any = obj;
 
-  if (parent?.[lastKey] === undefined) {
+  for (let i = 0; i < last; i++) {
+    const key = path[i];
+
+    if (isUnsafeToWriteProperty(key)) {
+      return false;
+    }
+
+    const next = parent[key];
+
+    if (next == null) {
+      return true;
+    }
+
+    if (typeof next === 'function' && !Object.hasOwn(parent, key)) {
+      return false;
+    }
+
+    parent = next;
+  }
+
+  if (parent[lastKey] === undefined) {
     return true;
   }
 

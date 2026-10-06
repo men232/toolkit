@@ -92,7 +92,7 @@ describe('unset', () => {
     expect(actual).toEqual(expected);
   });
 
-  it('should follow `path` over non-plain objects', () => {
+  it('should not delete through built-in prototypes', () => {
     const object = { a: '' };
     const paths = [
       'constructor.prototype.a',
@@ -103,8 +103,8 @@ describe('unset', () => {
       numberProto.a = 1;
 
       const actual = unset(0, path);
-      expect(actual).toBe(true);
-      expect('a' in numberProto).toBe(false);
+      expect(actual).toBe(false);
+      expect('a' in numberProto).toBe(true);
 
       delete numberProto.a;
     });
@@ -113,11 +113,48 @@ describe('unset', () => {
       stringProto.replace.b = 1;
 
       const actual = unset(object, path);
-      expect(actual).toBe(true);
-      expect('a' in stringProto.replace).toBe(false);
+      expect(actual).toBe(false);
+      expect('b' in stringProto.replace).toBe(true);
 
       delete stringProto.replace.b;
     });
+  });
+
+  it('should not mutate shared built-ins through unsafe or inherited keys', () => {
+    const toString = Object.prototype.toString;
+    const keys = Object.keys;
+
+    expect(unset({}, 'constructor.prototype.toString')).toBe(false);
+    expect(Object.prototype.toString).toBe(toString);
+
+    expect(unset({}, 'constructor.keys')).toBe(false);
+    expect(Object.keys).toBe(keys);
+
+    expect(unset({}, 'constructor.prototype.hasOwnProperty.name')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.name).toBe('hasOwnProperty');
+
+    expect(unset({}, 'toString.name')).toBe(false);
+    expect(Object.prototype.toString.name).toBe('toString');
+
+    expect(unset({}, ['toString', 'call', 'name'])).toBe(false);
+    expect(Function.prototype.call.name).toBe('call');
+  });
+
+  it('should still delete through own functions and prototype getters', () => {
+    const fn: any = () => {};
+    fn.cache = { k: 1 };
+    expect(unset({ fn }, 'fn.cache.k')).toBe(true);
+    expect('k' in fn.cache).toBe(false);
+
+    class Box {
+      _items: Record<string, number> = { x: 1 };
+      get items() {
+        return this._items;
+      }
+    }
+    const box = new Box();
+    expect(unset(box, 'items.x')).toBe(true);
+    expect('x' in box._items).toBe(false);
   });
 
   it('should return `false` for non-configurable properties', () => {
