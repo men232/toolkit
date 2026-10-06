@@ -437,7 +437,7 @@ Every entry below is a pattern people write by hand where an @andrew_l export do
 
 #### `withCache(fn)`
 
-- Replaces `const key = JSON.stringify(args); if (cache.has(key)) return cache.get(key)` — keys are typed (`1` and `'1'` differ; `undefined`, Dates and bigint survive) and a rejected promise is not cached. Caveats: object arguments are keyed by reference unless `objectStrategy: 'json'`; no in-flight dedupe (combine with `withResolve`); unbounded; a promise-returning function must be declared `async`, otherwise cache hits return the raw value, not a promise.
+- Replaces `const key = JSON.stringify(args); if (cache.has(key)) return cache.get(key)` — keys are typed (`1` and `'1'` differ; `undefined`, Dates and bigint survive) and a rejected promise is not cached. Caveats: object arguments are keyed by reference unless `objectStrategy: 'json'`; no in-flight dedupe (combine with `withResolve`); unbounded, entries for collected object arguments stay (use `withCacheLRU`/`withCacheFixed` for short-lived objects); a promise-returning function must be declared `async`, otherwise cache hits return the raw value, not a promise.
   - Detect: `\w+\s*=\s*JSON\.stringify\(\s*args\s*\)\s*;?\s*(if\s*\(\s*!?\s*)?[\w.]+\.(has|get)\(`
 
 #### `withCacheLRU(options, fn)`
