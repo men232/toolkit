@@ -53,7 +53,7 @@ export function asyncForEach<T>(
   ) => Promise<void> | void,
   { concurrency = 1 } = {},
 ): Promise<void> {
-  concurrency = Math.max(concurrency, 1);
+  concurrency = concurrency >= 1 ? Math.min(concurrency, array.length) : 1;
 
   if (array.length === 0) {
     return Promise.resolve();

@@ -56,7 +56,7 @@ export function asyncMap<T, U>(
   callbackfn: (value: T, index: number, array: Array<T>) => Promise<U> | U,
   { concurrency = 1 } = {},
 ): Promise<Array<U>> {
-  concurrency = Math.max(concurrency, 1);
+  concurrency = concurrency >= 1 ? Math.min(concurrency, array.length) : 1;
 
   if (array.length === 0) {
     return Promise.resolve([]);

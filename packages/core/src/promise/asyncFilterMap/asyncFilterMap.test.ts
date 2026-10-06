@@ -171,3 +171,19 @@ describe('asyncFilterMap', () => {
     expect(ranWhileMapping).toBe(true);
   });
 });
+
+it('should handle NaN concurrency', async () => {
+  expect(
+    await asyncFilterMap([1, 2, 3], (v, skip) => (v === 2 ? skip : v * 2), {
+      concurrency: NaN,
+    }),
+  ).toEqual([2, 6]);
+});
+
+it('should handle Infinity concurrency', async () => {
+  expect(
+    await asyncFilterMap([1, 2, 3], (v, skip) => (v === 2 ? skip : v * 2), {
+      concurrency: Infinity,
+    }),
+  ).toEqual([2, 6]);
+});

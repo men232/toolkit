@@ -68,7 +68,7 @@ export function asyncFilterMap<T, U>(
   ) => Awaitable<U | SpecialValue>,
   { concurrency = 1 } = {},
 ): Promise<U[]> {
-  concurrency = Math.max(concurrency, 1);
+  concurrency = concurrency >= 1 ? Math.min(concurrency, array.length) : 1;
   var mapped: U[] = [];
 
   if (array.length === 0) {

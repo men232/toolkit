@@ -92,3 +92,15 @@ describe('asyncMap', () => {
     expect(events).toEqual(['start 0', 'end 0', 'start 1', 'end 1']);
   });
 });
+
+it('should handle NaN concurrency', async () => {
+  expect(await asyncMap([1, 2, 3], v => v * 2, { concurrency: NaN })).toEqual([
+    2, 4, 6,
+  ]);
+});
+
+it('should handle Infinity concurrency', async () => {
+  expect(
+    await asyncMap([1, 2, 3], v => v * 2, { concurrency: Infinity }),
+  ).toEqual([2, 4, 6]);
+});

@@ -48,7 +48,7 @@ export function asyncFilter<T>(
   ) => Promise<boolean> | boolean,
   { concurrency = 1 } = {},
 ): Promise<T[]> {
-  concurrency = Math.max(concurrency, 1);
+  concurrency = concurrency >= 1 ? Math.min(concurrency, array.length) : 1;
 
   if (array.length === 0) {
     return Promise.resolve([]);

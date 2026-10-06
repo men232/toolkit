@@ -54,3 +54,15 @@ describe('asyncFilter', () => {
     expect(result).toEqual([1, 3, 5, 7, 9]);
   });
 });
+
+it('should handle NaN concurrency', async () => {
+  expect(
+    await asyncFilter([1, 2, 3], v => v !== 2, { concurrency: NaN }),
+  ).toEqual([1, 3]);
+});
+
+it('should handle Infinity concurrency', async () => {
+  expect(
+    await asyncFilter([1, 2, 3], v => v !== 2, { concurrency: Infinity }),
+  ).toEqual([1, 3]);
+});
