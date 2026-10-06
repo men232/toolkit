@@ -799,7 +799,11 @@ describe('BitPack', () => {
         ],
       });
 
-      const data = { timestamp: 1781295314, random: 2 ** 40 - 1, counter: 123456 };
+      const data = {
+        timestamp: 1781295314,
+        random: 2 ** 40 - 1,
+        counter: 123456,
+      };
       expect(fn.decimal(data)).toBe(fn.bigint(data).toString());
     });
   });
@@ -870,5 +874,46 @@ describe('BitPack', () => {
         '0000000000010000100000111111111111111111111111111111111111111111',
       );
     });
+  });
+  it('number() returns unsigned values and combines containers', () => {
+    const p32 = bitPack({
+      totalBits: 32,
+      fields: [
+        { name: 'a', bits: 16, take: 'low' },
+        { name: 'b', bits: 16, take: 'low' },
+      ] as const,
+    });
+    expect(p32.number({ a: 0xffff, b: 0xffff })).toBe(0xffffffff);
+
+    const p48 = bitPack({
+      totalBits: 48,
+      fields: [
+        { name: 'hi', bits: 16, take: 'low' },
+        { name: 'lo', bits: 32, take: 'low' },
+      ] as const,
+    });
+    expect(p48.number({ hi: 1, lo: 0 })).toBe(2 ** 32);
+    expect(BigInt(p48.number({ hi: 0xffff, lo: 0xffffffff }))).toBe(
+      p48.bigint({ hi: 0xffff, lo: 0xffffffff }),
+    );
+  });
+
+  it('buffer() writes into this.__buf when called as a method', () => {
+    const packer = bitPack({
+      totalBits: 32,
+      fields: [
+        { name: 'a', bits: 16, take: 'low' },
+        { name: 'b', bits: 16, take: 'low' },
+      ] as const,
+    });
+    const target = {
+      a: 1,
+      b: 2,
+      __buf: new Uint8Array(4),
+      pack: packer.buffer,
+    };
+
+    expect(target.pack(target)).toBe(target.__buf);
+    expect(Array.from(target.__buf)).toEqual([0, 1, 0, 2]);
   });
 });

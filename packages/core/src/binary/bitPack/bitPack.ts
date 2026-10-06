@@ -78,9 +78,14 @@ type Plan = {
 /**
  * Define compact packed structure
  *
+ * `buffer()` writes into `this.__buf` and returns it: call it as a method (`packer.buffer(data)`), or as a method of
+ * your own object that has a `__buf` to pack into that buffer. The packer's buffer is reused and overwritten on every
+ * call, so copy it (`.slice()`) to keep a result.
+ * `number()` is exact up to 53 bits; use `bigint()` for wider structures.
+ *
  * @replaces `(BigInt(ts) << 22n) | (BigInt(worker) << 17n) | BigInt(seq)` — an oversized value spills into the next
- * field; `bitPack` masks each value to its width and compiles 32-bit integer code. Caveats: `buffer()` returns one shared
- * `Uint8Array` and must be called as a method; `number()` keeps only the low 32 bits, signed; needs `new Function` (no strict CSP).
+ * field; `bitPack` masks each value to its width and compiles 32-bit integer code. Caveats: `buffer()` must be called
+ * as a method and reuses one `Uint8Array` across calls; needs `new Function` (no strict CSP).
  * @detect `<<\s*\d+n\s*\)?\s*\|[^|]`
  *
  * @group Binary
@@ -265,7 +270,13 @@ function buildBigIntResult(containersCount: number): string {
 }
 
 function buildNumberResult(containersCount: number): string {
-  return `return c_0;`;
+  const parts: string[] = [`(c_0 >>> 0)`];
+
+  for (let i = 1; i < containersCount; i++) {
+    parts.push(`(c_${i} >>> 0) * ${Math.pow(2, 32 * i)}`);
+  }
+
+  return `return ${parts.join(' + ')};`;
 }
 
 function buildDecimalResult(containersCount: number): string {
