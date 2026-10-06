@@ -1,5 +1,4 @@
 import { isObject } from '@/is';
-import { hasOwn } from '../hasOwn';
 import { setOwnProperty } from '../setOwnProperty';
 
 /**
@@ -25,21 +24,25 @@ export function pick<T extends Record<string, any>, U extends keyof T>(
   obj: T | null | undefined,
   keys: Readonly<Array<U> | Set<U> | Array<string> | Set<string>>,
 ): Pick<T, U> {
-  const keysSet = Array.isArray(keys)
-    ? new Set(keys)
-    : keys instanceof Set
-      ? keys
-      : undefined;
-
   const result: any = {};
 
-  if (!keysSet || !isObject(obj)) {
+  if (!isObject(obj)) {
     return result;
   }
 
-  for (const key of keysSet.values()) {
-    if (hasOwn(obj, key)) {
-      setOwnProperty(result, key, (obj as any)[key]);
+  if (Array.isArray(keys)) {
+    for (var i = 0, key; i < keys.length; i++) {
+      key = keys[i];
+
+      if (Object.hasOwn(obj, key)) {
+        setOwnProperty(result, key, (obj as any)[key]);
+      }
+    }
+  } else if (keys instanceof Set) {
+    for (const key of keys) {
+      if (Object.hasOwn(obj, key)) {
+        setOwnProperty(result, key, (obj as any)[key]);
+      }
     }
   }
 
