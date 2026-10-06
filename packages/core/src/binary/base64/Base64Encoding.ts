@@ -5,7 +5,8 @@ export class Base64Encoding implements BaseX {
   public alphabet: string;
   public padding: string;
 
-  private decodeMap = new Map<string, number>();
+  private codes: Int16Array;
+  private pairs: string[] | undefined;
 
   constructor(
     alphabet: string,
@@ -27,8 +28,16 @@ export class Base64Encoding implements BaseX {
       assert.ok(this.padding.length === 1, 'Padding length must be a 1');
     }
 
+    let maxCode = 0;
+
     for (let i = 0; i < alphabet.length; i++) {
-      this.decodeMap.set(alphabet[i]!, i);
+      maxCode = Math.max(maxCode, alphabet.charCodeAt(i));
+    }
+
+    this.codes = new Int16Array(maxCode + 1).fill(-1);
+
+    for (let i = 0; i < alphabet.length; i++) {
+      this.codes[alphabet.charCodeAt(i)] = i;
     }
   }
 
@@ -50,27 +59,27 @@ export class Base64Encoding implements BaseX {
       includePadding?: boolean;
     },
   ): string {
-    const includePadding = options?.includePadding ?? true;
-    let result = '';
-    let buffer = 0;
-    let shift = 0;
+    var includePadding = options?.includePadding ?? true;
+    var alphabet = this.alphabet;
+    var pairs = this.pairs ?? (this.pairs = buildPairs(alphabet));
+    var pad = includePadding ? this.padding : '';
+    var len = data.length;
+    var end = len - (len % 3);
+    var result = '';
+    var i = 0;
+    var n;
 
-    for (const byte of data) {
-      buffer = (buffer << 8) | byte;
-      shift += 8;
-      while (shift >= 6) {
-        shift -= 6;
-        result += this.alphabet[(buffer >> shift) & 0x3f];
-      }
+    for (; i < end; i += 3) {
+      n = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+      result += pairs[n >> 12] + pairs[n & 4095];
     }
 
-    if (shift > 0) {
-      result += this.alphabet[(buffer << (6 - shift)) & 0x3f];
-    }
-
-    if (includePadding && this.padding) {
-      const padCount = (4 - (result.length % 4)) % 4;
-      result += '='.repeat(padCount);
+    if (len - end === 1) {
+      n = data[i] << 16;
+      result += pairs[n >> 12] + pad + pad;
+    } else if (len - end === 2) {
+      n = (data[i] << 16) | (data[i + 1] << 8);
+      result += pairs[n >> 12] + alphabet[(n >> 6) & 63] + pad;
     }
 
     return result;
@@ -95,30 +104,69 @@ export class Base64Encoding implements BaseX {
       strict?: boolean;
     },
   ): Uint8Array {
-    const strict = options?.strict ?? true;
-    const result: number[] = [];
-    let buffer = 0;
-    let bitsCollected = 0;
+    var strict = options?.strict ?? true;
 
     if (this.padding && strict) {
       assert.ok(data.length % 4 === 0, 'Invalid Base64 data');
     }
 
-    for (const char of data) {
-      if (char === this.padding) break;
-      const value = this.decodeMap.get(char);
-      if (value === undefined) {
-        throw new Error(`Invalid Base64 character: ${char}`);
-      }
-      buffer = (buffer << 6) | value;
-      bitsCollected += 6;
+    var codes = this.codes;
+    var end = this.padding ? data.indexOf(this.padding) : -1;
 
-      if (bitsCollected >= 8) {
-        bitsCollected -= 8;
-        result.push((buffer >> bitsCollected) & 0xff);
-      }
+    if (end === -1) end = data.length;
+
+    var out = new Uint8Array((end * 3) >> 2);
+    var full = end - (end & 3);
+    var i = 0;
+    var j = 0;
+    var a, b, c, d;
+
+    for (; i < full; i += 4) {
+      a = lookup(codes, data, i);
+      b = lookup(codes, data, i + 1);
+      c = lookup(codes, data, i + 2);
+      d = lookup(codes, data, i + 3);
+      out[j++] = (a << 2) | (b >> 4);
+      out[j++] = ((b & 15) << 4) | (c >> 2);
+      out[j++] = ((c & 3) << 6) | d;
     }
 
-    return Uint8Array.from(result);
+    var rest = end - full;
+
+    if (rest >= 2) {
+      a = lookup(codes, data, i);
+      b = lookup(codes, data, i + 1);
+      out[j++] = (a << 2) | (b >> 4);
+
+      if (rest === 3) {
+        c = lookup(codes, data, i + 2);
+        out[j++] = ((b & 15) << 4) | (c >> 2);
+      }
+    } else if (rest === 1) {
+      lookup(codes, data, i);
+    }
+
+    return out;
   }
+}
+
+function buildPairs(alphabet: string): string[] {
+  var pairs = new Array<string>(4096);
+
+  for (var i = 0; i < 4096; i++) {
+    pairs[i] = alphabet[i >> 6] + alphabet[i & 63];
+  }
+
+  return pairs;
+}
+
+function lookup(codes: Int16Array, data: string, index: number): number {
+  var code = data.charCodeAt(index);
+  var value = code < codes.length ? codes[code] : -1;
+
+  if (value < 0) {
+    throw new Error(`Invalid Base64 character: ${data[index]}`);
+  }
+
+  return value;
 }
