@@ -33,4 +33,19 @@ describe('hmToSeconds', () => {
   it('should handle invalid input safely by converting it to a number', () => {
     expect(hmToSeconds('2.30' as any)).toBe(9000);
   });
+
+  it('should return whole seconds for every HH.MM value of a day', () => {
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m++) {
+        expect(hmToSeconds(Number(`${h}.${String(m).padStart(2, '0')}`))).toBe(
+          h * 3600 + m * 60,
+        );
+      }
+    }
+  });
+
+  it('should handle negative values', () => {
+    expect(hmToSeconds(-1.3)).toBe(-5400);
+    expect(hmToSeconds(-0.07)).toBe(-420);
+  });
 });

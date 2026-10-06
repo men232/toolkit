@@ -1,5 +1,4 @@
 import { assert } from '@/assert';
-import { round2digits } from '@/num/round2digits';
 
 /**
  * Converts a decimal representation of hours and minutes (HH.MM) into total seconds.
@@ -36,8 +35,9 @@ export function hmToSeconds(hm: number): number {
 
   assert.number(hm, 'expected number value');
 
-  const h = Math.floor(hm);
-  const m = round2digits(hm - h) * 100;
+  const abs = hm < 0 ? -hm : hm;
+  const h = Math.floor(abs);
+  const seconds = h * 3600 + Math.round((abs - h) * 100) * 60;
 
-  return h * 3600 + m * 60;
+  return hm < 0 ? -seconds : seconds;
 }
