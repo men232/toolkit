@@ -13,4 +13,8 @@ describe('humanFileSize', () => {
   test('no spaces', () => {
     expect(humanFileSize(6432, 1, false)).toBe('6.3KB');
   });
+  test('withSpace applies to values under 1 KB', () => {
+    expect(humanFileSize(500, 1, false)).toBe('0.5KB');
+    expect(humanFileSize(500, 1, true)).toBe('0.5 KB');
+  });
 });

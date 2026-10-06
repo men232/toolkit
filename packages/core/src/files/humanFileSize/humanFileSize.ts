@@ -6,8 +6,8 @@
  *
  * @replaces the `units = ['KB', 'MB', 'GB']` loop or `Math.log(bytes) / Math.log(1024)` index — the log version
  * breaks on `0` and negatives unless guarded, and the loop shows `1024.0 KB` at unit boundaries; `humanFileSize`
- * rolls over (`1048575` → `1.0 MB`). Caveats: values under 1 KiB come out as KB (`500` → `0.5 KB`, ignoring
- * `withSpace`), and the base is 1024 but labelled KB/MB, not KiB/MiB.
+ * rolls over (`1048575` → `1.0 MB`). Caveats: values under 1 KiB come out as KB (`500` → `0.5 KB`), and the base
+ * is 1024 but labelled KB/MB, not KiB/MiB.
  * @detect `['"]KB['"],\s*['"]MB['"],\s*['"]GB['"]`
  * @detect `['"]KiB['"],\s*['"]MiB['"],\s*['"]GiB['"]`
  * @detect `Math\.log\(\w+\)\s*[/]\s*Math\.log\((1024|1000|k)\)`
@@ -27,7 +27,7 @@ export function humanFileSize(
   const units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
   if (Math.abs(bytes) < thresh) {
-    return (bytes / thresh).toFixed(digits) + ` ${units[0]}`;
+    return (bytes / thresh).toFixed(digits) + (withSpace ? ' ' : '') + units[0];
   }
 
   let u = -1;
