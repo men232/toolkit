@@ -1,3 +1,7 @@
+const CODE = new Uint8Array(128);
+for (let i = 0; i < 10; i++) CODE[48 + i] = i;
+for (let i = 0; i < 6; i++) CODE[97 + i] = 10 + i;
+
 /**
  * Converts a `bigint` value into a byte array (`Uint8Array`) in big-endian order.
  *
@@ -34,18 +38,40 @@
  * @group Binary
  */
 export function bigIntBytes(value: bigint): Uint8Array {
-  if (value < 0n) {
-    value = value * -1n;
+  if (value < 0n) value = -value;
+
+  if (value <= 0x1fffffffffffffn) return fromNumber(Number(value));
+
+  return fromHex(value.toString(16));
+}
+
+function fromNumber(n: number): Uint8Array {
+  var len = 1,
+    t = n;
+  while (t >= 256) {
+    t = Math.floor(t / 256);
+    len++;
   }
-  let byteLength = 1;
-  while (value > 2n ** BigInt(byteLength * 8) - 1n) {
-    byteLength++;
+
+  var out = new Uint8Array(len);
+  for (var i = len - 1; i >= 0; i--) {
+    out[i] = n % 256;
+    n = Math.floor(n / 256);
   }
-  const encoded = new Uint8Array(byteLength);
-  for (let i = 0; i < encoded.byteLength; i++) {
-    encoded[i] = Number(
-      (value >> BigInt((encoded.byteLength - i - 1) * 8)) & 0xffn,
-    );
+  return out;
+}
+
+function fromHex(s: string): Uint8Array {
+  var odd = s.length & 1,
+    len = (s.length + odd) >> 1,
+    out = new Uint8Array(len),
+    i = 0,
+    j = 0;
+
+  if (odd) out[i++] = CODE[s.charCodeAt(j++)];
+
+  for (; i < len; i++, j += 2) {
+    out[i] = (CODE[s.charCodeAt(j)] << 4) | CODE[s.charCodeAt(j + 1)];
   }
-  return encoded;
+  return out;
 }

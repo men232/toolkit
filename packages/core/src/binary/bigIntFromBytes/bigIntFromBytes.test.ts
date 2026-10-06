@@ -46,4 +46,24 @@ describe('bigIntFromBytes', () => {
     const expected = 0n;
     expect(bigIntFromBytes(input)).toBe(expected);
   });
+  it('matches a reference decoder for random lengths', () => {
+    for (let len = 1; len <= 70; len++) {
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = (Math.random() * 256) | 0;
+
+      let expected = 0n;
+      for (let i = 0; i < len; i++)
+        expected = (expected << 8n) | BigInt(bytes[i]);
+
+      expect(bigIntFromBytes(bytes)).toBe(expected);
+    }
+  });
+
+  it('decodes large inputs in linear time', () => {
+    const bytes = new Uint8Array(100_000).fill(0xff);
+    const start = performance.now();
+    const value = bigIntFromBytes(bytes);
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(value).toBe((1n << 800_000n) - 1n);
+  });
 });

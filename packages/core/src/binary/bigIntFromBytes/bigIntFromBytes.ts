@@ -1,5 +1,8 @@
 import { assert } from '@/assert';
 
+const HEX: string[] = [];
+for (let i = 0; i < 256; i++) HEX[i] = (i < 16 ? '0' : '') + i.toString(16);
+
 /**
  * Converts a byte array (`Uint8Array`) into a `bigint`. The byte array is interpreted in big-endian order.
  *
@@ -43,9 +46,28 @@ import { assert } from '@/assert';
 export function bigIntFromBytes(bytes: Uint8Array): bigint {
   assert.ok(bytes.byteLength > 0, 'Empty Uint8Array');
 
-  let decoded = 0n;
-  for (let i = 0; i < bytes.byteLength; i++) {
-    decoded += BigInt(bytes[i]) << BigInt((bytes.byteLength - 1 - i) * 8);
+  var len = bytes.length,
+    i = 0,
+    n = 0;
+
+  if (len <= 6) {
+    for (; i < len; i++) n = n * 256 + bytes[i];
+    return BigInt(n);
   }
-  return decoded;
+
+  if (len <= 10) {
+    var end = len - 4;
+    for (; i < end; i++) n = n * 256 + bytes[i];
+    var lo =
+      ((bytes[i] << 24) |
+        (bytes[i + 1] << 16) |
+        (bytes[i + 2] << 8) |
+        bytes[i + 3]) >>>
+      0;
+    return (BigInt(n) << 32n) | BigInt(lo);
+  }
+
+  var hex = '0x';
+  for (; i < len; i++) hex += HEX[bytes[i]];
+  return BigInt(hex);
 }
