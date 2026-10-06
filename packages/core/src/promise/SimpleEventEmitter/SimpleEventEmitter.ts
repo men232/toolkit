@@ -74,9 +74,11 @@ export class SimpleEventEmitter<
 
     if (!set) return false;
 
-    set.forEach(fn => {
+    const list = Array.from(set);
+
+    for (let i = 0; i < list.length; i++) {
       try {
-        const result = fn(...args);
+        const result = list[i](...args);
 
         if (isPromise(result)) {
           result.catch(err => {
@@ -85,10 +87,12 @@ export class SimpleEventEmitter<
           });
         }
       } catch (err) {
+        if (eventName === 'error') throw err;
+
         // @ts-expect-error
         this.emit('error' as any, err);
       }
-    });
+    }
 
     return true;
   }
@@ -112,6 +116,8 @@ export class SimpleEventEmitter<
       listener(...args);
     };
 
+    wrapped.listener = listener;
+
     // @ts-expect-error
     this.on(eventName, wrapped);
 
@@ -122,7 +128,14 @@ export class SimpleEventEmitter<
     const set = this.#listeners.get(eventName);
 
     if (set) {
-      set.delete(listener);
+      if (!set.delete(listener)) {
+        for (const fn of set) {
+          if ((fn as any).listener === listener) {
+            set.delete(fn);
+            break;
+          }
+        }
+      }
 
       if (set.size === 0) {
         this.#listeners.delete(eventName);
