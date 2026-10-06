@@ -1,3 +1,5 @@
+import { assert } from '@/assert';
+
 /**
  * Splits an array into smaller sub-arrays (chunks) of a specified size.
  *
@@ -26,17 +28,22 @@
  * // ]
  *
  * @param list The array to be split into chunks.
- * @param size The size of each chunk. Defaults to `1` if not specified.
+ * @param size The size of each chunk. Defaults to `1` if not specified. Fractional sizes are floored.
  * @returns An array of arrays (chunks), each containing up to `size` elements from the original array.
+ * @throws {AssertionError} When `size` is less than 1.
  *
  * @group Array
  */
 export function chunk<T>(list: readonly T[], size: number = 1): T[][] {
-  return list.reduce((res, item, index) => {
-    if (index % size === 0) {
-      res.push([]);
-    }
-    res[res.length - 1].push(item);
-    return res;
-  }, [] as T[][]);
+  assert.ok(size >= 1, 'Chunk size must be at least 1.');
+
+  size = Math.floor(size);
+
+  var result: T[][] = [];
+
+  for (var i = 0; i < list.length; i += size) {
+    result.push(list.slice(i, i + size));
+  }
+
+  return result;
 }
