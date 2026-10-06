@@ -122,11 +122,6 @@ export class Scheduler {
     opts?: Scheduler.JobOptions,
   ): CancellablePromise<Awaited<T>> {
     return new CancellablePromise((resolve, reject, onCancel) => {
-      onCancel(() => {
-        job.flags! |= SCHEDULER_JOB_FLAGS.DISPOSED;
-        reject(new Error('Canceled'));
-      });
-
       const fn: Scheduler.Job = () => {
         return Promise.resolve()
           .then(() => job() as any)
@@ -136,6 +131,11 @@ export class Scheduler {
 
       fn.id = job.id;
       fn.flags = job.flags;
+
+      onCancel(() => {
+        fn.flags! |= SCHEDULER_JOB_FLAGS.DISPOSED;
+        reject(new Error('Canceled'));
+      });
 
       this.queueJob(fn, opts);
     });

@@ -274,4 +274,19 @@ describe('scheduler', () => {
     expect(await p).toBe(1);
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  test('queueJobWait cancel should skip the job and keep it reusable', async () => {
+    const scheduler = createScheduler();
+    const job = vi.fn(() => 1);
+
+    const p = scheduler.queueJobWait(job);
+    p.cancel();
+
+    await expect(p).rejects.toThrow('Canceled');
+    await scheduler.nextTick();
+    expect(job).toHaveBeenCalledTimes(0);
+
+    await expect(scheduler.queueJobWait(job)).resolves.toBe(1);
+    expect(job).toHaveBeenCalledTimes(1);
+  });
 });
