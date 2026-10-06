@@ -20,6 +20,10 @@ const EXCLUDED = new Set([
   '@andrew_l/pino-pretty',
 ]);
 const OUT_FILE = path.join(REPO_ROOT, 'skills/andrew-toolkit/SKILL.md');
+const AUDIT_OUT_FILE = path.join(
+  REPO_ROOT,
+  'skills/andrew-toolkit-audit/SKILL.md',
+);
 
 // typedoc ReflectionKind values
 const KIND = {
@@ -54,6 +58,31 @@ One section per npm package. Prefer these over a hand-written equivalent: they a
 
 Full reference: https://men232.github.io/toolkit/reference/
 `;
+
+const AUDIT_FRONTMATTER = `---
+name: andrew-toolkit-audit
+description: Audit a codebase for hand-written code that an @andrew_l package already replaces, and report each hit with the replacement and why it is worth it. Use when asked to audit, review or clean up code against @andrew_l/toolkit, or to find helpers that duplicate it.
+---`;
+
+const AUDIT_BODY = `# @andrew_l replacement audit
+
+Every entry below is a pattern people write by hand where an @andrew_l export does the job better: it fixes a bug the hand-written version usually has, or it handles edge cases the hand-written version misses. Patterns where the export is only a shorter spelling are left out on purpose.
+
+## Steps
+
+1. **Sweep.** Run every \`Detect\` pattern of every entry over the project's source with ripgrep, skipping \`node_modules\`, build output and lockfiles:
+
+   \`\`\`sh
+   rg -n -U --glob '!node_modules' --glob '!dist' -e '<pattern>' <src dirs>
+   \`\`\`
+
+   Done when every pattern has been run and its hits are collected per entry.
+
+2. **Verify each hit.** Open the code around it and confirm it is the hand-written pattern the entry describes, doing the same job. A pattern only narrows the search: a hit that merely looks similar is a false positive. Check the entry's caveats against the call site (option defaults, sync vs async, mutation). Done when every hit is marked *confirmed* or *false positive* with a one-line reason.
+
+3. **Report.** Write one table of confirmed hits, most serious first (bugs before edge cases): \`file:line\`, the code found, the replacement call, and why it is worth it. List the false positives briefly below it. Leave the code unchanged; the report is the deliverable.
+
+## Replacements`;
 
 function runTypedoc() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'toolkit-typedoc-'));
@@ -172,6 +201,65 @@ function renderGroups(module, undocumented) {
   return sections;
 }
 
+/** Text of a typedoc comment part list, code spans kept with their backticks. */
+function textOf(parts) {
+  return parts
+    .map(part => part.text)
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** `@replaces` / `@detect` pairs of an export, in source order. */
+function replacementsOf(reflection) {
+  const comment =
+    reflection.comment ??
+    (reflection.signatures ?? []).find(s => s.comment)?.comment ??
+    null;
+
+  const entries = [];
+
+  for (const tag of comment?.blockTags ?? []) {
+    if (tag.tag === '@replaces') {
+      entries.push({ replaces: textOf(tag.content), detect: [] });
+    } else if (tag.tag === '@detect' && entries.length) {
+      entries.at(-1).detect.push(textOf(tag.content).replace(/^`|`$/g, ''));
+    }
+  }
+
+  return entries;
+}
+
+function renderAudit(packages) {
+  const sections = [];
+  let count = 0;
+
+  for (const { module, pkg } of packages) {
+    const items = module.children
+      .filter(isIndexed)
+      .map(child => [child, replacementsOf(child)])
+      .filter(([, entries]) => entries.length)
+      .sort(([a], [b]) => a.name.localeCompare(b.name));
+
+    if (!items.length) continue;
+
+    const blocks = items.map(([child, entries]) => {
+      count += entries.length;
+
+      const lines = entries.flatMap(entry => [
+        `- Replaces ${entry.replaces}`,
+        ...entry.detect.map(pattern => `  - Detect: \`${pattern}\``),
+      ]);
+
+      return `#### ${labelOf(child)}\n\n${lines.join('\n')}`;
+    });
+
+    sections.push(`### ${pkg.getNpmName()}\n\n${blocks.join('\n\n')}`);
+  }
+
+  return { content: sections.join('\n\n'), count };
+}
+
 function renderPackage(module, pkg, undocumented) {
   const name = pkg.getNpmName();
   const description = pkg.packageJson.description ?? '';
@@ -236,6 +324,16 @@ function main() {
     content.split('\n').length,
     Math.round(content.length / 1024),
   );
+
+  const audit = renderAudit(packages);
+  const auditContent = [AUDIT_FRONTMATTER, AUDIT_BODY, audit.content, ''].join(
+    '\n\n',
+  );
+
+  fs.mkdirSync(path.dirname(AUDIT_OUT_FILE), { recursive: true });
+  fs.writeFileSync(AUDIT_OUT_FILE, auditContent);
+
+  console.info('andrew-toolkit-audit/SKILL.md: %d replacements', audit.count);
 }
 
 main();
