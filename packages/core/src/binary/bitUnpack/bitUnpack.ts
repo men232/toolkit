@@ -91,9 +91,18 @@ export function bitUnpack<
   assert.greaterThan(options.totalBits, 0, 'totalBits must be greater than 0');
 
   const fields = buildFieldsInfo(options.fields, options.totalBits);
+  const small = options.totalBits <= 64;
+  const containersCount = Math.ceil(options.totalBits / 32);
 
   // FN: BigInt - direct BigInt bit operations
-  const fnBigIntCode = [`return ${compileFields(fields)};`].join('\n');
+  const fnBigIntCode = (
+    small
+      ? [
+          containersFromBigInt(containersCount),
+          `return ${compileContainerFields(fields)};`,
+        ]
+      : [`return ${compileFields(fields)};`]
+  ).join('\n');
 
   const fnBigInt = createFunction<BitUnpack.Fn.BigInt>(
     'bigint',
@@ -102,12 +111,19 @@ export function bitUnpack<
   );
 
   // FN: Number
-  const fnNumberCode = [
-    '\n// Extract container from number',
-    'data = BigInt(data);',
-    '\n// Return result',
-    `return ${compileFields(fields)};`,
-  ].join('\n');
+  const fnNumberCode = (
+    small
+      ? [
+          containersFromNumber(containersCount),
+          `return ${compileContainerFields(fields)};`,
+        ]
+      : [
+          '\n// Extract container from number',
+          'data = BigInt(data);',
+          '\n// Return result',
+          `return ${compileFields(fields)};`,
+        ]
+  ).join('\n');
 
   const fnNumber = createFunction<BitUnpack.Fn.Number>(
     'number',
@@ -116,12 +132,19 @@ export function bitUnpack<
   );
 
   // FN: Buffer
-  const fnBufferCode = [
-    '\n// Extract bytes from buffer (big-endian)',
-    extractBigIntFromBuffer(options.totalBits),
-    '\n// Return result',
-    `return ${compileFields(fields)};`,
-  ].join('\n');
+  const fnBufferCode = (
+    small
+      ? [
+          containersFromBuffer(options.totalBits),
+          `return ${compileContainerFields(fields)};`,
+        ]
+      : [
+          '\n// Extract bytes from buffer (big-endian)',
+          extractBigIntFromBuffer(options.totalBits),
+          '\n// Return result',
+          `return ${compileFields(fields)};`,
+        ]
+  ).join('\n');
 
   const fnBuffer = createFunction<BitUnpack.Fn.Buffer>(
     'buffer',
@@ -170,6 +193,90 @@ function compileFields(fields: FieldInfo[]): string {
   }
 
   lines.push('}');
+
+  return lines.join('\n');
+}
+
+function compileContainerFields(fields: FieldInfo[]): string {
+  const lines: string[] = ['{'];
+
+  for (const field of fields) {
+    const first = field.startBit >> 5;
+    const last = field.endBit >> 5;
+    const offset = field.startBit & 31;
+    let expr: string;
+
+    if (first === last) {
+      const mask = Math.pow(2, field.bits) - 1;
+      const shifted =
+        offset === 0 ? `c_${first}` : `(c_${first} >>> ${offset})`;
+
+      expr =
+        field.bits === 32
+          ? `c_${first}`
+          : `(${shifted} & 0x${mask.toString(16)})`;
+    } else {
+      const lowBits = 32 - offset;
+      const highBits = field.bits - lowBits;
+      const low = offset === 0 ? `c_${first}` : `(c_${first} >>> ${offset})`;
+      const high =
+        highBits === 32
+          ? `c_${last}`
+          : `(c_${last} & 0x${(Math.pow(2, highBits) - 1).toString(16)})`;
+
+      expr = `(${high} * ${Math.pow(2, lowBits)} + ${low})`;
+    }
+
+    lines.push(`  ['${field.name}']: ${expr},`);
+  }
+
+  lines.push('}');
+
+  return lines.join('\n');
+}
+
+function containersFromBigInt(containersCount: number): string {
+  const lines = ['var c_0 = Number(data & 0xffffffffn);'];
+
+  if (containersCount > 1) {
+    lines.push('var c_1 = Number((data >> 32n) & 0xffffffffn);');
+  }
+
+  return lines.join('\n');
+}
+
+function containersFromNumber(containersCount: number): string {
+  const lines = ['var c_0 = data >>> 0;'];
+
+  if (containersCount > 1) {
+    lines.push('var c_1 = (data / 0x100000000) >>> 0;');
+  }
+
+  return lines.join('\n');
+}
+
+function containersFromBuffer(totalBits: number): string {
+  const totalBytes = Math.ceil(totalBits / 8);
+  const aligned = totalBits % 32 === 0;
+  const at = (index: number) =>
+    aligned ? `data[${index}]` : index === 0 ? 'data[o]' : `data[o + ${index}]`;
+  const containers: string[][] = [];
+
+  for (let index = 0; index < totalBytes; index++) {
+    const position = totalBytes - 1 - index;
+    const container = position >> 2;
+    const shift = (position & 3) * 8;
+
+    (containers[container] ??= []).push(
+      shift === 0 ? at(index) : `(${at(index)} << ${shift})`,
+    );
+  }
+
+  const lines = aligned ? [] : [`var o = data.length - ${totalBytes};`];
+
+  containers.forEach((parts, container) => {
+    lines.push(`var c_${container} = (${parts.join(' | ')}) >>> 0;`);
+  });
 
   return lines.join('\n');
 }

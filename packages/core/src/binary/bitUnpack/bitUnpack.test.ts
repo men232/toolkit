@@ -640,3 +640,66 @@ describe('buffer round trip with bitPack', () => {
     });
   }
 });
+
+describe('random layouts up to 64 bits', () => {
+  const randomFields = (totalBits: number) => {
+    const fields: { name: string; bits: number }[] = [];
+    let left = totalBits;
+    while (left > 0) {
+      const bits = Math.min(
+        left,
+        1 + ((Math.random() * Math.min(left, 40)) | 0),
+      );
+      fields.push({ name: 'f' + fields.length, bits });
+      left -= bits;
+    }
+    return fields;
+  };
+
+  const randomBigInt = (bits: number) => {
+    let value = 0n;
+    for (let i = 0; i < bits; i++)
+      value = (value << 1n) | (Math.random() < 0.5 ? 1n : 0n);
+    return value;
+  };
+
+  const expected = (
+    value: bigint,
+    fields: { name: string; bits: number }[],
+    totalBits: number,
+  ) => {
+    const result: Record<string, number> = {};
+    let start = totalBits;
+    for (const { name, bits } of fields) {
+      start -= bits;
+      result[name] = Number(
+        (value >> BigInt(start)) & ((1n << BigInt(bits)) - 1n),
+      );
+    }
+    return result;
+  };
+
+  const toBytes = (value: bigint, totalBits: number) => {
+    const bytes = new Uint8Array(Math.ceil(totalBits / 8));
+    for (let i = bytes.length - 1, v = value; i >= 0; i--, v >>= 8n)
+      bytes[i] = Number(v & 0xffn);
+    return bytes;
+  };
+
+  it('buffer, bigint and number match a BigInt reference', () => {
+    for (let n = 0; n < 300; n++) {
+      const totalBits = 1 + ((Math.random() * 64) | 0);
+      const fields = randomFields(totalBits);
+      const unpacker = bitUnpack({ totalBits, fields });
+      const value = randomBigInt(totalBits);
+      const want = expected(value, fields, totalBits);
+
+      expect(unpacker.bigint(value)).toEqual(want);
+      expect(unpacker.buffer(toBytes(value, totalBits))).toEqual(want);
+
+      if (totalBits <= 53) {
+        expect(unpacker.number(Number(value))).toEqual(want);
+      }
+    }
+  });
+});
