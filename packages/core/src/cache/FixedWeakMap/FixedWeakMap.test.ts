@@ -58,3 +58,16 @@ test('FixedWeakMap', () => {
 
   expect(map.size).toBe(0);
 });
+
+test('evicts in constant time per insert', () => {
+  const map = new FixedWeakMap<object, number>(10_000);
+  const keys = Array.from({ length: 50_000 }, () => ({}));
+  const start = performance.now();
+
+  for (let i = 0; i < keys.length; i++) map.set(keys[i], i);
+
+  expect(performance.now() - start).toBeLessThan(100);
+  expect(map.size).toBe(10_000);
+  expect(map.has(keys[39_999])).toBe(false);
+  expect(map.has(keys[40_000])).toBe(true);
+});

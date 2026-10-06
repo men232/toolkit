@@ -74,9 +74,7 @@ export class FixedMap<K = any, V = any> extends Map<K, V> {
 
   private _drain() {
     while (this._tail.length > this._capacity) {
-      const key = this._tail.shift();
-
-      key !== undefined && this.delete(key);
+      super.delete.call(this, this._tail.shift()!);
     }
   }
 }

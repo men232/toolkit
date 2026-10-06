@@ -92,9 +92,7 @@ export class FixedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<
 
   private _drain() {
     while (this._tail.length > this._capacity) {
-      const key = this._tail.shift();
-
-      key !== undefined && this.delete(key);
+      super.delete(this._tail.shift()!);
     }
   }
 }

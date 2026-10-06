@@ -75,3 +75,25 @@ test('FixedMap', () => {
 
   expect(Array.from(map.keys())).toStrictEqual([]);
 });
+
+test('evicts an undefined key', () => {
+  const map = new FixedMap<string | undefined, number>(1);
+
+  map.set(undefined, 1);
+  map.set('a', 2);
+
+  expect(map.has(undefined)).toBe(false);
+  expect(map.size).toBe(1);
+});
+
+test('evicts in constant time per insert', () => {
+  const map = new FixedMap<number, number>(10_000);
+  const start = performance.now();
+
+  for (let i = 0; i < 50_000; i++) map.set(i, i);
+
+  expect(performance.now() - start).toBeLessThan(100);
+  expect(map.size).toBe(10_000);
+  expect(map.has(39_999)).toBe(false);
+  expect(map.has(40_000)).toBe(true);
+});
