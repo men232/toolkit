@@ -4,7 +4,8 @@ import { isEmpty } from '@/is';
  * Removes properties with empty values from an object.
  *
  * This function iterates over the object's keys and deletes any property whose value
- * is considered "empty" (e.g., `null`, `undefined`, `[]`, `{}`, `''`, `false`).
+ * is considered "empty" by `isEmpty`: `null`, `undefined`, `''`, `[]`, `{}`, an empty `Map` or `Set`.
+ * Falsy values such as `false`, `0` and `NaN` are kept.
  *
  * ⚠️ **Mutates the original object**: The input object is directly modified, and properties
  * are removed from it.

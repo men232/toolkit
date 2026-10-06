@@ -19,4 +19,11 @@ describe('cleanEmpty', () => {
 
     expect(Object.is(obj, res)).toBe(true);
   });
+  test('keeps false and 0', () => {
+    const obj = { enabled: false, retries: 0, name: '', tags: [] };
+
+    cleanEmpty(obj);
+
+    expect(obj).toStrictEqual({ enabled: false, retries: 0 });
+  });
 });
