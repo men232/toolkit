@@ -235,4 +235,55 @@ describe('SortedArray', () => {
       expect(isNaN(nanArray[4])).toBe(true);
     });
   });
+
+  describe('large inputs', () => {
+    const asc = (a: number, b: number) => a - b;
+    const isSorted = (arr: ArrayLike<number>) => {
+      for (let i = 1; i < arr.length; i++)
+        if (arr[i - 1] > arr[i]) return false;
+      return true;
+    };
+
+    it('accepts large initial items', () => {
+      const items = Array.from({ length: 200_000 }, (_, i) => 200_000 - i);
+      const arr = new SortedArray(asc, items);
+
+      expect(arr.length).toBe(200_000);
+      expect(isSorted(arr)).toBe(true);
+    });
+
+    it('merges repeated large batches', () => {
+      const arr = new SortedArray(asc);
+
+      for (let b = 0; b < 5; b++) {
+        arr.push(...Array.from({ length: 40_000 }, (_, i) => i * 5 + b));
+      }
+
+      expect(arr.length).toBe(200_000);
+      expect(isSorted(arr)).toBe(true);
+    });
+
+    it('slices and concats large arrays', () => {
+      const big = Array.from({ length: 200_000 }, (_, i) => i);
+      const arr = new SortedArray(asc, big);
+
+      expect(arr.slice().length).toBe(200_000);
+
+      const merged = new SortedArray(asc, [1]).concat(big);
+      expect(merged.length).toBe(200_001);
+      expect(isSorted(merged)).toBe(true);
+    });
+  });
+
+  it('keeps existing items before equal new items', () => {
+    const byKey = (a: { k: number }, b: { k: number }) => a.k - b.k;
+    const first = { k: 1, tag: 'old' };
+    const arr = new SortedArray(byKey, [first, { k: 2, tag: 'old' }]);
+    const added = { k: 1, tag: 'new' };
+
+    arr.push(added);
+
+    expect(arr[0]).toBe(first);
+    expect(arr[1]).toBe(added);
+  });
 });

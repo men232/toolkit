@@ -55,7 +55,7 @@ export class SortedArray<T> extends Array<T> {
 
     // Add initial items in sorted order if provided
     if (items.length > 0) {
-      super.push.apply(this, items.toSorted(compareFn));
+      copyInto(this, items.toSorted(compareFn));
     }
   }
 
@@ -65,42 +65,7 @@ export class SortedArray<T> extends Array<T> {
    * @returns The new length of the array
    */
   push(...items: T[]): number {
-    // For large batches, first sort the new items
-    var newItems = items.toSorted(this[SYM_COMPARE_FN]);
-    var newItemsLen = newItems.length;
-    var originalLen = this.length;
-
-    // Calculate final array size and prepare space
-    var result = new Array<T>(originalLen + newItemsLen);
-
-    // Merge the two sorted arrays with minimal comparisons
-    var i = 0,
-      j = 0,
-      k = 0;
-
-    // Main merge loop - stops when either array is exhausted
-    while (i < originalLen && j < newItemsLen) {
-      if (this[SYM_COMPARE_FN](this[i], newItems[j]) <= 0) {
-        result[k++] = this[i++];
-      } else {
-        result[k++] = newItems[j++];
-      }
-    }
-
-    // Copy remaining elements (only one of these loops will execute)
-    while (i < originalLen) {
-      result[k++] = this[i++];
-    }
-
-    while (j < newItemsLen) {
-      result[k++] = newItems[j++];
-    }
-
-    // Fastest way to replace content: clear and use super.push with spread
-    this.length = 0;
-    super.push.apply(this, result);
-
-    return this.length;
+    return mergeInto(this, items);
   }
 
   /**
@@ -116,8 +81,7 @@ export class SortedArray<T> extends Array<T> {
    */
   slice(start?: number, end?: number): SortedArray<T> {
     var result = new SortedArray<T>(this[SYM_COMPARE_FN]);
-    var sliced = super.slice(start, end);
-    super.push.apply(result, sliced);
+    copyInto(result, super.slice(start, end));
     return result;
   }
 
@@ -130,15 +94,39 @@ export class SortedArray<T> extends Array<T> {
     var result = new SortedArray<T>(this[SYM_COMPARE_FN], this);
 
     for (const item of items) {
-      if (Array.isArray(item)) {
-        result.push.apply(result, item);
-      } else {
-        result.push(item as T);
-      }
+      mergeInto(result, Array.isArray(item) ? item : [item as T]);
     }
 
     return result;
   }
+}
+
+function copyInto<T>(target: T[], items: ArrayLike<T>) {
+  var len = items.length;
+  target.length = len;
+  for (var i = 0; i < len; i++) {
+    target[i] = items[i];
+  }
+}
+
+function mergeInto<T>(target: SortedArray<T>, items: ArrayLike<T>): number {
+  var compareFn: SortedArrayCompareFn<T> = (target as any)[SYM_COMPARE_FN];
+  var newItems = Array.prototype.slice.call(items).sort(compareFn) as T[];
+  var i = target.length - 1,
+    j = newItems.length - 1,
+    k = target.length + newItems.length - 1;
+
+  target.length = k + 1;
+
+  while (j >= 0) {
+    if (i >= 0 && compareFn(target[i], newItems[j]) > 0) {
+      target[k--] = target[i--];
+    } else {
+      target[k--] = newItems[j--];
+    }
+  }
+
+  return target.length;
 }
 
 // Wrap original array methods to return regular array instead of sorted array
