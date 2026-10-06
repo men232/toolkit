@@ -11,7 +11,7 @@ export function keyBy<T, K extends PropertyKey>(
   array: readonly T[],
   keyBy: K,
   objectMode?: false,
-): Map<IsPropertyKey<T, K, unknown>, T[]>;
+): Map<IsPropertyKey<T, K, unknown>, T>;
 
 export function keyBy<T, K>(
   array: readonly T[],
@@ -28,7 +28,7 @@ export function keyBy<T, K extends keyof T>(
 export function keyBy<T, K extends PropertyKey>(
   array: readonly T[],
   keyBy: K,
-  objectMode?: true,
+  objectMode: true,
 ): Record<ToPropertyKey<IsPropertyKey<T, K, unknown>>, T>;
 
 export function keyBy<T, K>(
@@ -40,6 +40,8 @@ export function keyBy<T, K>(
 /**
  * Maps each element of an array based on a provided key.
  *
+ * Each key holds one element; when several elements share a key, the last one wins.
+ *
  * @example
  * const data = [
  *     { id: 1, name: 'group 1' },
@@ -48,9 +50,9 @@ export function keyBy<T, K>(
  * ];
  *
  * const result = keyBy(data, 'id');
- * console.log(Object.entries(result));
+ * console.log([...result]);
  * // [
- * //    [1, [{ id: 1, name: 'group 1' }, { id: 1, name: 'group 2' }],
+ * //    [1, { id: 1, name: 'group 2' }],
  * //    [2, { id: 2, name: 'group 2' }],
  * // ]
  *

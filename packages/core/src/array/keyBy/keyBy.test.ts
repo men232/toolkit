@@ -1,5 +1,5 @@
 import { toMap } from '@/object';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { keyBy } from './keyBy';
 
 describe('keyBy', () => {
@@ -76,5 +76,16 @@ describe('keyBy', () => {
     const result = keyBy(people, person => person.name);
 
     expect(result).toEqual(toMap({}));
+  });
+  it('types a key that is not a known field as one item per key', () => {
+    type Row = { name: string };
+    const rows = [
+      { name: 'a', id: 1 },
+      { name: 'b', id: 1 },
+    ] as unknown as Row[];
+    const result = keyBy(rows, 'id');
+
+    expectTypeOf(result).toEqualTypeOf<Map<unknown, Row>>();
+    expect(result.get(1)).toBe(rows[1]);
   });
 });
