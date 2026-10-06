@@ -24,6 +24,11 @@ import { deepCloneWithImpl } from '../deepCloneWith/deepCloneWithImpl';
  * console.log(arr[1][0]); // 2
  * console.log(clonedArr[1][0]); // 99
  *
+ * @replaces `JSON.parse(JSON.stringify(x))` — turns Dates into strings and Map/Set into `{}`, drops
+ * `undefined` and class prototypes, and throws on a BigInt or a cycle; `deepClone` keeps all of them.
+ * Native `structuredClone` is also fine where class prototypes do not matter.
+ * @detect `JSON\.parse\(\s*JSON\.stringify\(`
+ *
  * @group Object
  */
 export const deepClone = <T>(value: T): T => {

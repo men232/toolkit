@@ -7,6 +7,13 @@ import { isColorChannels } from '../utils';
 
 /**
  * Parse css color and returns color channels
+ *
+ * @replaces `if (c.startsWith('#')) return hexToRgb(c); if (c.startsWith('rgb')) …` — one call parses hex (3/4/6/8
+ * digits), legacy and modern `rgb()`/`hsl()` (percentages, deg/rad/turn) and `"r,g,b"` into `[r, g, b, a]`. Never throws:
+ * named colors and `var()` log a warning and give opaque black, malformed hex/`rgb()`/`hsl()` give `[0, 0, 0, 0]`.
+ * @detect `startsWith\(\s*['"]#['"]\s*\)[\s\S]{0,300}?startsWith\(\s*['"](?:rgb|hsl)`
+ * @detect `(?:function\s+|const\s+)(?:parseColor|colorToRgba?)\b`
+ *
  * @group Colors
  */
 export function colorToChannels(

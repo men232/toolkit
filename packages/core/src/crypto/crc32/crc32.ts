@@ -49,6 +49,13 @@ var TABLE = new Int32Array([
 
 /**
  * Calculate crc32 hash from string
+ *
+ * @replaces A hand-built CRC-32 table loop (`0xEDB88320`) or the `crc-32` package — accepts a string (UTF-8), bytes or
+ * an array of chunks and chains with `crc32(next, crc32(prev))`. Returns a signed int32 like `crc-32`: use `>>> 0` for
+ * hex or to compare with `zlib.crc32`, which is the native choice in Node-only code (22.2+).
+ * @detect `0x[eE][dD][bB]88320\b`
+ * @detect `['"]crc-32['"]`
+ *
  * @group Crypto
  */
 export function crc32(

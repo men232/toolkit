@@ -45,6 +45,11 @@ export function intersectionBy<T>(
  * const result = intersectionBy(item => item.info.code, products1, products2);
  * // result will be [{ info: { code: 'B2' } }]
  *
+ * @replaces `a.filter(x => b.some(y => y.id === x.id))` — O(n·m) and keeps duplicates; `intersectionBy`
+ * builds a Set per array lazily and dedupes by key. Caveat: the items and their order come from the
+ * shortest array, not the first one; the key is a top-level property or a function.
+ * @detect `\.filter\(\s*\(?\w+\)?\s*=>\s*[\w.]+\.(some|find)\(\s*\(?\w+\)?\s*=>\s*\w+\.\w+\s*===\s*\w+\.\w+`
+ *
  * @group Array
  */
 export function intersectionBy(

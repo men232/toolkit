@@ -17,6 +17,11 @@
  * @param str - The string to escape for use in a regular expression.
  * @returns The input string with all special regex characters escaped.
  *
+ * @replaces `str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` — copied versions often drop `-` or `/`, which break
+ * a character class or a `/`-delimited source; `escapeRegExp` escapes both. On Node 24+ and current browsers
+ * `RegExp.escape` is the native alternative.
+ * @detect `\.replace\(/\[[^\n]*\]/g,\s*['"]\\\\\$&['"]\)`
+ *
  * @group Strings
  */
 export function escapeRegExp(str: string) {

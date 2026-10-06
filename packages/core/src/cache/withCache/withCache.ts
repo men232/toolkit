@@ -32,6 +32,12 @@ export const cache = /*#__PURE__*/ new WeakMap<
  * sum(1, 2);
  * sum(1, 3)  // calc?
  *
+ * @replaces `const key = JSON.stringify(args); if (cache.has(key)) return cache.get(key)` — keys are typed (`1` and
+ * `'1'` differ; `undefined`, Dates and bigint survive) and a rejected promise is not cached. Caveats: object arguments
+ * are keyed by reference unless `objectStrategy: 'json'`; no in-flight dedupe (combine with `withResolve`); unbounded;
+ * a promise-returning function must be declared `async`, otherwise cache hits return the raw value, not a promise.
+ * @detect `\w+\s*=\s*JSON\.stringify\(\s*args\s*\)\s*;?\s*(if\s*\(\s*!?\s*)?[\w.]+\.(has|get)\(`
+ *
  * @group Cache
  */
 export function withCache<T extends AnyFunction>(fn: T): WithCacheResult<T>;

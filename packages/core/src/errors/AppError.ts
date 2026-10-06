@@ -71,6 +71,11 @@ export interface AppErrorOptions extends ErrorOptions {
 
 /**
  * Simple application error class with the code
+ * @replaces `class HttpError extends Error { constructor(public status: number, ...) }` — `AppError`
+ * already has `statusCode` (default 500), `code` (default `'ERR_UNKNOWN'`), `cause`, a status-to-message
+ * map (`new AppError(404)` is "Not Found") and `AppError.is()`, which also matches by `name`.
+ * @detect `class\s+\w*(Http|HTTP|Api|API|App)\w*(Error|Exception)\s+extends\s+Error\b`
+ *
  * @group Errors
  */
 export class AppError extends Error {

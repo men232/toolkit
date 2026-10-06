@@ -12,6 +12,9 @@
  * const shuffledArray = shuffle(array);
  * // shuffledArray will be a new array with elements of array in random order, e.g., [3, 1, 4, 5, 2]
  *
+ * @replaces `arr.sort(() => Math.random() - 0.5)` — biased shuffle that also mutates the array.
+ * @detect `sort\(\s*\(\)\s*=>\s*Math\.random\(\)\s*-\s*0?\.5`
+ *
  * @group Array
  */
 export function shuffle<T>(arr: readonly T[]): T[] {

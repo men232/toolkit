@@ -45,6 +45,14 @@ export interface EJSONStreamOptionsWithPayload
  *
  * // {"key1":"value1","payload": [...data],"key2":"value2"}
  *
+ * @replaces `res.write('['); rows.forEach((r, i) => res.write((i ? ',' : '') + JSON.stringify(r))); res.write(']')` — a
+ * `TransformStream` that emits `[`, separators and `]`, optionally inside an object via `resultKey`/`prepend`/`append`.
+ * Caveats: items use the default EJSON (Dates become `{"$date": ms}`; pass `ejson: createEJSON()` for plain JSON),
+ * `prepend`/`append` always use the default EJSON, and `resultKey` is inserted without JSON escaping.
+ * @detect `\.write\(\s*['"]\[['"]\s*\)`
+ * @detect `\.(?:write|enqueue)\(\s*['"],['"]\s*\)`
+ * @detect `\.write\(\s*\(?\s*\w+\s*\?\s*['"],['"]\s*:\s*['"]['"]\s*\)?\s*\+`
+ *
  * @group EJSON
  */
 export function createEJSONStream(

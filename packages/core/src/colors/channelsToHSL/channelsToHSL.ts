@@ -3,6 +3,13 @@ import type { Color } from '../types';
 
 /**
  * Converts color channels into HSL
+ *
+ * @replaces A hand-copied `rgbToHsl(r, g, b)` (`l = (max + min) / 2`, hue by max channel) — takes `[r, g, b, a]`
+ * (0–255) and returns `{ h, s, l, a }` with h in degrees and s/l in percent. All three are rounded to integers, so the
+ * conversion is lossy.
+ * @detect `(?:function\s+|const\s+)rgbToHsla?\b`
+ * @detect `\(\s*max\s*\+\s*min\s*\)\s?/\s?2`
+ *
  * @group Colors
  */
 export function channelsToHSL([r, g, b, a]: Color.ColorChannels): Color.HSLA {

@@ -23,6 +23,10 @@ import { isDate } from '@/is';
  * // Using the current time
  * console.log(timestamp()); // Returns current seconds since Unix epoch
  *
+ * @replaces `Math.floor(Date.now() / 1000)` — one call that also takes a `Date` or epoch ms. An invalid `Date`
+ * gives `NaN`. `Math.round` variants differ from it by up to 1s.
+ * @detect `Math\.(floor|trunc)\(\s*(Date\.now\(\)|new Date\([^)\n]*\)\.getTime\(\)|[\w.]+\.getTime\(\))\s*[/]\s*1000\s*\)`
+ *
  * @group Date
  */
 export function timestamp(fromValue: Date | number = Date.now()) {

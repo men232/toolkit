@@ -54,6 +54,13 @@ export function keyBy<T, K>(
  * //    [2, { id: 2, name: 'group 2' }],
  * // ]
  *
+ * @replaces `new Map(list.map(x => [x.id, x]))` — `keyBy(list, 'id')` builds the same Map (the last item
+ * wins for a repeated key) without the intermediate array of pairs; the key can also be a function.
+ * @detect `new Map\(\s*[\w.]+\.map\(\s*\(?\w+\)?\s*=>\s*\[\s*\w+(\.\w+|\[[^\]]+\])\s*,\s*\w+\s*\]\s*,?\s*\)\s*,?\s*\)\s*[^.\s]`
+ * @replaces `Object.fromEntries(list.map(x => [x.id, x]))` — `keyBy(list, 'id', true)` returns the same
+ * plain object (the last item wins) in one pass.
+ * @detect `Object\.fromEntries\(\s*[\w.]+\.map\(\s*\(?\w+\)?\s*=>\s*\[\s*\w+(\.\w+|\[[^\]]+\])\s*,\s*\w+\s*\]\s*\)\s*\)`
+ *
  * @group Array
  */
 export function keyBy(

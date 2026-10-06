@@ -13,6 +13,13 @@
  * @param value The array from which duplicates will be removed.
  * @returns A new array containing only the unique values from the input array.
  *
+ * @replaces `list.filter((v, i, a) => a.indexOf(v) === i)` — O(n²) and drops every `NaN` (`indexOf` never
+ * finds it); `uniq` uses a Set, keeps one `NaN` and the first-occurrence order.
+ * @detect `\.filter\(\s*\(\s*\w+\s*,\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\.indexOf\(\s*\w+\s*\)\s*===\s*\w+\s*\)`
+ * @replaces `[...new Set(list)]` or `Array.from(new Set(list))` — same result for an array, as one call.
+ * Caveat: `uniq` returns `[]` for a non-array input such as a Set or a string.
+ * @detect `\[\s*\.\.\.\s*new Set\(|Array\.from\(\s*new Set\(`
+ *
  * @group Array
  */
 export function uniq<T>(value: readonly T[]): T[] {

@@ -21,6 +21,11 @@ import { type TimestampMsInput, timestampMs } from '../timestampMs';
  * // Use a timestamp as the base time
  * dateInDays(2, 1672531200000); // Returns a Date object 2 days after the base timestamp
  *
+ * @replaces `new Date(Date.now() - n * 24 * 60 * 60 * 1000)` — one call with no millisecond arithmetic
+ * (`dateInDays(-n)`). Returns a `Date` (use `.getTime()` for ms). Like the hand-written code it adds n×24h, not
+ * calendar days, so it drifts across DST; an unparsable base string falls back to epoch 0.
+ * @detect `(Date\.now\(\)|\.getTime\(\))\s*[-+]\s*\(?\s*([\w.]+\s*\*\s*)?(24\s*\*\s*60\s*\*\s*60\s*\*\s*1000|24\s*\*\s*3600\s*\*\s*1000|1000\s*\*\s*60\s*\*\s*60\s*\*\s*24|86_?400_?000|864e5)\b`
+ *
  * @group Date
  */
 export function dateInDays(

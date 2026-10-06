@@ -13,6 +13,10 @@
  * const result = intersection(array1, array2);
  * // result will be [3, 4, 5] since these elements are in both arrays.
  *
+ * @replaces `a.filter(x => b.includes(x))` — O(n·m); `intersection(a, b)` gives the same result
+ * (duplicates in `a` kept, `NaN` matched) with a Set per array, and takes more than two arrays.
+ * @detect `\.filter\(\s*\(?\w+\)?\s*=>\s*[\w.]+\.includes\(\s*\w+\s*\)\s*\)`
+ *
  * @group Array
  */
 export function intersection<T>(...arrays: (readonly T[])[]): T[] {

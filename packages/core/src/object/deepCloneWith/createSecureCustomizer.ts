@@ -153,6 +153,13 @@ export namespace SecureCustomizer {
  * );
  * // → { user: { email: 'a***@mail.com' }, token: '…1234' }
  *
+ * @replaces `JSON.stringify(obj, (k, v) => /password|token/i.test(k) ? '***' : v)` or a hand-written
+ * `redact()` before logging — the replacer throws on a cycle and turns Errors into `{}`; with
+ * `deepCloneWith(obj, createSecureCustomizer(keys))` keys match case-insensitively at any depth or by
+ * dotted path, cycles become a label and Errors become `{ message, stack, name, cause }`.
+ * @detect `JSON\.stringify\([^,()]+,\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>[^;]{0,200}?(?i:password|secret|token|authorization|api_?key)`
+ * @detect `(?i)\b(function\s+|const\s+|let\s+)(redact|scrub)\w*\s*[=(]`
+ *
  * @group Object
  */
 export function createSecureCustomizer(

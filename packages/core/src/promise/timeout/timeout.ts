@@ -34,6 +34,11 @@ import { createTimeoutError } from './createTimeoutError';
  *
  * @throws {Error} - Throws the `timeoutError` if the operation exceeds the specified timeout.
  *
+ * @replaces `Promise.race([p, new Promise((_, reject) => setTimeout(reject, ms))])` — the timer is never
+ * cleared, so the process stays alive for `ms` after the work finishes; `timeout` clears it, aborts the
+ * `AbortSignal` passed to the callback and rejects with a 408 `AppError`. For `fetch` alone, `AbortSignal.timeout(ms)` is enough.
+ * @detect `Promise\.race\(\[[\s\S]{0,200}?setTimeout\(`
+ *
  * @group Promise
  */
 export function timeout<T = any>(

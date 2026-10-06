@@ -47,6 +47,13 @@ export type Base64ToBytesOptions = {
  * const decodedStrict = base64ToBytes(base64StringStrict, { strict: true });
  * console.log(decodedStrict); // Output: Uint8Array [ 72, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 ]
  *
+ * @replaces `Uint8Array.from(atob(s), c => c.charCodeAt(0))`, plus `.replace(/-/g, '+').replace(/_/g, '/')` and
+ * re-padding for base64url — decodes both alphabets directly (native `fromBase64` when present). Caveat: `base64`
+ * is strict by default and throws on unpadded input (pass `strict: false`); `base64url` is lenient.
+ * @detect `atob\([^;]{0,80}?\.charCodeAt\(`
+ * @detect `atob\([\s\S]{0,200}?\w+\[\s*\w+\s*\]\s*=\s*\w+\.charCodeAt\(\s*\w+\s*\)`
+ * @detect `\.replace\(\s?/-/g\s*,\s*['"]\+['"]\s*\)`
+ *
  * @group Binary
  */
 export function base64ToBytes(

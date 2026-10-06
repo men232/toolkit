@@ -14,6 +14,11 @@ import { getWords } from '../getWords';
  * const convertedStr3 = lowerCase('hyphen-text') // returns 'hyphen text'
  * const convertedStr4 = lowerCase('HTTPRequest') // returns 'http request'
  *
+ * @replaces `str.replace(/([A-Z])/g, ' $1').toLowerCase().trim()` — the regex splits every capital
+ * (`HTTPRequest` → `h t t p request`) and keeps `-`/`_`; `lowerCase` keeps acronyms together and joins words
+ * with single spaces (`getHTTPResponse` → `get http response`).
+ * @detect `\.replace\(/\(\[A-Z\]\)/g,\s*['"] \$1['"]\)[^;]{0,80}\.toLowerCase\(\)`
+ *
  * @group Strings
  */
 export const lowerCase = (str?: string): string => {

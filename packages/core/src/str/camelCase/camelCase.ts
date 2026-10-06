@@ -17,6 +17,11 @@ import { getWords } from '../getWords';
  * const convertedStr4 = camelCase('HTTPRequest') // returns 'httpRequest'
  * const convertedStr5 = camelCase('Keep unicode 😅') // returns 'keepUnicode😅'
  *
+ * @replaces `str.replace(/[-_\s]+(.)/g, (_, c) => c.toUpperCase())` — the hand-written regex only handles the
+ * separators it lists and leaves acronyms and PascalCase input alone (`HTTPRequest` stays `HTTPRequest`);
+ * `camelCase` splits on case, digits and any separator (`HTTPRequest` → `httpRequest`, `user_id2` → `userId2`).
+ * @detect `\.replace\(/[^/\n]*[-_][^/\n]*[/]g,\s*\(?[\w\s,]*\)?\s*=>[^\n]*\.toUpperCase\(\)`
+ *
  * @group Strings
  */
 export function camelCase(str: string): string {

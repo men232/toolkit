@@ -44,6 +44,11 @@ import { nextTickIteration } from '../nextTickIteration';
  *   otherUsefulTask(),
  * ]).then(console.log);
  *
+ * @replaces `await Promise.all(items.map(async (item) => ...))` over a large or unbounded list — every call starts at
+ * once; `asyncMap` caps the calls in flight and keeps results in input order. The default `concurrency` is 1
+ * (sequential), so pass it explicitly. It rejects on the first error; calls already started keep running.
+ * @detect `Promise\.all\(\s*[\w.]+\.map\(\s*async\b`
+ *
  * @group Promise
  */
 export function asyncMap<T, U>(

@@ -81,6 +81,16 @@ import {
  *
  * console.log(ejson.mimetype); // application/vnd.andrew+json
  *
+ * @replaces `JSON.stringify(v, (k, x) => typeof x === 'bigint' ? String(x) : x)`, `BigInt.prototype.toJSON` or a reviver
+ * reviving ISO-looking strings — BigInt/Map/Set never come back and any date-like string becomes a Date. `EJSON.stringify`/`parse`
+ * round-trip Date, Map, Set, BigInt, ±Infinity, RegExp and typed arrays as `{"$date": ms}`-style placeholders; both ends need EJSON.
+ * @detect `JSON\.stringify\([^;]{0,300}?['"]bigint['"]`
+ * @detect `BigInt\.prototype\.toJSON`
+ * @detect `JSON\.parse\([^;]{0,300}?\\d\{4\}-\\d\{2\}-\\d\{2\}`
+ * @replaces `import superjson from 'superjson'` (or `devalue`) used only for Date/Map/Set/BigInt — `EJSON` covers those
+ * without a dependency. Unlike them it drops `undefined` like JSON, throws on cycles, and other classes need `addType`.
+ * @detect `from\s+['"](?:superjson|devalue)['"]`
+ *
  * @group EJSON
  */
 export function createEJSON(withBasicTypes: boolean = false): EJSON {

@@ -58,6 +58,12 @@ type FieldInfo = BitUnpack.Field & {
 
 /**
  * Define compact unpacked structure
+ *
+ * @replaces `Number((id >> 22n) & 0x3ffn)` per field — shifts and masks come from the same field list as `bitPack`
+ * (first field is most significant), so they cannot drift from the packer; reads a bigint, number, big-endian bytes
+ * or a bit string. Fields wider than 53 bits lose precision as numbers; needs `new Function` (no strict CSP).
+ * @detect `Number\(\s*\(?\s*(?:BigInt\(\s*[\w.]+\s*\)|[\w.]+)\s*>>\s*\d+n\b`
+ *
  * @group Binary
  *
  * @example

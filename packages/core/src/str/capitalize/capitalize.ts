@@ -9,6 +9,11 @@
  * const result = capitalize('fred') // returns 'Fred'
  * const result2 = capitalize('FRED') // returns 'Fred'
  *
+ * @replaces `s.charAt(0).toUpperCase() + s.slice(1)` — returns the literal type `Capitalize<T>` and does not throw
+ * on `''` like `s[0].toUpperCase()`. Caveat: it also lowercases the rest (`'iPhone'` → `'Iphone'`), so suggest it
+ * only where that is wanted.
+ * @detect `\w+(\.charAt\(0\)|\[0\])\.toUpperCase\(\)\s*\+\s*\w+\.(slice|substring|substr)\(1\)`
+ *
  * @group Strings
  */
 

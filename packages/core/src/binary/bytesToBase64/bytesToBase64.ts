@@ -56,6 +56,13 @@ export type BytesToBase64Options = {
  *   console.error(error); // Output: Error: Invalid encoding options: invalid
  * }
  *
+ * @replaces `btoa(String.fromCharCode(...bytes))` plus `.replace(/\+/g, '-').replace(/\//g, '_')` for base64url — the
+ * spread (or `.apply`) throws `RangeError` on large arrays (a few hundred KB). Uses native `toBase64` when present, a JS
+ * encoder otherwise; base64url omits padding by default. In Node-only code `Buffer#toString('base64url')` is as good.
+ * @detect `btoa\(\s*String\.fromCharCode(?:\.apply\(\s*null\s*,|\(\s*\.\.\.)`
+ * @detect `String\.fromCharCode\(\s*\w+\[\s*\w+\s*\]\s*\)[\s\S]{0,200}?btoa\(`
+ * @detect `\.replace\(\s?/\\\+/g\s*,\s*['"]-['"]\s*\)`
+ *
  * @group Binary
  */
 export function bytesToBase64(

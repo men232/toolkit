@@ -23,6 +23,11 @@ import { isNumber } from '@/is';
  * // Returns: 5 (clamped to min)
  * clamp(3, min, max);
  *
+ * @replaces `Math.min(Math.max(x, min), max)` — one call; `NaN` or a non-number input returns `min` where the
+ * one-liner returns `NaN`. `Infinity` passes through, and `min > max` is not checked (the result is `max`).
+ * @detect `Math\.min\(([^()\n]*,\s*)?Math\.max\(`
+ * @detect `Math\.max\(([^()\n]*,\s*)?Math\.min\(`
+ *
  * @group Numbers
  */
 export const clamp = (num: number, min: number, max: number) => {

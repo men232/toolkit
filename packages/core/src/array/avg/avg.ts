@@ -15,6 +15,11 @@ import { isNumber } from '@/is';
  * @param values An array of numbers (could include invalid values, which will be ignored).
  * @returns The average value of the valid numbers in the array, or `0` if no valid numbers exist.
  *
+ * @replaces `arr.reduce((a, b) => a + b, 0) / arr.length` — gives `NaN` for an empty array or any
+ * non-number entry; `avg` returns `0` for an empty array and skips non-numbers and `NaN`, dividing by
+ * the count of numbers it kept (`Infinity` is kept).
+ * @detect `\.reduce\([\s\S]{0,200}?\+[\s\S]{0,200}?,\s*0\s*\)\s*[/]\s*[\w.]+\.length`
+ *
  * @group Array
  */
 export const avg = (values: readonly number[]) => {

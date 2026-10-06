@@ -20,6 +20,11 @@ const htmlEscapes: Record<number, string> = Object.freeze({
  * @param unsafe - The string to be sanitized (escaped).
  * @returns A sanitized string with HTML special characters replaced by their corresponding HTML entities.
  *
+ * @replaces `str.replace(/&/g, '&amp;').replace(/</g, '&lt;')...` — hand-written chains often miss `"` or `'`
+ * or escape `&` after the other entities; `escapeHtml` escapes all five characters in one pass.
+ * @detect `\.replace\(/&/g,\s*['"]&amp;['"]\)`
+ * @detect `\.replace\(/</g,\s*['"]&lt;['"]\)`
+ *
  * @group Strings
  */
 export function escapeHtml(unsafe: string) {

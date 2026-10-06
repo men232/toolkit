@@ -43,6 +43,13 @@ import { get } from '@/object/get';
  *                  determined based on the value of that property.
  * @returns A new array containing only the first occurrence of each unique element based on the comparator.
  *
+ * @replaces `a.filter((x, i, s) => s.findIndex(y => y.id === x.id) === i)` — O(n²); `uniqBy` is O(n)
+ * with a Set and also keeps the first occurrence. A string key may be a deep path such as `'a.b'`.
+ * @detect `findIndex\(\s*\(?\w+\)?\s*=>\s*\w+\.\w+\s*===\s*\w+\.\w+\s*\)\s*===\s*\w+`
+ * @replaces `[...new Map(a.map(x => [x.id, x])).values()]` — keeps the last item for each key (at the
+ * first item's position); `uniqBy` keeps the first item.
+ * @detect `new Map\(\s*[\w.]+\.map\([\s\S]{0,120}?\)\s*\)\s*\.values\(\)`
+ *
  * @group Array
  */
 export function uniqBy<T>(

@@ -19,6 +19,11 @@ import { compareAscending } from './compareAscending';
  * // Output the sorted array
  * console.log(sortedUsers);
  *
+ * @replaces `list.sort((a, b) => a.x - b.x || a.y - b.y)` — sorts in place and only works for numbers;
+ * `orderBy(list, ['x', 'y'], ['asc', 'asc'])` returns a stable sorted copy (typed `readonly T[]`), also
+ * compares strings (by code unit, not `localeCompare`) and puts `null`/`undefined` last in `asc`.
+ * @detect `\.sort\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\(?\s*\w+\.\w+\s*-\s*\w+\.\w+\s*\)?\s*\|\|`
+ *
  * @group Array
  */
 export function orderBy<T>(

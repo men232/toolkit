@@ -77,6 +77,12 @@ type Plan = {
 
 /**
  * Define compact packed structure
+ *
+ * @replaces `(BigInt(ts) << 22n) | (BigInt(worker) << 17n) | BigInt(seq)` — an oversized value spills into the next
+ * field; `bitPack` masks each value to its width and compiles 32-bit integer code. Caveats: `buffer()` returns one shared
+ * `Uint8Array` and must be called as a method; `number()` keeps only the low 32 bits, signed; needs `new Function` (no strict CSP).
+ * @detect `<<\s*\d+n\s*\)?\s*\|[^|]`
+ *
  * @group Binary
  *
  * @example

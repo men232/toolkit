@@ -34,6 +34,17 @@ type StringifyOptions = {
  * const defaults = { page: 1, limit: 10 };
  * const params = qs.parse('page=5&limit=abc', defaults); // { page: 5, limit: 10 }
  *
+ * @replaces `Number(searchParams.get('page')) || 1`, `params.get('x') === 'true'` — `qs.parse(search, defaults)`
+ * casts each key to the type of its default (number, boolean, Date, array, Set, Map, bigint) and falls back to the
+ * default when the value is missing or invalid. Caveats: numbers use `parseFloat` (`'12abc'` becomes 12), only
+ * `'true'` is true, and keys missing from `defaults` are dropped.
+ * @detect `(Number|parseInt|parseFloat)\(\s*[\w.]*(?i:params|query)\w*\.get\(`
+ * @detect `\.get\(\s*['"][^'"]+['"]\s*\)\s*===\s*['"]true['"]`
+ * @replaces `new URLSearchParams(Object.entries(obj).filter(([, v]) => v != null))` — `qs.stringify(obj)` skips
+ * `null`, `undefined`, `''` and empty arrays or objects (keeps `0` and `false`), writes Dates as ISO strings and
+ * arrays as CSV; `excludeDefaults` also drops values equal to their defaults.
+ * @detect `new URLSearchParams\(\s*Object\.entries\(`
+ *
  * @group Utility Functions
  */
 export const qs = {

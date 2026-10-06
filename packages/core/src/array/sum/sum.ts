@@ -15,6 +15,10 @@ import { isNumber } from '@/is';
  * @param values The array of numbers to be summed.
  * @returns The sum of the numbers in the array.
  *
+ * @replaces `values.reduce((a, b) => a + b, 0)` — one string entry turns the result into concatenation and
+ * one `NaN` makes it `NaN`; `sum` skips non-numbers and `NaN` (`Infinity` is kept).
+ * @detect `\.reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\s*,\s*0\s*\)`
+ *
  * @group Array
  */
 export const sum = (values: readonly number[]) => {

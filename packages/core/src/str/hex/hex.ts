@@ -18,6 +18,12 @@ for (let n = 0; n <= 0xff; ++n) {
  * @param value - The array to be converted, either a `Uint8Array` or a number array.
  * @returns A string of hexadecimal characters representing the array's byte values.
  *
+ * @replaces `Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')` — `hex` reads from a precomputed
+ * byte table with no per-byte `toString`/`padStart`, and works in browsers. In Node-only code
+ * `Buffer.from(bytes).toString('hex')` is the native alternative. A `number[]` is wrapped mod 256.
+ * @detect `(Array\.from\(|\.map\()[^;]{0,80}\.toString\(16\)\.padStart\(2,\s*['"]0['"]\)[^;]{0,40}\.join\(['"]{2}\)`
+ * @detect `\(\s*['"]0['"]\s*\+\s*\w+\.toString\(16\)\s*\)\.slice\(-2\)`
+ *
  * @group Strings
  */
 export function hex(value: Uint8Array | number[]) {

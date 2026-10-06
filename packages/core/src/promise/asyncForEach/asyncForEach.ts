@@ -38,6 +38,10 @@ import { nextTickIteration } from '../nextTickIteration';
  *   task('task 2'),
  * ]);
  *
+ * @replaces `arr.forEach(async (item) => { ... })` — `forEach` ignores the returned promises, so nothing
+ * is awaited and rejections go unhandled. Pass `concurrency` when the items may run in parallel; the default is 1.
+ * @detect `\.forEach\(\s*async\b`
+ *
  * @group Promise
  */
 export function asyncForEach<T>(

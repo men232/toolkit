@@ -16,6 +16,11 @@ var DEFAULT_ALPHABET_LENGTH = DEFAULT_ALPHABET.length;
  * randomString(6, '0123456789'); // e.g. '402817'
  * randomString(4, 'AB'); // e.g. 'ABBA'
  *
+ * @replaces `Math.random().toString(36).slice(2, 10)` — the result can come back shorter than asked (the float
+ * may have few digits) and tops out near 11 characters; `randomString` always returns exactly `length`
+ * characters from a uniform alphabet. Still `Math.random`: use `crypto` for tokens or secrets.
+ * @detect `Math\.random\(\)\.toString\(36\)\.(slice|substr|substring)\(`
+ *
  * @group Strings
  */
 export function randomString(length: number, alphabet?: string): string {

@@ -32,6 +32,14 @@ import { assert } from '@/assert';
  * @returns An array of arrays (chunks), each containing up to `size` elements from the original array.
  * @throws {AssertionError} When `size` is less than 1.
  *
+ * @replaces `for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))` — loops forever
+ * when `size` is `0`, returns `[]` for `NaN` and gives uneven chunks for a fractional `size`; `chunk`
+ * floors `size` and throws an `AssertionError` below 1.
+ * @detect `for\s*\([^;]*;[^;]*;\s*\w+\s*\+=\s*\w+\s*\)[\s\S]{0,120}?\.slice\(\s*\w+\s*,\s*\w+\s*\+\s*\w+\s*\)`
+ * @detect `Math\.ceil\(\s*[\w.]+\.length\s*[/]\s*\w+\s*\)[\s\S]{0,120}?\.slice\(`
+ * @replaces `while (arr.length) out.push(arr.splice(0, size))` — empties the input array; `chunk` leaves it untouched.
+ * @detect `while\s*\([\w.]+\.length[^)]*\)[\s\S]{0,80}?\.splice\(\s*0\s*,`
+ *
  * @group Array
  */
 export function chunk<T>(list: readonly T[], size: number = 1): T[][] {

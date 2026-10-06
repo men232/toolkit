@@ -18,6 +18,10 @@ import { toString } from '../toString';
  * toPath('') // Returns []
  * toPath('.a[b].c.d[e]["f.g"].h') // Returns ['', 'a', 'b', 'c', 'd', 'e', 'f.g', 'h']
  *
+ * @replaces `path.split('.')` to walk a key path — breaks on brackets and quoted keys (`a[0].b`, `a["c.d"]`);
+ * `toPath` parses both like lodash (`a["c.d"]` → `['a', 'c.d']`). To read or write the value, prefer `get`/`set`.
+ * @detect `\b(path|keyPath|propPath|fieldPath|objectPath|dotPath)\.split\(['"]\.['"]\)`
+ *
  * @group Strings
  */
 export function toPath(deepKey: any): string[] {

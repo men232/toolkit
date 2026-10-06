@@ -35,6 +35,11 @@ interface DelayOptions {
  * // This will stop waiting as soon as the signal aborts
  * await delay(30_000, { signal: controller.signal });
  *
+ * @replaces `await new Promise((resolve) => setTimeout(resolve, ms))` and local `sleep` / `wait` helpers — one import;
+ * with `{ signal }` it clears the timer and resolves early on abort. It resolves (does not reject) on abort, unlike
+ * `setTimeout` from `node:timers/promises`, so check `signal.aborted` afterwards.
+ * @detect `new Promise(<[^()]*>)?\(\s*\(?\s*\w+\s*\)?\s*=>\s*(\{\s*)?setTimeout\(\s*\w+\s*,`
+ *
  * @group Promise
  */
 export function delay(

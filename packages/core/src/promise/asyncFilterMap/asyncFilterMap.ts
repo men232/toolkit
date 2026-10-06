@@ -51,6 +51,11 @@ import { nextTickIteration } from '../nextTickIteration';
  * );
  * ```
  *
+ * @replaces `(await Promise.all(items.map(async (item) => ...))).filter(Boolean)` — `filter(Boolean)` also drops
+ * legitimate `0`, `''` and `false` results; here the callback returns `skip` to drop an item and every other value is
+ * kept, in source order. The default `concurrency` is 1, so pass it to keep the parallelism of `Promise.all`.
+ * @detect `Promise\.all\([\s\S]{0,300}?\)\s*\)?\s*(\.then\(\s*\(?\w+\)?\s*=>\s*\w+\s*)?\.filter\(\s*(Boolean|\(?\w+\)?\s*=>\s*\w+\s*!==?\s*(null|undefined))`
+ *
  * @group Promise
  */
 export function asyncFilterMap<T, U>(

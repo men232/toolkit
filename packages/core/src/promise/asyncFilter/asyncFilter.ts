@@ -30,6 +30,13 @@ import { nextTickIteration } from '../nextTickIteration';
  *   otherUsefulTask(),
  * ]).then(console.log);
  *
+ * @replaces `items.filter(async (item) => ...)` — the predicate returns a Promise, which is always truthy, so nothing
+ * is filtered out. `asyncFilter` awaits each predicate and keeps the source order. The default `concurrency` is 1.
+ * @detect `\.filter\(\s*async\b`
+ * @replaces `const ok = await Promise.all(items.map(pred)); items.filter((_, i) => ok[i])` — one call instead of two
+ * passes and an index lookup. It runs one predicate at a time unless you pass `concurrency`.
+ * @detect `\.filter\(\s*\(\s*_\w*\s*,\s*(i|idx|index)\s*\)\s*=>\s*\w+\[(i|idx|index)\]\s*\)`
+ *
  * @group Promise
  */
 export function asyncFilter<T>(

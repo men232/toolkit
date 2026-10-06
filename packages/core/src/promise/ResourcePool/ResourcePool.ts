@@ -86,6 +86,12 @@ interface PoolState<T> {
  * }
  * ```
  *
+ * @replaces `availableConnections.pop() ?? (await waitForRelease())` (a hand-rolled pool with an idle list, an in-use
+ * set and a wait queue) — `acquire` / `release` with a FIFO wait queue, lazy creation up to `poolSize` with
+ * `auto: true`, `drain()` and `destroy(rejectAcquires)`. Not included: acquire timeouts and health checks; every
+ * `acquire` must be paired with `release`.
+ * @detect `\b(available|idle|free)(Connections|Resources|Workers|Clients|Sessions)\b`
+ *
  * @group Promise
  */
 export class ResourcePool<

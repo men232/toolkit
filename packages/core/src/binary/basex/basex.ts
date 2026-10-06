@@ -44,6 +44,14 @@ export interface BaseX {
  * console.log(base16.decode(encoded));
  * ```
  *
+ * @replaces `while (n > 0n) { out = ALPHABET[Number(n % BASE)] + out; n /= BASE; }` or the `bs58` / `base-x` package —
+ * keeps leading zero bytes as leading `alphabet[0]` characters, which a plain BigInt round trip loses, and `decode` throws
+ * on characters outside the alphabet. O(n²) BigInt math: fine for IDs and keys, not large blobs; no base58check checksum.
+ * @detect `\[\s*Number\(\s*\w+\s*%\s*\w+\s*\)\s*\]`
+ * @detect `while\s*\(\s*\w+\s*>\s*0n\s*\)\s*\{[^}]{0,200}%`
+ * @detect `['"]123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz['"]`
+ * @detect `from\s+['"](?:bs58|base-x)['"]|require\(\s*['"](?:bs58|base-x)['"]\s*\)`
+ *
  * @group Binary
  */
 export function basex(alphabet: string): BaseX {

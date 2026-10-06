@@ -76,6 +76,11 @@ export interface DebouncedFunction<F extends (...args: any[]) => void> {
  * controller.abort();
  *
  * @author es-toolkit
+ * @replaces `clearTimeout(timer); timer = setTimeout(() => fn(...args), ms)` — adds `cancel()` / `flush()`, an
+ * `AbortSignal` that cancels the pending call (e.g. on unmount), leading and trailing edges, and keeps `this`.
+ * The debounced function returns `void`, not the result of `fn`.
+ * @detect `clearTimeout\(\s*[\w.]+\s*\)\s*;?\s*[\w.]+\s*=\s*setTimeout\(`
+ *
  * @group Utility Functions
  */
 export function debounce<F extends (...args: any[]) => void>(

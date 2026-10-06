@@ -201,6 +201,13 @@ export interface EnvParserOptions {
  *
  * const API_KEY = env.string('API_KEY', 'test_key');
  *
+ * @replaces `parseInt(import.meta.env.VITE_X)`, `import.meta.env.VITE_X === 'true'` or `JSON.parse(import.meta.env.X)`
+ * — the same `NaN`, case and throw problems as with `process.env`; `createEnvParser(import.meta.env)` gives the
+ * typed, trimmed, default-on-failure getters of `env` over any record. Warnings need `options.logger`.
+ * @detect `(parseInt|parseFloat|Number)\(\s*import\.meta\.env\.`
+ * @detect `import\.meta\.env\.\w+\s*[!=]==?\s*['"](true|false|1|0)['"]`
+ * @detect `JSON\.parse\(\s*import\.meta\.env\.`
+ *
  * @group Environment
  */
 export function createEnvParser(

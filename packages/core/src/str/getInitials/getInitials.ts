@@ -47,6 +47,11 @@ const IGNORED_TITLES = Object.freeze(
  * getInitials("");
  * // Returns: ""
  *
+ * @replaces `name.split(' ').map(w => w[0]).join('').toUpperCase()` — `w[0]` splits surrogate pairs, double spaces
+ * yield `undefined`, and titles like `Dr.` count as words; `getInitials` handles all three. Caveat: it returns
+ * at most two letters (first and last word) and deletes hyphens (`Jean-Luc Picard` → `JP`).
+ * @detect `\.split\((['"] ['"]|/\\s\+/)\)\s*\.map\(\s*\(?\w+\)?\s*=>\s*\w+(\[0\]|\.charAt\(0\)|\.at\(0\))\s*\)\s*\.join\(['"]{2}\)`
+ *
  * @group Strings
  */
 export function getInitials(fullName: string) {

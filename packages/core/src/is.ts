@@ -16,6 +16,10 @@ export const isDef = <T = any>(val?: T): val is T => typeof val !== 'undefined';
 
 /**
  * Checks if the given value is a `null` or `undefined`
+ * @replaces `x !== null && x !== undefined` or `x === null || x === undefined` — one call that narrows
+ * the type; write `!isNullOrUndefined(x)` for the first form. `x != null` is the same check and can stay.
+ * @detect `[\w.]+\s*[!=]==\s*(null|undefined)\s*(&&|\|\|)\s*[\w.]+\s*[!=]==\s*(null|undefined)\b`
+ *
  * @group Predicates
  */
 export function isNullOrUndefined(value: unknown): value is undefined | null {
@@ -76,6 +80,11 @@ export const isString = (val: unknown): val is string =>
 
 /**
  * Checks if the given value is a `object`
+ * @replaces `typeof x === 'object' && x !== null && !Array.isArray(x)` — still lets through `Date`,
+ * `Map`, `RegExp`, `Error` and other built-ins; `isObject` accepts only values tagged `[object Object]`:
+ * plain objects, class instances and null-prototype objects.
+ * @detect `typeof\s+[\w.]+\s*===\s*['"]object['"]\s*&&[^;\n]{0,40}!\s*Array\.isArray\(`
+ *
  * @group Predicates
  */
 export const isObject = (val: any): val is object =>
@@ -83,6 +92,11 @@ export const isObject = (val: any): val is object =>
 
 /**
  * Checks if the given value is a plain `object`
+ * @replaces `x?.constructor === Object` — false for `Object.create(null)` and for objects from another
+ * realm (iframe, `vm`); `isPlainObject` accepts both and rejects class instances. Caveat: an object with an
+ * own non-function `constructor` key, such as parsed JSON `{"constructor": "x"}`, still returns `false`.
+ * @detect `\.constructor\s*===\s*Object\b`
+ *
  * @group Predicates
  */
 export const isPlainObject = (val: any): val is object => {
@@ -109,6 +123,10 @@ export const isPlainObject = (val: any): val is object => {
 
 /**
  * Checks if the given value is valid `Date`
+ * @replaces `value instanceof Date` — also true for `new Date('garbage')`, whose `toISOString()` throws a
+ * `RangeError`; `isDate` rejects an Invalid Date.
+ * @detect `(\bif\s*\(\s*!?\s*\(?|\breturn\s+|=>\s*)[\w.]+\s+instanceof\s+Date\s*(\)|;|\n)`
+ *
  * @group Predicates
  */
 export const isDate = (val: any): val is Date =>
@@ -182,6 +200,12 @@ export const isWeakMap = <V = any>(val: any): val is WeakMap<WeakKey, V> =>
  * isEqual(/abc/g, /abc/g); // true
  * isEqual(new Date('2020-01-01'), new Date('2020-01-01')); // true
  * isEqual([1, 2, 3], [1, 2, 3]); // true
+ *
+ * @replaces `JSON.stringify(a) === JSON.stringify(b)` — depends on key order and turns `Map`, `Set` and
+ * `RegExp` into `{}`; `isEqual` ignores key order and compares Date, RegExp, Map, typed arrays and NaN.
+ * Caveats: `{ a: undefined }` differs from `{}`, Set members compare by reference, constructors must
+ * match, and there is no cycle guard.
+ * @detect `JSON\.stringify\([^;\n]*\)\s*[!=]==?\s*JSON\.stringify\(`
  *
  * @group Predicates
  */

@@ -30,6 +30,12 @@
  * truncate("ThisStringHasNoSpacesButIsVeryLong", 10);
  * // Returns: "ThisString..."
  *
+ * @replaces `s.length > n ? s.slice(0, n) + '…' : s` — cuts mid-word; `truncate` cuts at the last space within
+ * `maxLength` and trims. Caveats: it skips truncation when the overflow is under 5% of `maxLength` (default
+ * 120), appends `...` (not `…`), so the result can exceed `maxLength`. Suggest it only where word breaks are wanted.
+ * @detect `\.(slice|substring)\(0,\s*[^)\n]+\)\s*\+\s*['"](\.\.\.|…)['"]`
+ * @detect `\x60\$\{\w+\.(slice|substring)\(0,\s*[^)\n]+\)\}(\.\.\.|…)\x60`
+ *
  * @group Strings
  */
 export function truncate(

@@ -8,6 +8,12 @@ import { parseHSL } from './parseHSL';
  * // [128, 51, 204, 0.15]
  * hslToChannels('hsl(270 60% 50% / 15%)');
  *
+ * @replaces A hand-copied `hslToRgb(h, s, l)` with a `hue2rgb(p, q, t)` helper — parses `hsl()` with deg/rad/turn
+ * units, the modern syntax and alpha, and wraps negative hues. Takes a CSS string (`'hsl(210 50% 40%)'`), not three
+ * numbers, and returns `[0, 0, 0, 0]` on invalid input.
+ * @detect `\bhue2rgb\b`
+ * @detect `(?:function\s+|const\s+)hslToRgba?\b`
+ *
  * @group Colors
  */
 export function hslToChannels(value: string): Color.ColorChannels {

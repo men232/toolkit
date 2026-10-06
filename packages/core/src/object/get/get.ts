@@ -17,6 +17,11 @@ import type { GetFieldType } from './GetFieldType.ts';
  * get(object, 'a[0].b.c');
  * // => 3
  *
+ * @replaces `path.split('.').reduce((o, k) => o?.[k], obj)` — no bracket indexes (`'a[0].b'`) and no
+ * default; `get(obj, path, defaultValue)` parses both, prefers a literal `'a.b'` key, returns the default
+ * for `undefined`, and infers the result type for a literal path.
+ * @detect `\.split\(\s*['"]\.['"]\s*\)\s*\.reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>[^;]{0,60}?\[\s*\w+\s*\]\s*\)?\s*,\s*[\w.]+\s*\)`
+ *
  * @group Object
  */
 export function get<TObject extends object, TKey extends keyof TObject>(

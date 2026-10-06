@@ -14,6 +14,12 @@ import type { Color } from '../types';
  * // 'rgba(0, 0, 0, 1)'
  * const textColor = tintedTextColor(bgColor, tint);
  *
+ * @replaces `(r * 299 + g * 587 + b * 114) / 1000 >= 128 ? '#000' : '#fff'` — the YIQ threshold can pick the worse
+ * color (white on `#00a000` gives 3.5:1, black 6:1); this picks by WCAG contrast. Returns channels, not a string, and
+ * by default mixes in 20% of the background (pass `0` for pure black or white).
+ * @detect `\*\s*(?:0\.)?299\s*\+[\s\S]{0,40}?\*\s*(?:0\.)?587`
+ * @detect `(?:0\.)?299\s*\*\s*\w+(?:\[\d\])?\s*\+[\s\S]{0,40}?(?:0\.)?587\s*\*`
+ *
  * @group Colors
  */
 export function tintedTextColor(

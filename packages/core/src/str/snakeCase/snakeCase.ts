@@ -14,6 +14,12 @@ import { getWords } from '../getWords';
  * const convertedStr3 = snakeCase('hyphen-text') // returns 'hyphen_text'
  * const convertedStr4 = snakeCase('HTTPRequest') // returns 'http_request'
  *
+ * @replaces `str.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()` — the two-group regex does not split
+ * acronym runs (`HTTPRequest` → `httprequest`) and leaves spaces and `-` in place; `snakeCase` splits on case,
+ * digits and any separator (`getHTTPResponseCode` → `get_http_response_code`).
+ * @detect `\.replace\(/\(\[a-z[^\]\n]*\]\)\(\[A-Z\]\)/g,\s*['"]\$1_\$2['"]\)`
+ * @detect `\.replace\(/\(?\[A-Z\]\)?/g,\s*\(?\w+\)?\s*=>\s*(['"]_['"]\s*\+|\x60_\$\{)`
+ *
  * @group Strings
  */
 export const snakeCase = (str?: string): string => {

@@ -24,6 +24,11 @@ import { TimeSpan, type TimeSpanUnit } from './TimeSpan';
  * const ts = createTimeSpan(7, 'd');
  * console.log(ts.weeks()); // 1
  *
+ * @replaces `const DAY_MS = 24 * 60 * 60 * 1000` and similar unit constants — `createTimeSpan(1, 'd').milliseconds()`
+ * names the unit and converts between ms, s, m, h, d and w. Units have fixed lengths (a day is always 24h).
+ * @detect `(const|let|var)\s+\w+\s*=\s*([\d_]+\s*\*\s*)*60\s*\*\s*60\s*\*\s*1000\b`
+ * @detect `(const|let|var)\s+\w+\s*=\s*(1000\s*\*\s*60\s*\*\s*60(\s*\*\s*\d+)*|86_?400_?000|864e5)\b`
+ *
  * @group Date
  */
 export function createTimeSpan(

@@ -93,6 +93,11 @@ var stringifyArgs = (...args: any[]): string => computeArgsKey(args);
  * - All waiting calls receive the same result (success or error)
  * - Works with both resolved and rejected promises
  *
+ * @replaces `const p = load(key).finally(() => pending.delete(key)); pending.set(key, p)` (in-flight dedupe) — one
+ * wrapper; the key is the EJSON of the arguments by default, the entry is cleared on both resolve and reject, and a
+ * synchronous throw becomes a rejection. The wrapped function must return a promise.
+ * @detect `\.finally\(\s*\(\)\s*=>\s*(\{\s*)?[\w.]+\.delete\(`
+ *
  * @group Promise
  */
 export function withResolve<

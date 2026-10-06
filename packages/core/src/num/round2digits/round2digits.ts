@@ -22,6 +22,13 @@
  * round2digits(3.789, 0);
  * // Returns: 4 (rounded to the nearest integer)
  *
+ * @replaces `Math.round(x * 100) / 100` or `+x.toFixed(2)` — both suffer from binary float error
+ * (`1.005` → `1`); `round2digits` shifts the decimal point in the string form (`1.005` → `1.01`) and handles
+ * exponent notation. Negative halves still round toward +∞, as with `Math.round` (`-1.005` → `-1`).
+ * @detect `Math\.round\([^;\n]*\*\s*10+\s*\)\s*[/]\s*10+\b`
+ * @detect `(parseFloat|Number)\(\s*[\w.]+\.toFixed\(\d\)\s*\)`
+ * @detect `(=|\(|return|,|:)\s*\+\(?[\w.]+\.toFixed\(\d\)`
+ *
  * @group Numbers
  */
 export function round2digits(value: number, digits: number = 2) {

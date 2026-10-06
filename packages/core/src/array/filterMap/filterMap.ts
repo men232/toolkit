@@ -32,6 +32,10 @@ import type { SpecialValue } from '@/types';
  * // => [1, 3]
  * ```
  *
+ * @replaces `list.map(fn).filter(Boolean)` — also drops mapped `0`, `''` and `false` and walks the array
+ * twice; `filterMap(list, (x, skip) => fn(x) ?? skip)` drops only what returns `skip`, in one pass.
+ * @detect `\.map\([\s\S]{0,200}?\)\s*\.filter\(\s*Boolean\s*\)`
+ *
  * @group Array
  */
 export function filterMap<T, U>(

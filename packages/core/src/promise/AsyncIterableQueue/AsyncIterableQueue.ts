@@ -21,6 +21,12 @@ import { Queue } from '../Queue';
  *   console.log('text part', { text });
  * }
  *
+ * @replaces `[Symbol.asyncIterator]() { return { next: () => new Promise((r) => resolvers.push(r)) } }` (a hand-written
+ * push/pull channel) — `put` / `close` / `for await` instead of buffer and resolver bookkeeping; items put before
+ * `close()` are still delivered and `put` after `close()` throws. Unbounded (no backpressure) and meant for one
+ * consumer: when two consumers wait on an empty queue, `close()` ends only one of them.
+ * @detect `\[Symbol\.asyncIterator\]\s*\(\)[\s\S]{0,400}?new Promise(<[^()]*>)?\(\s*\(?\s*\w+\s*\)?\s*=>\s*(\{\s*)?\(?\s*[\w.]+(\s*=\s*\w|\.push\()`
+ *
  * @group Promise
  */
 export class AsyncIterableQueue<T> implements AsyncIterable<T> {

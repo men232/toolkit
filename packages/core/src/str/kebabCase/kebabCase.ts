@@ -14,6 +14,12 @@ import { getWords } from '../getWords';
  * const convertedStr3 = kebabCase('hyphen-text') // returns 'hyphen-text'
  * const convertedStr4 = kebabCase('HTTPRequest') // returns 'http-request'
  *
+ * @replaces `str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()` — the two-group regex does not split
+ * acronym runs (`HTTPRequest` → `httprequest`) and leaves spaces and `_` in place; `kebabCase` splits on case,
+ * digits and any separator (`getHTTPResponse` → `get-http-response`).
+ * @detect `\.replace\(/\(\[a-z[^\]\n]*\]\)\(\[A-Z\]\)/g,\s*['"]\$1-\$2['"]\)`
+ * @detect `\.replace\(/\(?\[A-Z\]\)?/g,\s*\(?\w+\)?\s*=>\s*(['"]-['"]\s*\+|\x60-\$\{)`
+ *
  * @group Strings
  */
 export function kebabCase(str: string): string {

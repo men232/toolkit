@@ -63,6 +63,15 @@ export type RetryOnErrorConfig = {
  *
  * await fn();
  *
+ * @replaces `for (let attempt = 0; attempt < max; attempt++) { try { return await fn() } catch { await sleep(ms) } }`
+ * and local `retry` helpers — retries only while `shouldRetryBasedOnError(err, attempt)` allows, catches synchronous
+ * throws and rethrows the last error. Defaults differ: 2 attempts in total and a constant 100 ms delay; set
+ * `maxAttempts` and `delayFactor: 2` for exponential backoff (capped by `delayMaxMs`, default 1000). No jitter, no
+ * `AbortSignal`.
+ * @detect `for\s*\(\s*let\s+\w+\s*=\s*[01]\s*;\s*\w+\s*<=?\s*[\w.]*(?i:retr|attempt)\w*`
+ * @detect `\bcatch\s*(\(\s*\w*\s*\))?\s*\{[^}]{0,200}?await\s+(sleep|delay|wait)\(`
+ * @detect `(function\s+(retry|withRetry)\w*\s*[<(]|const\s+(retry|withRetry)\w*\s*=\s*(async\s*)?(<[^()]*>)?\()`
+ *
  * @group Utility Functions
  */
 export function retryOnError<T extends AnyFunction>(
