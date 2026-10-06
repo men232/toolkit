@@ -176,6 +176,9 @@ function compileFields(fields: FieldInfo[]): string {
 
 function extractBigIntFromBuffer(totalBits: number): string {
   const totalBytes = Math.ceil(totalBits / 8);
+  const aligned = totalBits % 32 === 0;
+  const at = (index: number) =>
+    aligned ? `data[${index}]` : index === 0 ? 'data[o]' : `data[o + ${index}]`;
   const chunks: string[] = [];
 
   let byteIndex = 0;
@@ -185,7 +188,7 @@ function extractBigIntFromBuffer(totalBits: number): string {
     if (remainingBytes >= 4) {
       // Full 32-bit chunk
       const shift = (remainingBytes - 4) * 8;
-      const chunk = `((data[${byteIndex}] << 24) | (data[${byteIndex + 1}] << 16) | (data[${byteIndex + 2}] << 8) | data[${byteIndex + 3}]) >>> 0`;
+      const chunk = `((${at(byteIndex)} << 24) | (${at(byteIndex + 1)} << 16) | (${at(byteIndex + 2)} << 8) | ${at(byteIndex + 3)}) >>> 0`;
       if (shift === 0) {
         chunks.push(`BigInt(${chunk})`);
       } else {
@@ -197,18 +200,20 @@ function extractBigIntFromBuffer(totalBits: number): string {
       // Remaining bytes (1-3)
       let chunk: string;
       if (remainingBytes === 3) {
-        chunk = `(data[${byteIndex}] << 16) | (data[${byteIndex + 1}] << 8) | data[${byteIndex + 2}]`;
+        chunk = `(${at(byteIndex)} << 16) | (${at(byteIndex + 1)} << 8) | ${at(byteIndex + 2)}`;
       } else if (remainingBytes === 2) {
-        chunk = `(data[${byteIndex}] << 8) | data[${byteIndex + 1}]`;
+        chunk = `(${at(byteIndex)} << 8) | ${at(byteIndex + 1)}`;
       } else {
-        chunk = `data[${byteIndex}]`;
+        chunk = at(byteIndex);
       }
       chunks.push(`BigInt(${chunk})`);
       remainingBytes = 0;
     }
   }
 
-  return `data =\n    ${chunks.join('\n  | ')};`;
+  const offset = aligned ? '' : `var o = data.length - ${totalBytes};\n`;
+
+  return `${offset}data =\n    ${chunks.join('\n  | ')};`;
 }
 
 function buildFieldsInfo(

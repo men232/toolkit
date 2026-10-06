@@ -616,3 +616,27 @@ describe('BitUnpack', () => {
     });
   });
 });
+
+describe('buffer round trip with bitPack', () => {
+  for (const totalBits of [8, 16, 24, 40, 48, 64]) {
+    it(`restores fields for totalBits=${totalBits}`, () => {
+      const half = totalBits / 2;
+      const fields = [
+        { name: 'a', bits: half },
+        { name: 'b', bits: half },
+      ] as const;
+      const value = { a: 2 ** half - 1, b: 2 ** (half - 1) + 1 };
+
+      const packer = bitPack({
+        totalBits,
+        fields: fields.map(f => ({ ...f, take: 'low' as const })),
+      });
+      const unpacker = bitUnpack({ totalBits, fields: [...fields] });
+
+      expect(unpacker.buffer(packer.buffer(value))).toEqual(value);
+
+      const minimal = packer.buffer(value).slice(-Math.ceil(totalBits / 8));
+      expect(unpacker.buffer(minimal)).toEqual(value);
+    });
+  }
+});
