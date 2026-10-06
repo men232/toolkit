@@ -29,4 +29,8 @@ describe('formatMoney', () => {
   test('UAH puts the symbol after the amount', () => {
     expect(formatMoney(1500.5, 'UAH')).toBe('1 500,50₴');
   });
+  test('unknown currency code uses a dot as the decimal separator', () => {
+    expect(formatMoney(12.5, 'XYZ')).toBe('12.50XYZ');
+    expect(formatMoney(1234.5, 'XYZ')).toBe('1,234.50XYZ');
+  });
 });

@@ -26,7 +26,7 @@ const CURRENCY_FORMAT = new Map<string, FormatMoney>([
 ]);
 
 const DEF_FORMAT: FormatMoney = {
-  decimal: ' ',
+  decimal: '.',
   thousands: ',',
   symbol: '',
   symbolBefore: false,
