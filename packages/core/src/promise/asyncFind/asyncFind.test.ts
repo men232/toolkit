@@ -54,4 +54,12 @@ describe('asyncFind', () => {
 
     expect(result).toEqual(9);
   });
+
+  it('should not wait a timer per element', async () => {
+    const arr = Array.from({ length: 1000 }, (_, i) => i);
+    const start = performance.now();
+
+    expect(await asyncFind(arr, () => false)).toBeUndefined();
+    expect(performance.now() - start).toBeLessThan(100);
+  });
 });

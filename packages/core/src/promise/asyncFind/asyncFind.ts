@@ -55,7 +55,7 @@ export function asyncFind<T>(
               resolve(array[i]);
             } else {
               i++;
-              setTimeout(processNextBatch, 0);
+              processNextBatch();
             }
           })
           .catch(reject);
