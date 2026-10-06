@@ -76,10 +76,10 @@ General utility functions
 | `concatenateBytes(a, b)` | Concatenates two `Uint8Array` instances into a single new `Uint8Array`. |
 | `rleDecode(buf, value?)` | Decode a run-length encoded buffer. |
 | `rleEncode(buf, value?)` | Run-length encode a buffer, compressing runs of a specific byte value. |
-| `uint16ToUint8(value)` | Converts a `Uint16Array` into a `Uint8Array`. |
-| `uint32ToUint8(value)` | Converts a `Uint32Array` into a `Uint8Array`. |
-| `uint8ToUint16(value)` | Converts a Uint8Array to a Uint16Array. |
-| `uint8ToUint32(value)` | Converts a `Uint8Array` into a `Uint32Array`. |
+| `uint16ToUint8(value)` | Converts a `Uint16Array` into a `Uint8Array`, writing each value as 2 bytes in little-endian order. |
+| `uint32ToUint8(value)` | Converts a `Uint32Array` into a `Uint8Array`, writing each value as 4 bytes in little-endian order. |
+| `uint8ToUint16(value)` | Converts a `Uint8Array` into a `Uint16Array`, reading each pair of bytes as little-endian. |
+| `uint8ToUint32(value)` | Converts a `Uint8Array` into a `Uint32Array`, reading each group of 4 bytes as little-endian. |
 
 ### Cache
 
@@ -282,7 +282,7 @@ General utility functions
 | `fastIdlePromise()` | Same as `fastIdle` but promisified |
 | `fastRaf(callback, withTimeoutFallback?)` | Stacks callbacks for `requestAnimationFrame` into a single execution call. |
 | `nextTickIteration(amount, delay?)` | Creates a cooldown function that resolves after a specified number of executions (`amount`). |
-| `Queue` (class) | A basic queue implementation with a limit and event-based synchronization. |
+| `Queue` (class) | A basic FIFO queue with an optional limit and waiting `get` / `put`. |
 | `ResourcePool` (class) | A generic resource pool that manages the lifecycle of expensive resources. |
 | `SimpleEventEmitter` (class) | Simplified version on nodejs `EventEmitter` but platform agnostic |
 | `timeout(ms, promiseOrCallback, timeoutError?)` | Throws an error if the provided promise or callback is not resolved within the specified timeout period. |
@@ -312,7 +312,7 @@ General utility functions
 | `maskingPhone(value, fromPosition?, toPosition?, withChar?)` | Masks part of a phone number to provide a simple level of privacy. |
 | `maskingWords(value, withChar?)` | Masks the middle characters of each word in the given string, leaving the first and last characters intact. |
 | `objectId(fromValue?)` | Useful when you need to generate almost secure object id in browser |
-| `randomString(length)` | Generates a random string of the specified length using characters from a predefined set. |
+| `randomString(length, alphabet?)` | Generates a random string of the specified length using characters from the given alphabet. |
 | `snakeCase(str?)` | Converts a string to snake case. |
 | `sprintf(line, args, unusedArgs?)` | Formats a string by replacing format specifiers with values from the provided arguments. |
 | `startCase(value?)` | Converts the first character of each word in a string to uppercase and the remaining characters to lowercase. |
