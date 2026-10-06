@@ -24,13 +24,15 @@ export function omit<T extends Record<string, any>, U extends keyof T>(
   obj: T,
   excludes: Readonly<Array<U> | Set<U> | Array<string> | Set<string>>,
 ): Omit<T, U> {
-  const excludesSet = Array.isArray(excludes)
-    ? new Set(excludes)
-    : excludes instanceof Set
-      ? excludes
-      : undefined;
+  var list: readonly any[] | undefined;
+  var set: Set<any> | undefined;
 
-  if (!excludesSet) {
+  if (Array.isArray(excludes)) {
+    if (excludes.length > 8) set = new Set(excludes);
+    else list = excludes;
+  } else if (excludes instanceof Set) {
+    set = excludes;
+  } else {
     return obj;
   }
 
@@ -40,10 +42,14 @@ export function omit<T extends Record<string, any>, U extends keyof T>(
     return result;
   }
 
-  for (const [key, value] of Object.entries(obj)) {
-    if (excludesSet.has(key)) continue;
+  var keys = Object.keys(obj);
 
-    setOwnProperty(result, key, value);
+  for (var i = 0, key; i < keys.length; i++) {
+    key = keys[i];
+
+    if (set !== undefined ? set.has(key) : list!.includes(key)) continue;
+
+    setOwnProperty(result, key, (obj as any)[key]);
   }
 
   return result;
