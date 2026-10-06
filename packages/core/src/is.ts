@@ -142,10 +142,16 @@ export const noop = () => {};
  * Checks if the given value is a `Error`
  * @group Predicates
  */
-export const isError = (val: any): val is Error =>
-  val instanceof Error ||
-  //@ts-expect-error
-  (isObject(val) && isString(val.message) && isString(val.stack));
+export const isError = (val: any): val is Error => {
+  if (val instanceof Error) return true;
+
+  const tag = getTag(val);
+
+  return (
+    tag === '[object Error]' ||
+    (tag === '[object Object]' && isString(val.message) && isString(val.stack))
+  );
+};
 
 /**
  * Checks if the given value is a `symbol`
