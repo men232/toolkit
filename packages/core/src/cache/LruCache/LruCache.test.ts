@@ -97,6 +97,13 @@ describe('LruCache', () => {
 });
 
 describe('LruCache (mnemonist suite)', () => {
+  test.each([0, -1, NaN, undefined, 'x'])(
+    'should throw for an invalid capacity: %s',
+    capacity => {
+      expect(() => new LruCache(capacity as any)).toThrow(/capacity/);
+    },
+  );
+
   const entries = (cache: LruCache) => Array.from(cache.entries());
 
   test('should be possible to create a LRU cache', () => {

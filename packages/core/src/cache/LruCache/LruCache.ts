@@ -1,4 +1,4 @@
-import { isNumber } from '@/is';
+import { assertCapacity } from './utils';
 
 /**
  * A simple implementation of a Least Recently Used (LRU) cache. This cache stores
@@ -27,7 +27,7 @@ export class LruCache<TKey = any, TValue = any> {
   private tail: number;
 
   constructor(private capacity: number) {
-    this.capacity = Math.max(isNumber(capacity) ? capacity : 0, 0);
+    assertCapacity(capacity);
 
     this.forward = pointerArray(this.capacity);
     this.backward = pointerArray(this.capacity);
