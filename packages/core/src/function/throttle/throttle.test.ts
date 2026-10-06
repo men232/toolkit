@@ -131,4 +131,21 @@ describe('throttle', () => {
 
     expect(contexts).toEqual([obj, obj]);
   });
+  it('should call the function once per call after an idle gap', () => {
+    vi.useFakeTimers();
+
+    try {
+      const calls: number[] = [];
+      const throttled = throttle((value: number) => calls.push(value), 50);
+
+      throttled(1);
+      vi.advanceTimersByTime(120);
+      throttled(2);
+      vi.advanceTimersByTime(120);
+
+      expect(calls).toEqual([1, 2]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
