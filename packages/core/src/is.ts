@@ -1,5 +1,5 @@
 import { getTag } from './object/getTag';
-import type { Primitive } from './types';
+import type { Data, Primitive } from './types';
 
 /**
  * Determines if the window object is available in the global scope
@@ -99,7 +99,7 @@ export const isObject = (val: any): val is object =>
  *
  * @group Predicates
  */
-export const isPlainObject = (val: any): val is object => {
+export const isPlainObject = (val: any): val is Data => {
   let ctor, prot;
 
   if (!isObject(val)) return false;
