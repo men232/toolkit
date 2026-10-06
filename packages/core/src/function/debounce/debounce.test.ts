@@ -151,4 +151,47 @@ describe('debounce', () => {
 
     addEventListenerSpy.mockRestore();
   });
+
+  it('should keep a call made from inside func', async () => {
+    const calls: number[] = [];
+    const debounced = debounce((value: number) => {
+      calls.push(value);
+      if (value === 1) debounced(2);
+    }, 20);
+
+    debounced(1);
+    await delay(60);
+    await delay(60);
+
+    expect(calls).toEqual([1, 2]);
+  });
+
+  it('should not repeat arguments after func throws', () => {
+    const calls: number[] = [];
+    const debounced = debounce((value: number) => {
+      calls.push(value);
+      throw new Error('boom');
+    }, 20);
+
+    debounced(1);
+    expect(() => debounced.flush()).toThrow('boom');
+    debounced.flush();
+    debounced.cancel();
+
+    expect(calls).toEqual([1]);
+  });
+
+  it('should drop pending arguments at the end of a leading-only window', async () => {
+    const calls: number[] = [];
+    const debounced = debounce((value: number) => calls.push(value), 20, {
+      edges: ['leading'],
+    });
+
+    debounced(1);
+    debounced(2);
+    await delay(60);
+    debounced.flush();
+
+    expect(calls).toEqual([1]);
+  });
 });

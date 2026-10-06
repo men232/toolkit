@@ -96,18 +96,23 @@ export function debounce<F extends (...args: any[]) => void>(
 
   const invoke = () => {
     if (pendingArgs !== null) {
-      func.apply(pendingThis, pendingArgs);
+      const args = pendingArgs;
+      const self = pendingThis;
+
       pendingThis = undefined;
       pendingArgs = null;
+
+      func.apply(self, args);
     }
   };
 
   const onTimerEnd = () => {
     if (trailing) {
       invoke();
+    } else {
+      pendingThis = undefined;
+      pendingArgs = null;
     }
-
-    cancel();
   };
 
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
