@@ -23,7 +23,6 @@ const CURRENCY_FORMAT = new Map<string, FormatMoney>([
   ['BRL', { symbol: 'R$', thousands: '.', decimal: ',', symbolBefore: true }],
   ['MXN', { symbol: '$', thousands: ',', decimal: '.', symbolBefore: true }],
   ['ZAR', { symbol: 'R', thousands: ' ', decimal: ',', symbolBefore: true }],
-  ['UAH', { symbol: '₴', thousands: ' ', decimal: ',', symbolBefore: true }],
 ]);
 
 const DEF_FORMAT: FormatMoney = {

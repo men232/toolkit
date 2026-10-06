@@ -26,4 +26,7 @@ describe('formatMoney', () => {
     expect(formatMoney(-1500, 'RUB')).toBe('-1 500₽');
     expect(formatMoney(-0.004, 'USD')).toBe('$0');
   });
+  test('UAH puts the symbol after the amount', () => {
+    expect(formatMoney(1500.5, 'UAH')).toBe('1 500,50₴');
+  });
 });
