@@ -22,6 +22,10 @@ export const cache = /*#__PURE__*/ new WeakMap<
 /**
  * Wrap a function to cache results by arguments
  *
+ * ⚠️ The cache is unbounded and entries are never evicted. With object arguments every new object adds an entry that
+ * stays after the object is garbage collected (`objectStrategy: 'ref'` keys by a generated id, not by the object
+ * itself). For per-request or otherwise short-lived objects use `withCacheLRU` or `withCacheFixed`.
+ *
  * @example
  * const sum = withCache((a, b) => {
  *     console.log('calc?');
@@ -34,8 +38,9 @@ export const cache = /*#__PURE__*/ new WeakMap<
  *
  * @replaces `const key = JSON.stringify(args); if (cache.has(key)) return cache.get(key)` — keys are typed (`1` and
  * `'1'` differ; `undefined`, Dates and bigint survive) and a rejected promise is not cached. Caveats: object arguments
- * are keyed by reference unless `objectStrategy: 'json'`; no in-flight dedupe (combine with `withResolve`); unbounded;
- * a promise-returning function must be declared `async`, otherwise cache hits return the raw value, not a promise.
+ * are keyed by reference unless `objectStrategy: 'json'`; no in-flight dedupe (combine with `withResolve`); unbounded,
+ * entries for collected object arguments stay (use `withCacheLRU`/`withCacheFixed` for short-lived objects); a
+ * promise-returning function must be declared `async`, otherwise cache hits return the raw value, not a promise.
  * @detect `\w+\s*=\s*JSON\.stringify\(\s*args\s*\)\s*;?\s*(if\s*\(\s*!?\s*)?[\w.]+\.(has|get)\(`
  *
  * @group Cache

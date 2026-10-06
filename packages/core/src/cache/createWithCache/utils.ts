@@ -16,6 +16,7 @@ export interface ArgToKeyOptions {
    * Also may not hit into cache when object has different key order.
    *
    * When `ref` we will use WeakMap to store object key which more effective but may produce unexpected cache hit.
+   * The generated key outlives the object: an unbounded cache keeps the entry after the object is garbage collected.
    *
    * @default `ref`
    */
