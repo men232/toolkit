@@ -2,6 +2,8 @@
  * Formats a string by replacing format specifiers with values from the provided arguments.
  * It supports a variety of format types, including strings, numbers, and objects.
  *
+ * Without arguments the line is returned untouched.
+ *
  * ⚠️ This function mutates the `unusedArgs` array, which will contain any arguments
  * that were not used in the formatting process.
  *
@@ -36,10 +38,13 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
   let result = '';
 
   const argsLen = args.length;
+
+  if (argsLen === 0) return line;
+
   const lineLen = line.length;
 
   let opened = false;
-  let currentChar = -1;
+  let currentChar;
   let lastPos = 0;
   let argsIndex = 0;
 
@@ -103,12 +108,10 @@ export function sprintf(line: string, args: any[], unusedArgs: any[] = []) {
     if (argsIndex >= argsLen) break;
   }
 
-  if (lastPos < lineLen) {
-    result += line.slice(lastPos, lineLen);
-  }
+  result += line.slice(lastPos);
 
   if (argsIndex < argsLen) {
-    unusedArgs.push(...args.slice(argsIndex, argsLen));
+    unusedArgs.push(...args.slice(argsIndex));
   }
 
   return result;

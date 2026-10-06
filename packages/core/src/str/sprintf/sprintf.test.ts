@@ -35,4 +35,8 @@ describe('sprintf', () => {
 
     expect(leftArgs).toStrictEqual(['a', 'b', 'c']);
   });
+
+  test('leaves the line untouched without arguments', () => {
+    expect(sprintf('Progress: %s', [])).toBe('Progress: %s');
+  });
 });
