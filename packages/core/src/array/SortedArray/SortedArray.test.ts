@@ -286,4 +286,72 @@ describe('SortedArray', () => {
     expect(arr[0]).toBe(first);
     expect(arr[1]).toBe(added);
   });
+
+  describe('derived arrays', () => {
+    const asc = (a: number, b: number) => a - b;
+
+    it('filter returns a SortedArray with the same order', () => {
+      const arr = new SortedArray(asc, [3, 1, 2, 4]);
+      const result = arr.filter(x => x % 2 === 0);
+
+      expect(result).toBeInstanceOf(SortedArray);
+      expect([...result]).toEqual([2, 4]);
+      result.push(3);
+      expect([...result]).toEqual([2, 3, 4]);
+    });
+
+    it('splice returns removed items as a SortedArray', () => {
+      const arr = new SortedArray(asc, [3, 1, 2]);
+      const removed = arr.splice(0, 1);
+
+      expect(removed).toBeInstanceOf(SortedArray);
+      expect([...removed]).toEqual([1]);
+      removed.push(0);
+      expect([...removed]).toEqual([0, 1]);
+      expect([...arr]).toEqual([2, 3]);
+    });
+
+    it('splice without deleteCount removes to the end', () => {
+      const arr = new SortedArray(asc, [1, 2, 3, 4]);
+
+      expect([...arr.splice(2)]).toEqual([3, 4]);
+      expect([...arr]).toEqual([1, 2]);
+    });
+
+    it('splice keeps inserted items in sorted order', () => {
+      const arr = new SortedArray(asc, [1, 5, 9]);
+      const removed = arr.splice(1, 1, 10, 0);
+
+      expect([...removed]).toEqual([5]);
+      expect([...arr]).toEqual([0, 1, 9, 10]);
+    });
+
+    it('map, flat and flatMap return clean plain arrays', () => {
+      const arr = new SortedArray(asc, [3, 1, 2]);
+
+      for (const result of [
+        arr.map(x => x * 2),
+        arr.flat(),
+        arr.flatMap(x => [x]),
+      ]) {
+        expect(Object.getPrototypeOf(result)).toBe(Array.prototype);
+        expect(Object.getOwnPropertySymbols(result)).toEqual([]);
+      }
+    });
+
+    it('reverse and sort return a plain copy and keep the SortedArray', () => {
+      const arr = new SortedArray(asc, [3, 1, 2]);
+
+      const reversed = arr.reverse();
+      const sorted = arr.sort((a, b) => b - a);
+
+      expect(Object.getPrototypeOf(reversed)).toBe(Array.prototype);
+      expect(reversed).toEqual([3, 2, 1]);
+      expect(sorted).toEqual([3, 2, 1]);
+      expect(arr).toBeInstanceOf(SortedArray);
+      expect([...arr]).toEqual([1, 2, 3]);
+      arr.push(0);
+      expect([...arr]).toEqual([0, 1, 2, 3]);
+    });
+  });
 });

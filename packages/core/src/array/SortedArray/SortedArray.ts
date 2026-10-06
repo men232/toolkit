@@ -42,6 +42,10 @@ export class SortedArray<T> extends Array<T> {
   // @ts-expect-error
   private [SYM_COMPARE_FN]: SortedArrayCompareFn<T>;
 
+  static get [Symbol.species](): ArrayConstructor {
+    return Array;
+  }
+
   /**
    * Creates a new SortedArray instance.
    *
@@ -83,6 +87,75 @@ export class SortedArray<T> extends Array<T> {
     var result = new SortedArray<T>(this[SYM_COMPARE_FN]);
     copyInto(result, super.slice(start, end));
     return result;
+  }
+
+  /**
+   * Filters elements into a new SortedArray with the same comparison function
+   * @returns A new SortedArray with the elements that pass the predicate
+   */
+  filter(
+    predicate: (value: T, index: number, array: T[]) => unknown,
+    thisArg?: any,
+  ): SortedArray<T> {
+    var result = new SortedArray<T>(this[SYM_COMPARE_FN]);
+
+    for (var i = 0, k = 0, len = this.length; i < len; i++) {
+      if (predicate.call(thisArg, this[i], i, this)) {
+        result[k++] = this[i];
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Removes elements and merges inserted items while maintaining sort order
+   * @returns A new SortedArray with the removed elements
+   */
+  splice(start: number, deleteCount?: number, ...items: T[]): SortedArray<T> {
+    var result = new SortedArray<T>(this[SYM_COMPARE_FN]);
+
+    copyInto(
+      result,
+      arguments.length === 1
+        ? super.splice(start)
+        : super.splice(start, deleteCount!),
+    );
+
+    if (items.length > 0) {
+      mergeInto(this, items);
+    }
+
+    return result;
+  }
+
+  /**
+   * Returns a reversed plain array copy, the sorted array is left untouched
+   */
+  reverse(): T[] {
+    var len = this.length;
+    var result = new Array<T>(len);
+
+    for (var i = 0; i < len; i++) {
+      result[i] = this[len - 1 - i];
+    }
+
+    return result;
+  }
+
+  /**
+   * Returns a sorted plain array copy, the sorted array is left untouched
+   */
+  // @ts-expect-error
+  sort(compareFn?: (a: T, b: T) => number): T[] {
+    var len = this.length;
+    var result = new Array<T>(len);
+
+    for (var i = 0; i < len; i++) {
+      result[i] = this[i];
+    }
+
+    return result.sort(compareFn);
   }
 
   /**
@@ -128,12 +201,3 @@ function mergeInto<T>(target: SortedArray<T>, items: ArrayLike<T>): number {
 
   return target.length;
 }
-
-// Wrap original array methods to return regular array instead of sorted array
-['map', 'filter', 'flatMap', 'flat', 'reverse', 'sort'].forEach((key: any) => {
-  SortedArray.prototype[key] = function () {
-    const arr = Array.prototype[key].apply(this, arguments);
-    Object.setPrototypeOf(arr, Array.prototype);
-    return arr;
-  };
-});
