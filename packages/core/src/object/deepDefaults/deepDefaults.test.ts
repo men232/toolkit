@@ -340,3 +340,15 @@ describe('deepDefaults', () => {
     });
   });
 });
+
+it('should skip an own __proto__ key in sources', () => {
+  const target: any = { b: 2 };
+  const result: any = deepDefaults(
+    target,
+    JSON.parse('{"__proto__":{"isAdmin":true},"a":1}'),
+  );
+  expect(result).toBe(target);
+  expect(result.isAdmin).toBeUndefined();
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+  expect(result).toEqual({ a: 1, b: 2 });
+});

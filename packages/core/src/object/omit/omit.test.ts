@@ -16,3 +16,13 @@ test('omit', () => {
     createdAt: user.createdAt,
   });
 });
+
+test('should keep an own __proto__ key as data', () => {
+  const result: any = omit(JSON.parse('{"__proto__":{"isAdmin":true},"a":1}'), [
+    'a',
+  ]);
+  expect(result.isAdmin).toBeUndefined();
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+  expect(Object.keys(result)).toEqual(['__proto__']);
+  expect(result.__proto__).not.toBe(Object.prototype);
+});

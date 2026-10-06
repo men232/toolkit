@@ -1,4 +1,5 @@
 import { isObject } from '@/is';
+import { setOwnProperty } from '../setOwnProperty';
 
 /**
  * Creates a new object with specified keys omitted.
@@ -42,7 +43,7 @@ export function omit<T extends Record<string, any>, U extends keyof T>(
   for (const [key, value] of Object.entries(obj)) {
     if (excludesSet.has(key)) continue;
 
-    result[key] = value;
+    setOwnProperty(result, key, value);
   }
 
   return result;

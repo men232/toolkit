@@ -1,4 +1,5 @@
 import { isPlainObject } from '@/is';
+import { isUnsafeProperty } from '@/str/isUnsafeProperty';
 
 /**
  * Recursively assigns default properties.
@@ -48,6 +49,8 @@ function defaultsDeepRecursive(
   stack: WeakMap<any, any>,
 ): void {
   for (const key in source) {
+    if (isUnsafeProperty(key)) continue;
+
     const sourceValue = source[key];
     const targetValue = target[key];
 

@@ -1,3 +1,4 @@
+import { setOwnProperty } from '../setOwnProperty';
 interface PrefixedValuesOptions {
   /**
    * Key prefix
@@ -49,8 +50,7 @@ export function pickPrefixed(
     if (!key.startsWith(prefix!)) continue;
     if (prefixTrim) key = key.substring(prefix!.length);
 
-    // @ts-expect-error
-    result[key] = value;
+    setOwnProperty(result, key, value);
   }
 
   return result;

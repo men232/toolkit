@@ -524,3 +524,13 @@ describe('deepClone', () => {
     expect(cloned).toBeInstanceOf(Int32Array);
   });
 });
+
+it('should keep an own __proto__ key as data', () => {
+  const source = JSON.parse('{"__proto__":{"isAdmin":true},"a":1}');
+  const result: any = deepClone(source);
+  expect(result.isAdmin).toBeUndefined();
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+  expect(Object.keys(result)).toEqual(['__proto__', 'a']);
+  expect(result.__proto__).toEqual({ isAdmin: true });
+  expect(result.__proto__).not.toBe(source.__proto__);
+});

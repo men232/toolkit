@@ -1,4 +1,5 @@
 import { isBuffer, isTypedArray } from '@/is';
+import { setOwnProperty } from '../setOwnProperty';
 import {
   argumentsTag,
   arrayBufferTag,
@@ -417,12 +418,15 @@ function copyProperty<T>(
       ? undefined
       : cloneValue(value, key, objectToClone, stack, parent);
 
-  target[key] =
+  setOwnProperty(
+    target,
+    key,
     cloned !== undefined
       ? cloned
       : typeof value !== 'object' || value === null
         ? value
-        : cloneObject(value, key, objectToClone, stack, parent, cloneValue);
+        : cloneObject(value, key, objectToClone, stack, parent, cloneValue),
+  );
 }
 
 function isCloneableObject(object: object) {

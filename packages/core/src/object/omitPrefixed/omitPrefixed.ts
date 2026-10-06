@@ -1,3 +1,4 @@
+import { setOwnProperty } from '../setOwnProperty';
 /**
  * Pick object keys with excluding prefix keys
  *
@@ -20,7 +21,7 @@ export function omitPrefixed(
 
   for (const [key, value] of Object.entries(obj)) {
     if (key.startsWith(prefix)) continue;
-    result[key] = value;
+    setOwnProperty(result, key, value);
   }
 
   return result;

@@ -1,5 +1,6 @@
 import { assert } from '@/assert';
 import { isObject } from '@/is';
+import { setOwnProperty } from '@/object/setOwnProperty';
 import {
   BigIntType,
   BinaryType,
@@ -446,37 +447,19 @@ function copyOnWrite(
     const mapped = fn(item);
 
     if (result !== null) {
-      setOwn(result, key, mapped);
+      setOwnProperty(result, key, mapped);
     } else if (mapped !== item) {
       result = {};
 
       for (let j = 0; j < i; j++) {
-        setOwn(result, keys[j], value[keys[j]]);
+        setOwnProperty(result, keys[j], value[keys[j]]);
       }
 
-      setOwn(result, key, mapped);
+      setOwnProperty(result, key, mapped);
     }
   }
 
   return result ?? value;
-}
-
-/**
- * Plain assignment of a `__proto__` key would change the prototype of the
- * copy instead of creating an own property (JSON.parse does produce such
- * keys), so that one key goes through `defineProperty`.
- */
-function setOwn(target: Record<string, any>, key: string, value: any) {
-  if (key === '__proto__') {
-    Object.defineProperty(target, key, {
-      value,
-      writable: true,
-      enumerable: true,
-      configurable: true,
-    });
-  } else {
-    target[key] = value;
-  }
 }
 
 function enter(seen: Set<object>, value: object) {

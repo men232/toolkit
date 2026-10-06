@@ -1,5 +1,6 @@
 import { isObject } from '@/is';
 import { hasOwn } from '../hasOwn';
+import { setOwnProperty } from '../setOwnProperty';
 
 /**
  * Creates a new object composed of the picked object properties.
@@ -38,7 +39,7 @@ export function pick<T extends Record<string, any>, U extends keyof T>(
 
   for (const key of keysSet.values()) {
     if (hasOwn(obj, key)) {
-      result[key] = (obj as any)[key];
+      setOwnProperty(result, key, (obj as any)[key]);
     }
   }
 

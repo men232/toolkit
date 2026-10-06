@@ -26,3 +26,13 @@ describe('pick', () => {
     });
   });
 });
+
+test('should keep an own __proto__ key as data', () => {
+  const result: any = pick(JSON.parse('{"__proto__":{"isAdmin":true},"a":1}'), [
+    '__proto__',
+    'a',
+  ] as any);
+  expect(result.isAdmin).toBeUndefined();
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+  expect(Object.keys(result)).toEqual(['__proto__', 'a']);
+});
