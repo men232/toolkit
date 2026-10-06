@@ -54,3 +54,13 @@ test('logger (writes at or above the current level only)', () => {
   expect(info).not.toHaveBeenCalled();
   expect(warn).toHaveBeenCalledExactlyOnceWith('[test]', 'shown x');
 });
+
+test('logger (keeps placeholders without arguments)', () => {
+  const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+  const log = logger('test');
+
+  setLoggerLevel('info');
+  log.info('Progress: %s');
+
+  expect(info).toHaveBeenCalledExactlyOnceWith('[test]', 'Progress: %s');
+});

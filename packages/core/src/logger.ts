@@ -78,7 +78,7 @@ export const logger = (...baseArgs: any[]): Logger => {
       return;
     }
 
-    if (!isString(pattern)) {
+    if (!isString(pattern) || args.length === 0) {
       // eslint-disable-next-line no-console
       console[level](...baseArgs, pattern, ...args);
       return;
