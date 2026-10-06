@@ -80,12 +80,11 @@ export function flatten(
   }: FlattenOptions = {},
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const seen = new WeakSet();
 
   if (isObjectCompare(obj)) {
     iter(
       result,
-      seen,
+      [],
       isObjectCompare,
       separator,
       withArrays,
@@ -100,7 +99,7 @@ export function flatten(
 
 function iter(
   output: Record<string, unknown>,
-  seen: WeakSet<any>,
+  ancestors: any[],
   isObjectCompare: Exclude<FlattenOptions['isObjectCompare'], undefined>,
   separator: string,
   withArrays: boolean,
@@ -108,23 +107,23 @@ function iter(
   key: string,
   initial?: boolean,
 ) {
-  if (seen.has(val)) return;
-
   let k,
     pfx = key && !initial ? key + separator : key;
 
   if (Array.isArray(val)) {
-    seen.add(val);
-
     if (!withArrays) {
       output[key] = val;
       return;
     }
 
+    if (ancestors.indexOf(val) !== -1) return;
+
+    ancestors.push(val);
+
     for (k = 0; k < val.length; k++) {
       iter(
         output,
-        seen,
+        ancestors,
         isObjectCompare,
         separator,
         withArrays,
@@ -132,13 +131,17 @@ function iter(
         pfx + k,
       );
     }
+
+    ancestors.pop();
   } else if (isObjectCompare(val)) {
-    seen.add(val);
+    if (ancestors.indexOf(val) !== -1) return;
+
+    ancestors.push(val);
 
     for (k in val) {
       iter(
         output,
-        seen,
+        ancestors,
         isObjectCompare,
         separator,
         withArrays,
@@ -146,6 +149,8 @@ function iter(
         pfx + k,
       );
     }
+
+    ancestors.pop();
   } else {
     output[key] = val;
   }

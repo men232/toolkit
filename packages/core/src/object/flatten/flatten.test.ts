@@ -69,3 +69,28 @@ describe('flatten', () => {
     });
   });
 });
+
+test('should flatten every occurrence of a shared reference', () => {
+  const shared = { c: 1 };
+  const list = [1, 2];
+
+  expect(flatten({ a: shared, b: shared })).toEqual({ a_c: 1, b_c: 1 });
+  expect(flatten({ a: list, b: list })).toEqual({
+    a_0: 1,
+    a_1: 2,
+    b_0: 1,
+    b_1: 2,
+  });
+  expect(flatten({ a: list, b: list }, { withArrays: false })).toEqual({
+    a: list,
+    b: list,
+  });
+});
+
+test('should still skip circular references', () => {
+  const obj: any = { a: { b: 1 } };
+  obj.a.self = obj;
+  obj.a.loop = obj.a;
+
+  expect(flatten(obj)).toEqual({ a_b: 1 });
+});
